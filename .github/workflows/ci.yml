@@ -43,32 +43,11 @@ jobs:
       - name: Lint
         run: bun run lint
 
-      - name: Type-check (web)
-        working-directory: apps/web
-        run: bunx tsc -b --pretty
+      - name: Type-check
+        run: bun run typecheck
 
-      - name: Type-check (server)
-        working-directory: apps/server
-        run: bunx tsc --noEmit --pretty
-
-      - name: Prepare test report directory
-        run: mkdir -p reports
-
-      - name: Test (web - vitest)
-        working-directory: apps/web
-        run: >
-          bunx vitest run
-          --reporter=default
-          --reporter=junit
-          --outputFile.junit=../../reports/web-junit.xml
-
-      - name: Test (server - bun test)
-        working-directory: apps/server
-        # bun test exits non-zero on failures; report step below still runs via if: always()
-        run: >
-          bun test
-          --reporter=junit
-          --reporter-outfile=../../reports/server-junit.xml
+      - name: Test (JUnit output)
+        run: bun run test:ci
 
       - name: Publish test report (HTML check)
         uses: dorny/test-reporter@v2
@@ -89,7 +68,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Standalone build
-        run: bun run build:standalone -- --targets=linux-x64
+        run: bun run build:standalone:ci
 
       - name: Upload standalone artifacts
         if: always()

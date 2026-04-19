@@ -13,7 +13,9 @@
     "dev:server": "cd apps/server && bun run dev",
     "build": "bun run --filter='*' build",
     "lint": "bun run --filter='*' lint",
+    "typecheck": "bun run --filter='*' typecheck",
     "test": "bun run --filter='*' test",
+    "test:ci": "bun run scripts/ensure-reports-dir.ts && bun run --filter='*' test:ci",
     "test:watch": "cd apps/web && bun run test:watch",
     "test:ui": "cd apps/web && bun run test:ui",
     "test:coverage": "cd apps/web && bun run test:coverage",
@@ -21,6 +23,8 @@
     "db:generate": "cd apps/server && bun run db:generate",
     "db:migrate": "cd apps/server && bun run db:migrate",
     "build:standalone": "bun run scripts/build-standalone.ts",
+    "build:standalone:ci": "bun run scripts/build-standalone.ts --targets=linux-x64",
+    "ci": "bun run lint && bun run typecheck && bun run test:ci && bun run build:standalone:ci",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"
