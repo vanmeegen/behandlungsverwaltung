@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+# Needed so dorny/test-reporter can create a check with HTML results.
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Lint, Type-check, Test & Standalone Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun install
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Type-check (web)
+        working-directory: apps/web
+        run: bunx tsc -b --pretty
+
+      - name: Type-check (server)
+        working-directory: apps/server
+        run: bunx tsc --noEmit --pretty
+
+      - name: Prepare test report directory
+        run: mkdir -p reports
+
+      - name: Test (web - vitest)
+        working-directory: apps/web
+        run: >
+          bunx vitest run
+          --reporter=default
+          --reporter=junit
+          --outputFile.junit=../../reports/web-junit.xml
+
+      - name: Test (server - bun test)
+        working-directory: apps/server
+        # bun test exits non-zero on failures; report step below still runs via if: always()
+        run: >
+          bun test
+          --reporter=junit
+          --reporter-outfile=../../reports/server-junit.xml
+
+      - name: Publish test report (HTML check)
+        uses: dorny/test-reporter@v2
+        if: always()
+        with:
+          name: Test Results
+          path: 'reports/*-junit.xml'
+          reporter: java-junit
+          fail-on-error: true
+          fail-on-empty: true
+
+      - name: Upload raw JUnit XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-reports
+          path: reports/*-junit.xml
+          if-no-files-found: warn
+
+      - name: Standalone build
+        run: bun run build:standalone -- --targets=linux-x64
+
+      - name: Upload standalone artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: standalone-executables
+          path: dist-standalone/
+          if-no-files-found: warn
