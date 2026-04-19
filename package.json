@@ -20,6 +20,7 @@
     "preview": "cd apps/web && bun run preview",
     "db:generate": "cd apps/server && bun run db:generate",
     "db:migrate": "cd apps/server && bun run db:migrate",
+    "build:standalone": "bun run scripts/build-standalone.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"

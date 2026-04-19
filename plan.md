@@ -13,6 +13,22 @@ Living plan per `AGENTS.md`. Mark completed items with ✅.
 - ✅ ESLint (flat config) + Prettier
 - ✅ Husky + lint-staged pre-commit hook
 - ✅ Hello-world end-to-end: GraphQL `{ hello }` → MobX model → React observer
+- ✅ Standalone single-file executables (`bun run build:standalone`)
+  that embed the Vite bundle, GraphQL server, and SQLite — currently
+  Windows x64 and macOS arm64. Binary auto-opens the default browser on
+  launch and stores `app.db` next to itself.
+- ✅ PWA manifest + service worker for Android installability
+  (no native Bun support for Android; PWA is the supported path).
+
+## Standalone distribution
+
+- Build all targets: `bun run build:standalone -- --targets=all`
+- Default targets: `windows-x64`, `darwin-arm64` (can be changed via
+  `--targets=<list>`; full list: `linux-x64`, `linux-arm64`,
+  `darwin-x64`, `darwin-arm64`, `windows-x64`).
+- Output: `dist-standalone/behandlungsverwaltung-<target>[.exe]`.
+- Android: not a Bun compile target. The web app ships as an installable
+  PWA and can point at a standalone server on the LAN.
 
 ## Phase 1: Domain (next)
 
