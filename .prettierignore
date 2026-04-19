@@ -1,0 +1,9 @@
+node_modules
+dist
+build
+coverage
+bun.lock
+bun.lockb
+apps/*/dist
+apps/server/data
+apps/server/drizzle
