@@ -1,0 +1,20 @@
+{
+  "name": "Behandlungsverwaltung",
+  "short_name": "Behandlung",
+  "description": "Verwaltet Behandlungen und ihre Abrechnung.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f766e",
+  "theme_color": "#0f766e",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

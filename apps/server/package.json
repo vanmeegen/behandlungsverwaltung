@@ -1,0 +1,32 @@
+{
+  "name": "@behandlungsverwaltung/server",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "bun --hot run src/index.ts",
+    "start": "bun run src/index.ts",
+    "build": "tsc --noEmit",
+    "lint": "eslint 'src/**/*.ts'",
+    "test": "bun test",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@pothos/core": "^4.3.0",
+    "drizzle-orm": "^0.36.4",
+    "graphql": "^16.9.0",
+    "graphql-yoga": "^5.10.4"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.13",
+    "@typescript-eslint/eslint-plugin": "^8.15.0",
+    "@typescript-eslint/parser": "^8.15.0",
+    "drizzle-kit": "^0.28.1",
+    "eslint": "^9.15.0",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.15.0"
+  }
+}

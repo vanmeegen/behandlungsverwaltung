@@ -1,0 +1,50 @@
+{
+  "name": "behandlungsverwaltung",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter='*' dev",
+    "dev:web": "cd apps/web && bun run dev",
+    "dev:server": "cd apps/server && bun run dev",
+    "build": "bun run --filter='*' build",
+    "lint": "bun run --filter='*' lint",
+    "test": "bun run --filter='*' test",
+    "test:watch": "cd apps/web && bun run test:watch",
+    "test:ui": "cd apps/web && bun run test:ui",
+    "test:coverage": "cd apps/web && bun run test:coverage",
+    "preview": "cd apps/web && bun run preview",
+    "db:generate": "cd apps/server && bun run db:generate",
+    "db:migrate": "cd apps/server && bun run db:migrate",
+    "build:standalone": "bun run scripts/build-standalone.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@types/bun": "^1.1.13",
+    "eslint": "^9.15.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.14",
+    "globals": "^15.12.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.15.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css,html,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}
