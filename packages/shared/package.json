@@ -11,6 +11,8 @@
   "scripts": {
     "build": "tsc --noEmit",
     "lint": "echo 'no lint for shared yet'",
-    "test": "echo 'no tests for shared yet'"
+    "typecheck": "tsc --noEmit --pretty",
+    "test": "echo 'no tests for shared yet'",
+    "test:ci": "echo 'no tests for shared yet'"
   }
 }

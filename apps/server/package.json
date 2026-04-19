@@ -9,7 +9,9 @@
     "start": "bun run src/index.ts",
     "build": "tsc --noEmit",
     "lint": "eslint 'src/**/*.ts'",
+    "typecheck": "tsc --noEmit --pretty",
     "test": "bun test",
+    "test:ci": "bun test --reporter=junit --reporter-outfile=../../reports/server-junit.xml",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
