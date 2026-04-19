@@ -131,6 +131,75 @@ To reproduce a CI failure locally, run `bun run ci`.
   - Test files: `apps/server/src/__tests__/**/*.spec.ts`
 - **JUnit output**: `test:ci` writes to `reports/web-junit.xml` and `reports/server-junit.xml`; GitHub Actions renders these as an HTML check via `dorny/test-reporter`.
 
+## End-to-End Tests (Playwright)
+
+E2E tests live in `apps/web/e2e/` and run against the real dev stack: Vite on
+`:5173` proxying `/graphql` to the Bun GraphQL server on `:4000`. Playwright's
+`webServer` config starts `bun run dev` automatically, so a single command runs
+the full system.
+
+Config: `apps/web/playwright.config.ts` — Chromium only, `testIdAttribute` set
+to `data-testselector` so `page.getByTestId('...')` resolves
+`data-testselector="..."` in the DOM. Test files match `**/*.e2e.ts`.
+
+### Commands
+
+```bash
+bun run e2e:install        # one-time: download Chromium + OS deps
+bun run e2e                # headless run (from repo root)
+bun run e2e:ui             # interactive UI mode (debug, time-travel)
+cd apps/web && bun run e2e:ci   # CI mode, writes reports/web-e2e-junit.xml
+```
+
+### Conventions for writing new e2e tests
+
+1. **Page Objects live in `apps/web/e2e/pages/`** — one class per page/view.
+   The class exposes `Locator`s for elements and async methods for user
+   interactions (`login()`, `submitForm()`, `openPatient()`, …). Specs MUST NOT
+   use raw selectors — always go through the page object.
+2. **Specs live in `apps/web/e2e/` as `*.e2e.ts`.** Keep them short and
+   declarative: arrange (instantiate page object + `goto()`), act, assert.
+3. **Select elements with `data-testselector`, never with text or CSS classes.**
+   Use `page.getByTestId('my-thing')` in page objects (Playwright is configured
+   to resolve this to `data-testselector`). This keeps tests robust against:
+   - i18n / translation changes (the app has German strings today)
+   - visual redesigns (className churn)
+   - DOM restructuring that preserves semantics
+4. **Add `data-testselector` to components while writing the test.** Use
+   kebab-case, scoped names: `hello-greeting`, `patient-list-row`,
+   `save-button`. Prefer one id per interactive or assertable element. Do NOT
+   remove the semantic ARIA roles — `role` and `data-testselector` coexist.
+5. **Never assert on translated strings.** Assert on presence
+   (`toBeVisible()`), count (`toHaveCount(n)`), value, or structural state. If
+   you must check visible text, pull it from a shared constant the component
+   also uses.
+6. **Prefer auto-waiting assertions** (`await expect(locator).toBeVisible()`)
+   over manual `waitFor*`. Never use `page.waitForTimeout()`.
+7. **No state sharing between specs.** Each test re-navigates via the page
+   object's `goto()`.
+8. **Debugging a failure.** Run with `bun run e2e:ui` locally, or open the
+   HTML report at `apps/web/playwright-report/index.html` after a failed run.
+   Traces are recorded on first retry (see `use.trace` in the config).
+
+### Example: new page object
+
+```ts
+// apps/web/e2e/pages/PatientListPage.ts
+import type { Locator, Page } from '@playwright/test';
+
+export class PatientListPage {
+  readonly rows: Locator;
+  constructor(readonly page: Page) {
+    this.rows = page.getByTestId('patient-row');
+  }
+  async goto(): Promise<void> {
+    await this.page.goto('/patients');
+  }
+}
+```
+
+In the component, mark each row with `data-testselector="patient-row"`.
+
 ## Lint-staged Configuration
 
 Automatically runs on commit:

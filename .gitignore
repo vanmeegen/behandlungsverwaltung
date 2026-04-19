@@ -22,3 +22,9 @@ apps/server/data/
 
 # Drizzle generated migrations output is kept in VCS; only ignore cache
 .drizzle-cache/
+
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/
+apps/web/e2e/.auth/

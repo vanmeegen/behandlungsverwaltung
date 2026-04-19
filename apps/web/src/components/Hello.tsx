@@ -12,10 +12,18 @@ export const Hello = observer(({ model }: HelloProps) => {
   }, [model]);
 
   if (model.loading) {
-    return <p role="status">Lade…</p>;
+    return (
+      <p role="status" data-testselector="hello-loading">
+        Lade…
+      </p>
+    );
   }
   if (model.error) {
-    return <p role="alert">Fehler: {model.error}</p>;
+    return (
+      <p role="alert" data-testselector="hello-error">
+        Fehler: {model.error}
+      </p>
+    );
   }
-  return <h1>{model.message}</h1>;
+  return <h1 data-testselector="hello-greeting">{model.message}</h1>;
 });
