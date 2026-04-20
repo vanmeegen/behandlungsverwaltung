@@ -34,6 +34,7 @@ Living plan per `AGENTS.md`. Mark completed items with ✅ when done. Every step
 
 - Red/green TDD, step by step — **never** write production code without a failing test citing the AC.
 - No React state hooks for app state — MobX observables + `observer`. `useEffect` only for one-shot `model.load()` bootstraps (as in `Hello.tsx`).
+- **Enforced by ESLint**: add a `no-restricted-syntax` rule to `apps/web/eslint.config.js` that bans `useState` / `useReducer` imports outside `apps/web/src/**/__tests__/**`. Landed in Phase 2 alongside the first form. Any form component must drive its inputs from a store `draft` observable (setter-pair pattern: `store.draftKind.setPlz(value)`), never from `useState`.
 - Strict TypeScript, named exported types (no inline types shared across files).
 - Run `bun run lint && bun run typecheck && bun run test:ci && bun run e2e` before each commit. Conventional commits (`feat:`, `fix:`, `refactor:`, `test:`, `chore:`).
 
@@ -126,7 +127,8 @@ Goal: all five tables exist, migrations generated, GraphQL types declared, no re
   - empty / future Geburtsdatum → inline errors
   - valid submit of **all 8 fields** calls `store.create` with exactly the typed values (assert via mock fetcher spy).
   - The form renders an input for **every** DB column (vorname, nachname, geburtsdatum, strasse, hausnummer, plz, stadt, aktenzeichen) — assert each via `data-testselector="kind-form-<field>"`.
-- **Green**: `apps/web/src/components/KindList.tsx`, `KindForm.tsx`, `pages/KindListPage.tsx`, `pages/KindFormPage.tsx`. Mobile-first CSS (single column, ≥44px tap targets, sticky primary action bottom). Validation errors driven by the **same shared zod schema** the server uses — single source of truth.
+  - **Presentation-model binding**: each input's `value` equals `store.draftKind.<field>` (assert by mutating `store.draftKind.setVorname("X")` in the test and asserting the rendered input reflects it without re-rendering from props) — locks the "no React useState for app state" rule.
+- **Green**: `apps/web/src/components/KindList.tsx`, `KindForm.tsx`, `pages/KindListPage.tsx`, `pages/KindFormPage.tsx`. Mobile-first CSS (single column, ≥44px tap targets, sticky primary action bottom). Validation errors driven by the **same shared zod schema** the server uses — single source of truth. `KindStore` exposes a `draftKind` observable (MobX class with setters per field) — the form binds inputs to it; submit calls `store.saveDraft()`.
 
 ### 2.5 E2E: create + edit Kind <!-- implements AC-KIND-01, AC-KIND-03, UC-3.5 -->
 
@@ -165,12 +167,14 @@ Goal: all five tables exist, migrations generated, GraphQL types declared, no re
   - every Pflicht-field per §2.2 surfaces its error from the shared zod schema when empty.
   - stundensatz parser: `"45,00"` → 4500; `"45"` → 4500; `"45,5"` → rejected (two decimals required); negative → rejected.
   - the form renders an input for **every** DB column used by the chosen typ.
-- **Green**: `apps/web/src/models/AuftraggeberStore.ts`, `components/AuftraggeberForm.tsx`, list/form pages. Stundensatz input wired through a shared `parseEuroToCents` util.
+  - **Presentation-model binding**: each input's `value` is driven by `store.draftAuftraggeber.<field>`; `store.draftAuftraggeber.setFirmenname("X")` propagates to the rendered input. No `useState` in the component.
+- **Green**: `apps/web/src/models/AuftraggeberStore.ts` (with `draftAuftraggeber` observable), `components/AuftraggeberForm.tsx`, list/form pages. Stundensatz input wired through a shared `parseEuroToCents` util.
 
 ### 3.3 E2E: create Firma + Person-edge <!-- implements AC-AG-01, AC-AG-02, UC-3.6 -->
 
-- **Red (e2e)**: `apps/web/e2e/uc-3.6-auftraggeber.e2e.ts` with `AuftraggeberListPage` / `AuftraggeberFormPage` page objects. Two scenarios:
+- **Red (e2e)**: `apps/web/e2e/uc-3.6-auftraggeber.e2e.ts` with `AuftraggeberListPage` / `AuftraggeberFormPage` page objects. Three scenarios:
   - **Firma happy (AC-AG-01 / UC-3.6 Szenario 1)**: typ=Firma, firmenname="Jugendamt Köln", strasse="Kalker Hauptstr.", hausnummer="247-273", plz="51103", stadt="Köln", stundensatz="45,00" → submit. Row shows firmenname (`data-testselector="auftraggeber-row-firmenname"`); detail view renders no vorname/nachname inputs. **Field readback**: GraphQL `auftraggeber { id typ firmenname vorname nachname strasse hausnummer plz stadt stundensatzCents }` asserts `typ=firma`, `firmenname="Jugendamt Köln"`, `vorname=null`, `nachname=null`, `stundensatzCents=4500`, all other columns as typed.
+  - **Person happy (fills vorname/nachname for DB coverage)**: typ=Person, vorname="Petra", nachname="Privatzahlerin", strasse="Lindenallee", hausnummer="7", plz="50667", stadt="Köln", stundensatz="60,00" → submit. Row shows "Privatzahlerin, Petra"; detail view renders no firmenname input. **Field readback**: assert `typ=person`, `vorname="Petra"`, `nachname="Privatzahlerin"`, `firmenname=null`, `stundensatzCents=6000`, all address columns as typed.
   - **Person edge (UC-3.6 Szenario 2)**: typ=Person, leave vorname/nachname empty, fill plz + stundensatz → submit → error "Vor- und Nachname Pflicht"; list remains empty.
 - **Green**: markup adjustments, `data-testselector` on every field and row.
 
@@ -207,14 +211,16 @@ Goal: all five tables exist, migrations generated, GraphQL types declared, no re
   - `bewilligteBe` number input required and > 0
   - `kindId` / `auftraggeberId` dropdowns required
   - the form renders an input for **every** DB column (kindId, auftraggeberId, form, kommentar, bewilligteBe, arbeitsthema).
+  - **Presentation-model binding**: all inputs driven by `store.draftTherapie.<field>`; setters on the draft propagate to the DOM.
     `KindDetail.spec.tsx` (renders list of Therapien from injected store); `AuftraggeberDetail.spec.tsx` (same).
-- **Green**: implement.
+- **Green**: implement (with `draftTherapie` observable on `TherapieStore`).
 
 ### 4.4 E2E: Therapie CRUD with dual-parent visibility <!-- implements AC-TH-02, AC-TH-01, UC-3.7 -->
 
-- **Red (e2e)**: `apps/web/e2e/uc-3.7-therapie.e2e.ts`. Two scenarios:
+- **Red (e2e)**: `apps/web/e2e/uc-3.7-therapie.e2e.ts`. Three scenarios:
   - **Happy (UC-3.7 Szenario 1)**: seed Kind "Anna Musterfrau" + Auftraggeber "Jugendamt Köln"; open Therapieliste → Neu → pick both, form=Lerntherapie, bewilligteBe=60, arbeitsthema="Mathe-Grundlagen" → submit. Assert therapie row appears on **both** `KindDetailPage` and `AuftraggeberDetailPage`. **Field readback**: GraphQL `therapien { id kindId auftraggeberId form kommentar bewilligteBe arbeitsthema }` asserts every column (form=lerntherapie, kommentar=null, bewilligteBe=60, arbeitsthema="Mathe-Grundlagen", both FKs correct) matches input.
-  - **Edge (UC-3.7 Szenario 2 / AC-TH-01 e2e echo)**: form=Sonstiges with empty kommentar → error "Kommentar ist Pflicht bei Sonstiges"; Therapieliste remains empty.
+  - **Sonstiges-happy (kommentar coverage)**: form=Sonstiges, kommentar="Individuell abgestimmte Förderung", bewilligteBe=30, arbeitsthema="Konzentration" → submit. **Field readback**: assert `form=sonstiges`, `kommentar="Individuell abgestimmte Förderung"`, `bewilligteBe=30`, `arbeitsthema="Konzentration"` — this is the only e2e that populates the `kommentar` DB column.
+  - **Sonstiges-edge (UC-3.7 Szenario 2 / AC-TH-01 e2e echo)**: form=Sonstiges with empty kommentar → error "Kommentar ist Pflicht bei Sonstiges"; Therapieliste unchanged.
 - **Green**: wire the nested routes; `data-testselector` on therapie rows and fields.
 
 ### 4.5 Commit gate
@@ -251,6 +257,7 @@ Goal: all five tables exist, migrations generated, GraphQL types declared, no re
   - overriding Arbeitsthema submits the override.
   - switching Therapie after manual edit does NOT overwrite the user's text.
   - the form renders an input for every DB column (therapieId, datum, be, arbeitsthema).
+  - **Presentation-model binding**: all inputs driven by `store.draftBehandlung.<field>`; BE stepper calls `store.draftBehandlung.incrementBe()` / `decrementBe()`; setters propagate to the DOM.
 - **Green**: component + store.
 - **Refactor**: stepper as a reusable `BeStepper` component; pre-fill logic isolated in a MobX-driven helper (no React `useState` for app state).
 
@@ -331,7 +338,9 @@ Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded tem
 
 ### 7.5 E2E <!-- implements AC-TPL-01 -->
 
-- **Red (e2e)**: `apps/web/e2e/templates.e2e.ts` — use Playwright's `setInputFiles()` with a fixture PDF in `apps/web/e2e/fixtures/template-rechnung.pdf` (checked into repo, ~a few KB blank PDF). After upload, assert the file exists in the isolated `BEHANDLUNG_HOME/templates/` (use `fs.statSync` in a `test.afterEach` sanity check).
+- **Red (e2e)**: `apps/web/e2e/templates.e2e.ts` — use Playwright's `setInputFiles()` with a fixture PDF in `apps/web/e2e/fixtures/template-rechnung.pdf` (checked into repo, ~a few KB blank PDF). Upload once as a global rechnung template (auftraggeberId=null), then a second time as a per-Auftraggeber stundennachweis template. Assertions:
+  - file exists in isolated `BEHANDLUNG_HOME/templates/` (`fs.statSync` sanity check in `afterEach`).
+  - **Field readback**: GraphQL `templateFiles { id kind auftraggeberId filename createdAt }` asserts the inserted rows — one with `kind='rechnung'`, `auftraggeberId=null`, `filename` matching the stored path; one with `kind='stundennachweis'`, `auftraggeberId` = the seeded Auftraggeber id, `filename` matching the stored path.
 - **Green**: wire `FormData`/base64 as needed.
 
 ### 7.6 Commit gate
@@ -376,8 +385,12 @@ Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded tem
 
 ### 8.6 Web: Monatsrechnung screen
 
-- **Red (unit, web)**: `RechnungCreatePage.spec.tsx` — month/year picker (default current month), Kind picker, Auftraggeber picker filtered to those linked via Therapie to that Kind, submit button. On duplicate error, a confirm dialog appears with message "Für diesen Monat wurde bereits eine Rechnung erzeugt. Nochmal?" and `data-testselector="duplicate-confirm"`; in v1 we just **warn** and stop — user can delete the file manually. Locks AC-RECH-05 UX side.
-- **Green**: component + `RechnungStore`.
+- **Red (unit, web)**: `RechnungCreatePage.spec.tsx` covering:
+  - month/year picker (default current month), Kind picker, Auftraggeber picker filtered to those linked via Therapie to that Kind, submit button.
+  - **Presentation-model binding**: picker selections driven by `store.draftRechnung.<field>`; setter-pair pattern; no `useState`.
+  - **Duplicate path (AC-RECH-05 UX side)**: on `DUPLICATE_RECHNUNG` GraphQL error, a confirm dialog appears with the **exact** text "Für diesen Monat wurde bereits eine Rechnung erzeugt." (matches UC-3.2 Szenario 2 wording) and `data-testselector="duplicate-confirm"`; in v1 we just **warn** and stop — user can delete the file manually.
+  - **KeineBehandlungen path**: on `KEINE_BEHANDLUNGEN` GraphQL error (Phase 8.1), the UI renders an inline message "Für den gewählten Monat liegen keine Behandlungen vor." in a `data-testselector="keine-behandlungen"` banner; the submit button stays enabled but no PDF is produced.
+- **Green**: component + `RechnungStore` with `draftRechnung` observable.
 
 ### 8.7 E2E happy path <!-- implements AC-RECH-01, AC-RECH-09, UC-3.2 -->
 
@@ -388,9 +401,9 @@ Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded tem
   - Rechnungsübersicht row shows nummer `2026-04-0001` and Gesamtsumme `270,00 €`
   - **Field readback** via GraphQL: `rechnungen { nummer jahr monat kindId auftraggeberId stundensatzCentsSnapshot gesamtCents dateiname rechnungBehandlungen { snapshotDate snapshotBe snapshotArbeitsthema snapshotZeilenbetragCents } }` — assert `stundensatzCentsSnapshot=4500`, `gesamtCents=27000`, `dateiname="2026-04-0001-Anna_Musterfrau.pdf"`, three `rechnungBehandlungen` rows each with `snapshotBe=2`, `snapshotArbeitsthema="Mathe-Grundlagen"`, `snapshotZeilenbetragCents=9000`.
 
-### 8.8 E2E duplicate warning <!-- implements AC-RECH-05 -->
+### 8.8 E2E duplicate warning <!-- implements AC-RECH-05, UC-3.2 Szenario 2 -->
 
-- **Red (e2e)**: after the first Rechnung is created, try to create it again → duplicate dialog appears.
+- **Red (e2e)**: after the first Rechnung is created (re-use Phase 8.7 seed), try to create it again for the same month/Kind/Auftraggeber → assert `data-testselector="duplicate-confirm"` dialog appears containing the exact text "Für diesen Monat wurde bereits eine Rechnung erzeugt." (matches UC-3.2 Szenario 2). After dismissing the dialog, `rechnungen` table still has exactly one row for that month/Kind/Auftraggeber (no second insert).
 
 ### 8.9 Commit gate
 
@@ -448,12 +461,14 @@ Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded tem
 
 ### 10.3 Web: `RechnungListPage`
 
-- **Red (unit, web)**: `RechnungListPage.spec.tsx` — filter inputs (Kind, Monat, Auftraggeber) drive the query; rows with download links.
+- **Red (unit, web)**: `RechnungListPage.spec.tsx`:
+  - filter inputs (Kind, Monat, Auftraggeber) drive the query, bound to `store.filter.<field>` (presentation-model binding, no `useState`).
+  - each row shows: Nummer, Monat/Jahr, Kind, Auftraggeber, **Gesamtsumme** formatted as `"X,XX €"` via `formatEuro(gesamtCents)`, and a "PDF" download link. Asserts via `data-testselector="rechnung-row-{nummer}-gesamtsumme"`.
 - **Green**: implement; download link = `/bills/<dateiname>` → browser download.
 
 ### 10.4 E2E <!-- implements UC-3.4 -->
 
-- **Red (e2e)**: `apps/web/e2e/uc-3.4-rechnungsuebersicht.e2e.ts` — seed three Rechnungen (2026-04-0001 Kind "Anna Musterfrau", 2026-04-0002 Kind "Ben Beispiel", 2026-05-0003 Kind "Anna Musterfrau"). Open Übersicht, filter `Kind = "Anna Musterfrau"` → assert exactly two rows with nummern `2026-04-0001` and `2026-05-0003`. Click "PDF" on `2026-04-0001`; Playwright `page.waitForEvent('download')` → assert filename is `2026-04-0001-Anna_Musterfrau.pdf` and byte length > 0.
+- **Red (e2e)**: `apps/web/e2e/uc-3.4-rechnungsuebersicht.e2e.ts` — seed three Rechnungen with known `gesamtCents` (2026-04-0001 Kind "Anna Musterfrau" gesamt 27000, 2026-04-0002 Kind "Ben Beispiel" gesamt 9000, 2026-05-0003 Kind "Anna Musterfrau" gesamt 18000). Open Übersicht, filter `Kind = "Anna Musterfrau"` → assert exactly two rows with nummern `2026-04-0001` and `2026-05-0003`, and the Gesamtsumme cells display `"270,00 €"` and `"180,00 €"` respectively (matches UC-3.2 Gherkin, via `data-testselector="rechnung-row-{nummer}-gesamtsumme"`). Click "PDF" on `2026-04-0001`; Playwright `page.waitForEvent('download')` → assert filename is `2026-04-0001-Anna_Musterfrau.pdf` and byte length > 0.
 
 ### 10.5 Commit gate
 
