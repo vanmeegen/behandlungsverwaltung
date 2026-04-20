@@ -130,7 +130,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
   - **Presentation-model binding**: each input's `value` equals `store.draftKind.<field>` (assert by mutating `store.draftKind.setVorname("X")` in the test and asserting the rendered input reflects it without re-rendering from props) — locks the "no React useState for app state" rule.
 - **Green**: `apps/web/src/components/KindList.tsx`, `KindForm.tsx`, `pages/KindListPage.tsx`, `pages/KindFormPage.tsx`. Mobile-first CSS (single column, ≥44px tap targets, sticky primary action bottom). Validation errors driven by the **same shared zod schema** the server uses — single source of truth. `KindStore` exposes a `draftKind` observable (MobX class with setters per field) — the form binds inputs to it; submit calls `store.saveDraft()`.
 
-### 2.5 E2E: create + edit Kind <!-- implements AC-KIND-01, AC-KIND-03, UC-3.5 -->
+### 2.5 E2E: create + edit Kind ✅ <!-- implements AC-KIND-01, AC-KIND-03, UC-3.5 -->
 
 - **Red (e2e)**: `apps/web/e2e/uc-3.5-kind.e2e.ts` using new `apps/web/e2e/pages/KindListPage.ts` and `KindFormPage.ts`. Three scenarios:
   - **Happy path (AC-KIND-01 / UC-3.5 Szenario 1)**: empty list → open form → fill **all 8 fields** (vorname="Anna", nachname="Musterfrau", geburtsdatum="2018-03-14", strasse="Hauptstr.", hausnummer="12", plz="50667", stadt="Köln", aktenzeichen="K-2026-001") → submit → success toast; list row "Musterfrau, Anna" visible. **Field readback**: `afterEach` queries `kinder { id vorname nachname geburtsdatum strasse hausnummer plz stadt aktenzeichen }` via GraphQL and asserts **every** column equals the typed value byte-for-byte.
@@ -139,7 +139,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 - Playwright bootstrap uses a **per-run isolated data dir**: the `webServer.command` picks up `DB_PATH=./e2e-data/<uuid>/app.db`, `BEHANDLUNG_HOME=./e2e-data/<uuid>` env vars. See Phase 11 + Risks section.
 - **Green**: markup tweaks to satisfy the page objects (add `data-testselector` attributes for every field + row).
 
-### 2.6 Commit gate
+### 2.6 Commit gate ✅
 
 - `bun run lint && bun run typecheck && bun run test:ci && bun run e2e`; commit `feat(kind): crud for Kind stammdaten`.
 

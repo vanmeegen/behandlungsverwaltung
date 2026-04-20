@@ -1,1 +1,2 @@
 import './kind';
+import './testReset';
