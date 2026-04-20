@@ -1,18 +1,10 @@
 import { createYoga } from 'graphql-yoga';
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { resolveDbPath } from './db/client';
-import { createAndMigrateDb } from './db/migrate';
+import { bootstrap } from './bootstrap';
 import { billsHandler, timesheetsHandler } from './http/billsRoute';
-import { ensureDataDirs, paths } from './paths';
 import { schema } from './schema';
 import type { SchemaContext } from './schema/builder';
 
-const dbPath = resolveDbPath();
-mkdirSync(dirname(dbPath), { recursive: true });
-const db = createAndMigrateDb(dbPath);
-const appPaths = paths();
-ensureDataDirs(appPaths);
+const { db, paths: appPaths, dbPath } = bootstrap();
 
 const yoga = createYoga<object, SchemaContext>({
   schema,
