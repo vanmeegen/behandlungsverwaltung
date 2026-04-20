@@ -1,8 +1,16 @@
-import { mkdirSync, rmSync } from 'node:fs';
+import { rmSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const CONFIG_DIR = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(CONFIG_DIR, '..', '..', '..');
+const TEST_DB_PATH = resolve(REPO_ROOT, 'apps', 'server', 'data', 'app-test.db');
 
 export default async function globalSetup(): Promise<void> {
-  const home = process.env.BEHANDLUNG_HOME;
-  if (!home) throw new Error('BEHANDLUNG_HOME must be set by playwright.config.ts');
-  rmSync(home, { recursive: true, force: true });
-  mkdirSync(home, { recursive: true });
+  // Start each Playwright run from an empty DB. testReset handles
+  // between-test cleanup; this handles between-run cleanup.
+  rmSync(TEST_DB_PATH, { force: true });
+  // Drizzle-created sidecars.
+  rmSync(`${TEST_DB_PATH}-wal`, { force: true });
+  rmSync(`${TEST_DB_PATH}-shm`, { force: true });
 }

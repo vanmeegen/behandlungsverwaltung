@@ -1,6 +1,7 @@
 /**
- * Test-only mutation. Registered only when BEHANDLUNG_TEST_MODE=1 so it
- * cannot leak into production binaries (Risks R3 in the plan).
+ * Test-only mutation. Registered only when BEHANDLUNG_TEST_MODE=1 (Risks R3).
+ * A server started in test mode also uses app-test.db (see resolveDbPath),
+ * so this never touches the dev/production app.db.
  */
 import {
   auftraggeber,
