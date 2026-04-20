@@ -71,7 +71,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 - **Refactor**: split `schema.ts` into one file per entity under `apps/server/src/db/schema/`, re-export from `index.ts`. Update `drizzle.config.ts` path if needed.
 - Run `bun run db:generate` and commit the SQL under `apps/server/drizzle/`.
 
-### 1.2 Migration runner on server boot <!-- part of AC-SYS-01 -->
+### 1.2 Migration runner on server boot ✅ <!-- part of AC-SYS-01 -->
 
 - **Red (unit, server)**: `apps/server/src/__tests__/db/migrate.spec.ts` — given a fresh temp sqlite file (via `DB_PATH` override), `runMigrations(db)` creates all tables.
 - **Green**: add `apps/server/src/db/migrate.ts` (uses `drizzle-orm/bun-sqlite/migrator`). Call it from `src/index.ts` and `src/standalone.ts` before `Bun.serve`.
