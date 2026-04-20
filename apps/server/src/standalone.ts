@@ -2,6 +2,7 @@ import { createYoga } from 'graphql-yoga';
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { createDb } from './db/client';
 import { schema } from './schema';
 import type { SchemaContext } from './schema/builder';
 import { staticFiles } from './generated/staticFiles';
@@ -18,10 +19,14 @@ function platformDataDir(): string {
 
 Bun.env.DB_PATH = Bun.env.DB_PATH ?? join(platformDataDir(), 'app.db');
 
+// Phase 11.1 will replace this with bootstrap(), which also runs migrations.
+// For now the standalone binary serves the schema without migrating on boot.
+const db = createDb();
+
 const yoga = createYoga<object, SchemaContext>({
   schema,
   graphqlEndpoint: '/graphql',
-  context: () => ({ requestId: crypto.randomUUID() }),
+  context: () => ({ requestId: crypto.randomUUID(), db }),
   landingPage: false,
 });
 

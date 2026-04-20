@@ -77,7 +77,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 - **Green**: add `apps/server/src/db/migrate.ts` (uses `drizzle-orm/bun-sqlite/migrator`). Call it from `src/index.ts` and `src/standalone.ts` before `Bun.serve`.
 - **Refactor**: extract `createAndMigrateDb()` so tests and production share the bootstrap.
 
-### 1.3 GraphQL types (Pothos objects, no resolvers yet)
+### 1.3 GraphQL types (Pothos objects, no resolvers yet) ✅
 
 - **Red (unit, server)**: `apps/server/src/__tests__/schema/types.spec.ts` — introspect `schema` and assert presence of `type Kind`, `type Auftraggeber`, `type Therapie`, `type Behandlung`, `type Rechnung`, and the enum types.
 - **Green**: add `apps/server/src/schema/types/*.ts` files (one per entity). Register the SchemaContext with `db: Db`, update `builder.ts` to type it, inject the db into yoga's `context` in `index.ts` and `standalone.ts`.

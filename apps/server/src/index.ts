@@ -8,12 +8,12 @@ import type { SchemaContext } from './schema/builder';
 
 const dbPath = resolveDbPath();
 mkdirSync(dirname(dbPath), { recursive: true });
-createAndMigrateDb(dbPath);
+const db = createAndMigrateDb(dbPath);
 
 const yoga = createYoga<object, SchemaContext>({
   schema,
   graphqlEndpoint: '/graphql',
-  context: () => ({ requestId: crypto.randomUUID() }),
+  context: () => ({ requestId: crypto.randomUUID(), db }),
   landingPage: false,
 });
 
