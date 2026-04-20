@@ -147,7 +147,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 
 ## Phase 3: Auftraggeber
 
-### 3.1 Server: validation <!-- implements AC-AG-02, AC-AG-03, PRD §2.2 -->
+### 3.1 Server: validation ✅ <!-- implements AC-AG-02, AC-AG-03, PRD §2.2 -->
 
 - **Red (unit, server)**: `apps/server/src/__tests__/schema/auftraggeber.spec.ts` — validation table covering **every** field in §2.2:
   - `typ ∉ {firma, person}` → error
@@ -160,7 +160,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 - **Green**: `apps/server/src/schema/types/auftraggeber.ts` with `AuftraggeberInput`. Shared `auftraggeberSchema` in `packages/shared/src/validation/auftraggeber.ts` — discriminated union on `typ` with `stundensatzCents: z.number().int().positive()`.
 - **Refactor**: the discriminated-union schema also produces the TS type via `z.infer`.
 
-### 3.2 Web: store + form
+### 3.2 Web: store + form ✅
 
 - **Red (unit, web)**: `apps/web/src/__tests__/stores/AuftraggeberStore.spec.ts`; `apps/web/src/__tests__/components/AuftraggeberForm.spec.tsx`:
   - switching typ radio shows/hides firmenname vs vorname+nachname (AC-AG-01 visual split).
@@ -170,7 +170,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
   - **Presentation-model binding**: each input's `value` is driven by `store.draftAuftraggeber.<field>`; `store.draftAuftraggeber.setFirmenname("X")` propagates to the rendered input. No `useState` in the component.
 - **Green**: `apps/web/src/models/AuftraggeberStore.ts` (with `draftAuftraggeber` observable), `components/AuftraggeberForm.tsx`, list/form pages. Stundensatz input wired through a shared `parseEuroToCents` util.
 
-### 3.3 E2E: create Firma + Person-edge <!-- implements AC-AG-01, AC-AG-02, UC-3.6 -->
+### 3.3 E2E: create Firma + Person-edge ✅ <!-- implements AC-AG-01, AC-AG-02, UC-3.6 -->
 
 - **Red (e2e)**: `apps/web/e2e/uc-3.6-auftraggeber.e2e.ts` with `AuftraggeberListPage` / `AuftraggeberFormPage` page objects. Three scenarios:
   - **Firma happy (AC-AG-01 / UC-3.6 Szenario 1)**: typ=Firma, firmenname="Jugendamt Köln", strasse="Kalker Hauptstr.", hausnummer="247-273", plz="51103", stadt="Köln", stundensatz="45,00" → submit. Row shows firmenname (`data-testselector="auftraggeber-row-firmenname"`); detail view renders no vorname/nachname inputs. **Field readback**: GraphQL `auftraggeber { id typ firmenname vorname nachname strasse hausnummer plz stadt stundensatzCents }` asserts `typ=firma`, `firmenname="Jugendamt Köln"`, `vorname=null`, `nachname=null`, `stundensatzCents=4500`, all other columns as typed.
@@ -178,7 +178,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
   - **Person edge (UC-3.6 Szenario 2)**: typ=Person, leave vorname/nachname empty, fill plz + stundensatz → submit → error "Vor- und Nachname Pflicht"; list remains empty.
 - **Green**: markup adjustments, `data-testselector` on every field and row.
 
-### 3.4 Commit gate
+### 3.4 Commit gate ✅
 
 - `bun run lint && bun run typecheck && bun run test:ci && bun run e2e`; commit `feat(auftraggeber): crud with firma/person discriminator`.
 

@@ -1,6 +1,8 @@
 import { Link, Route, Routes } from 'react-router-dom';
 import { Hello } from './components/Hello';
 import { rootStore } from './models/rootStore';
+import { AuftraggeberFormPage } from './pages/AuftraggeberFormPage';
+import { AuftraggeberListPage } from './pages/AuftraggeberListPage';
 import { KindFormPage } from './pages/KindFormPage';
 import { KindListPage } from './pages/KindListPage';
 
@@ -15,12 +17,28 @@ export function App(): JSX.Element {
         <Link to="/kinder" data-testselector="nav-kinder">
           Kinder
         </Link>
+        {' · '}
+        <Link to="/auftraggeber" data-testselector="nav-auftraggeber">
+          Auftraggeber
+        </Link>
       </nav>
       <Routes>
         <Route path="/" element={<Hello model={rootStore.helloModel} />} />
         <Route path="/kinder" element={<KindListPage store={rootStore.kindStore} />} />
         <Route path="/kinder/new" element={<KindFormPage store={rootStore.kindStore} />} />
         <Route path="/kinder/:id" element={<KindFormPage store={rootStore.kindStore} />} />
+        <Route
+          path="/auftraggeber"
+          element={<AuftraggeberListPage store={rootStore.auftraggeberStore} />}
+        />
+        <Route
+          path="/auftraggeber/new"
+          element={<AuftraggeberFormPage store={rootStore.auftraggeberStore} />}
+        />
+        <Route
+          path="/auftraggeber/:id"
+          element={<AuftraggeberFormPage store={rootStore.auftraggeberStore} />}
+        />
       </Routes>
     </main>
   );

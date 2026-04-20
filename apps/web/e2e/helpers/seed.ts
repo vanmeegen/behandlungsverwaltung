@@ -64,3 +64,38 @@ export async function readKinder(): Promise<SeededKind[]> {
   );
   return data.kinder;
 }
+
+export type SeededAuftraggeberTyp = 'firma' | 'person';
+
+export interface SeededAuftraggeber {
+  id: string;
+  typ: SeededAuftraggeberTyp;
+  firmenname: string | null;
+  vorname: string | null;
+  nachname: string | null;
+  strasse: string;
+  hausnummer: string;
+  plz: string;
+  stadt: string;
+  stundensatzCents: number;
+}
+
+const AUFTRAGGEBER_COLUMNS = /* GraphQL */ `
+  id
+  typ
+  firmenname
+  vorname
+  nachname
+  strasse
+  hausnummer
+  plz
+  stadt
+  stundensatzCents
+`;
+
+export async function readAuftraggeber(): Promise<SeededAuftraggeber[]> {
+  const data = await gql<{ auftraggeber: SeededAuftraggeber[] }>(
+    /* GraphQL */ `query { auftraggeber { ${AUFTRAGGEBER_COLUMNS} } }`,
+  );
+  return data.auftraggeber;
+}
