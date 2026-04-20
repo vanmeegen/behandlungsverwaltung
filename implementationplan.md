@@ -107,7 +107,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 - **Green**: Pothos input `KindInput` builds on shared `kindSchema` (= `addressSchema` + `vornameSchema` + `nachnameSchema` + `geburtsdatumSchema` + optional `aktenzeichenSchema`). Resolver inserts row. Errors thrown as `GraphQLError` with a stable `code`.
 - **Refactor**: extract `validateOrThrow(schema, input)` helper.
 
-### 2.2 Server: `kinder` query + `updateKind`
+### 2.2 Server: `kinder` query + `updateKind` ✅
 
 - **Red (unit, server)**: same file — list returns inserted Kinder ordered by nachname; updateKind applies partial updates.
 - **Green**: implement.
