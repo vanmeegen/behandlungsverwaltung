@@ -223,6 +223,33 @@ export interface SeededRechnung {
   dateiname: string;
 }
 
+export async function createMonatsrechnungApi(input: {
+  year: number;
+  month: number;
+  kindId: string;
+  auftraggeberId: string;
+}): Promise<SeededRechnung> {
+  const data = await gql<{ createMonatsrechnung: SeededRechnung }>(
+    /* GraphQL */ `
+      mutation Seed($input: CreateMonatsrechnungInput!) {
+        createMonatsrechnung(input: $input) {
+          id
+          nummer
+          jahr
+          monat
+          kindId
+          auftraggeberId
+          stundensatzCentsSnapshot
+          gesamtCents
+          dateiname
+        }
+      }
+    `,
+    { input },
+  );
+  return data.createMonatsrechnung;
+}
+
 export async function readRechnungen(): Promise<SeededRechnung[]> {
   const data = await gql<{ rechnungen: SeededRechnung[] }>(/* GraphQL */ `
     query {

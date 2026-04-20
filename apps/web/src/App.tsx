@@ -9,6 +9,7 @@ import { KindFormPage } from './pages/KindFormPage';
 import { KindListPage } from './pages/KindListPage';
 import { RechnungCreatePage } from './pages/RechnungCreatePage';
 import { SchnellerfassungPage } from './pages/SchnellerfassungPage';
+import { StundennachweisPage } from './pages/StundennachweisPage';
 import { TemplateUploadPage } from './pages/TemplateUploadPage';
 import { TherapieFormPage } from './pages/TherapieFormPage';
 import { TherapieListPage } from './pages/TherapieListPage';
@@ -43,6 +44,10 @@ export function App(): JSX.Element {
         {' · '}
         <Link to="/rechnungen/neu" data-testselector="nav-rechnung-neu">
           Rechnung erstellen
+        </Link>
+        {' · '}
+        <Link to="/stundennachweis" data-testselector="nav-stundennachweis">
+          Stundennachweis
         </Link>
       </nav>
       <Routes>
@@ -128,6 +133,16 @@ export function App(): JSX.Element {
               kindStore={rootStore.kindStore}
               auftraggeberStore={rootStore.auftraggeberStore}
               rechnungStore={rootStore.rechnungStore}
+            />
+          }
+        />
+        <Route
+          path="/stundennachweis"
+          element={
+            <StundennachweisPage
+              kindStore={rootStore.kindStore}
+              auftraggeberStore={rootStore.auftraggeberStore}
+              stundennachweisStore={rootStore.stundennachweisStore}
             />
           }
         />

@@ -108,6 +108,47 @@ export class RechnungDraft {
   }
 }
 
+export class RechnungFilter {
+  year: number | null = null;
+  month: number | null = null;
+  kindId = '';
+  auftraggeberId = '';
+
+  constructor() {
+    makeAutoObservable(this, {}, { autoBind: true });
+  }
+
+  setMonat(year: number, month: number): void {
+    this.year = year;
+    this.month = month;
+  }
+  clearMonat(): void {
+    this.year = null;
+    this.month = null;
+  }
+  setKindId(v: string): void {
+    this.kindId = v;
+  }
+  setAuftraggeberId(v: string): void {
+    this.auftraggeberId = v;
+  }
+  reset(): void {
+    this.year = null;
+    this.month = null;
+    this.kindId = '';
+    this.auftraggeberId = '';
+  }
+
+  toInput(): Partial<CreateMonatsrechnungInput> {
+    const input: Partial<CreateMonatsrechnungInput> = {};
+    if (this.year !== null) input.year = this.year;
+    if (this.month !== null) input.month = this.month;
+    if (this.kindId !== '') input.kindId = this.kindId;
+    if (this.auftraggeberId !== '') input.auftraggeberId = this.auftraggeberId;
+    return input;
+  }
+}
+
 function parseErrorCode(err: unknown): { code: RechnungErrorCode; message: string } {
   if (!(err instanceof Error)) {
     return { code: 'UNKNOWN', message: String(err) };
@@ -142,6 +183,7 @@ export class RechnungStore {
   lastCreated: Rechnung | null = null;
   error: { code: RechnungErrorCode; message: string } | null = null;
   draftRechnung = new RechnungDraft();
+  filter = new RechnungFilter();
 
   constructor(private readonly fetcher: GraphQLFetcher) {
     makeAutoObservable(this, {}, { autoBind: true });

@@ -11,6 +11,14 @@ export default defineConfig({
         target: 'http://localhost:4000',
         changeOrigin: true,
       },
+      '/bills': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/timesheets': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
     },
   },
   test: {

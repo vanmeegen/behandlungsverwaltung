@@ -11,3 +11,4 @@ export * from './rechnungInput';
 export * from './therapie';
 export * from './behandlung';
 export * from './rechnung';
+export * from './stundennachweis';

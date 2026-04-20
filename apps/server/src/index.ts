@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { resolveDbPath } from './db/client';
 import { createAndMigrateDb } from './db/migrate';
+import { billsHandler, timesheetsHandler } from './http/billsRoute';
 import { ensureDataDirs, paths } from './paths';
 import { schema } from './schema';
 import type { SchemaContext } from './schema/builder';
@@ -25,7 +26,12 @@ const PORT = Number(Bun.env.PORT ?? 4000);
 
 const server = Bun.serve({
   port: PORT,
-  fetch: yoga.fetch,
+  fetch: async (req: Request): Promise<Response> => {
+    const url = new URL(req.url);
+    if (url.pathname.startsWith('/bills/')) return billsHandler(url, appPaths);
+    if (url.pathname.startsWith('/timesheets/')) return timesheetsHandler(url, appPaths);
+    return yoga.fetch(req);
+  },
 });
 
 console.log(`GraphQL server listening at http://localhost:${server.port}/graphql`);
