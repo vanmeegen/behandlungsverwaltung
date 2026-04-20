@@ -282,7 +282,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 
 This phase is the tip of the spear for AC-RECH-03 and AC-RECH-04; all logic lives in `packages/shared/src/domain/rechnungsnummer.ts` as a **pure function** — zero DB coupling — which the server then calls inside a transaction.
 
-### 6.1 Shared: pure function <!-- implements AC-RECH-03, AC-RECH-04 -->
+### 6.1 Shared: pure function ✅ <!-- implements AC-RECH-03, AC-RECH-04 -->
 
 - **Red (unit, shared)**: `packages/shared/src/__tests__/rechnungsnummer.spec.ts` — parameterised table:
   - No existing numbers in 2026, month=4 → `"2026-04-0001"` (AC-RECH-03)
@@ -295,12 +295,12 @@ This phase is the tip of the spear for AC-RECH-03 and AC-RECH-04; all logic live
 - **Green**: implementation parses each existing string with a regex `/^(\d{4})-(\d{2})-(\d{4})$/`, filters by `year`, reduces `max(NNNN)`, increments, formats.
 - **Refactor**: introduce helpers `parseRechnungsnummer` / `formatRechnungsnummer` — keeps call-sites readable.
 
-### 6.2 Server: wire the function + transactional allocation <!-- implements AC-RECH-03, AC-RECH-04 -->
+### 6.2 Server: wire the function + transactional allocation ✅ <!-- implements AC-RECH-03, AC-RECH-04 -->
 
 - **Red (unit, server)**: `apps/server/src/__tests__/services/nummerService.spec.ts` — given pre-seeded rows in `rechnungen`, `allocateNummer(db, year, month)` reads all `nummer`s in `year`, calls the shared function, and returns the next. Race-safety is delegated to the surrounding SQLite transaction Drizzle provides.
 - **Green**: `apps/server/src/services/nummer.ts`.
 
-### 6.3 Commit gate
+### 6.3 Commit gate ✅
 
 - `bun run lint && bun run typecheck && bun run test:ci && bun run e2e`; commit `feat(rechnung): jaehrlicher rechnungsnummer-generator`.
 
