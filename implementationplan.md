@@ -82,12 +82,12 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 - **Red (unit, server)**: `apps/server/src/__tests__/schema/types.spec.ts` — introspect `schema` and assert presence of `type Kind`, `type Auftraggeber`, `type Therapie`, `type Behandlung`, `type Rechnung`, and the enum types.
 - **Green**: add `apps/server/src/schema/types/*.ts` files (one per entity). Register the SchemaContext with `db: Db`, update `builder.ts` to type it, inject the db into yoga's `context` in `index.ts` and `standalone.ts`.
 
-### 1.4 Shared brand types + validators
+### 1.4 Shared brand types + validators ✅
 
 - **Red (unit, shared)**: `packages/shared/src/__tests__/validation.spec.ts` — `plzSchema` rejects `""`, `"abcde"`, accepts `"12345"`; `addressSchema` composes correctly.
 - **Green**: create the shared validators listed in Cross-cutting concerns.
 
-### 1.5 Commit gate
+### 1.5 Commit gate ✅
 
 - Run `bun run lint && bun run typecheck && bun run test:ci && bun run e2e`. If green, `git commit -m "feat(domain): add drizzle schema, migrations and graphql types for Kind/Auftraggeber/Therapie/Behandlung/Rechnung"`.
 

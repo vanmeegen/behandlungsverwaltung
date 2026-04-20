@@ -12,7 +12,10 @@
     "build": "tsc --noEmit",
     "lint": "echo 'no lint for shared yet'",
     "typecheck": "tsc --noEmit --pretty",
-    "test": "echo 'no tests for shared yet'",
-    "test:ci": "echo 'no tests for shared yet'"
+    "test": "bun test",
+    "test:ci": "bun test --reporter=junit --reporter-outfile=../../reports/shared-junit.xml"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
   }
 }
