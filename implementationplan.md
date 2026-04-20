@@ -502,24 +502,24 @@ Much of this landed in Phase 7.1; this phase makes it a user-visible guarantee.
 
 ## Phase 12: PWA polish, offline, standalone binary integration
 
-### 12.1 PWA already partially present (Phase 0). Verify + extend
+### 12.1 PWA already partially present (Phase 0). Verify + extend ✅
 
 - **Red (unit, web)**: `apps/web/src/__tests__/pwa/manifest.spec.ts` — `public/manifest.webmanifest` parses, has `display: standalone`, icons 192 / 512, `theme_color`, `background_color`. Verify service worker registration in `main.tsx`.
 - **Green**: adjust manifest if needed.
 
-### 12.2 Offline read-only
+### 12.2 Offline read-only ✅
 
 - The server is local; there is no "offline" vs "online" split at the binary level. For the PWA scenario (device without the binary), the service worker caches the shell so navigation still works; GraphQL mutations fail loudly. Document in `README.md` that offline v1 is read-only shell, full offline is out of scope.
 - **Red (unit, web)**: a tiny test that the service worker precaches `/`, `/manifest.webmanifest`, and the built `assets/*` glob.
 - **Green**: extend the existing `sw.js`.
 
-### 12.3 Standalone binary integration check
+### 12.3 Standalone binary integration check ✅
 
 - Manual (documented) post-CI step: run `bun run build:standalone:ci`, execute the binary with `BEHANDLUNG_HOME=$(mktemp -d)`, `curl http://localhost:4000/graphql -d '{"query":"{ kinder { id } }"}'` — should return `[]`. Capture as a bash script `scripts/smoke-standalone.sh` (read-only — no writes outside the temp dir).
 - **Red (unit, script)**: none (shell script). Instead add a CI workflow job that runs `scripts/smoke-standalone.sh` on the built artifact.
-- **Green**: wire it up.
+- **Green**: wire it up. Also embeds drizzle migrations into the binary via `with { type: 'file' }` so first-run `runMigrations` succeeds without the repo on disk.
 
-### 12.4 Final commit gate
+### 12.4 Final commit gate ✅
 
 - `bun run lint && bun run typecheck && bun run test:ci && bun run e2e`; commit `feat(pwa): manifest/service-worker polish and standalone smoke test`.
 

@@ -1,13 +1,24 @@
 import { Database } from 'bun:sqlite';
 import { drizzle } from 'drizzle-orm/bun-sqlite';
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator';
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { resolveDbPath, type Db } from './client';
+import { materializeEmbeddedMigrations } from './embeddedMigrations';
 
-const MIGRATIONS_FOLDER = resolve(import.meta.dir, '../../drizzle');
+const ON_DISK_MIGRATIONS_FOLDER = resolve(import.meta.dir, '../../drizzle');
+
+function resolveMigrationsFolder(): string {
+  // Dev / tests: read migrations straight from the repo.
+  // Compiled binary: extract the embedded copies to a temp dir.
+  if (existsSync(resolve(ON_DISK_MIGRATIONS_FOLDER, 'meta/_journal.json'))) {
+    return ON_DISK_MIGRATIONS_FOLDER;
+  }
+  return materializeEmbeddedMigrations();
+}
 
 export function runMigrations(db: Db): void {
-  migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
+  migrate(db, { migrationsFolder: resolveMigrationsFolder() });
 }
 
 export function createAndMigrateDb(path?: string): Db {
