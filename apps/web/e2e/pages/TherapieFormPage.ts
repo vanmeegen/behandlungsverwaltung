@@ -1,0 +1,64 @@
+import type { Locator, Page } from '@playwright/test';
+
+export type TherapieFormValue =
+  | 'dyskalkulie'
+  | 'lerntherapie'
+  | 'heilpaedagogik'
+  | 'elternberatung'
+  | 'sonstiges';
+
+export interface TherapieFormFields {
+  kindId: string;
+  auftraggeberId: string;
+  form: TherapieFormValue;
+  bewilligteBe: number;
+  kommentar?: string;
+  arbeitsthema?: string;
+}
+
+export class TherapieFormPage {
+  readonly page: Page;
+  readonly kindSelect: Locator;
+  readonly auftraggeberSelect: Locator;
+  readonly formSelect: Locator;
+  readonly kommentar: Locator;
+  readonly bewilligteBe: Locator;
+  readonly arbeitsthema: Locator;
+  readonly submit: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.kindSelect = page.getByTestId('therapie-form-kindId');
+    this.auftraggeberSelect = page.getByTestId('therapie-form-auftraggeberId');
+    this.formSelect = page.getByTestId('therapie-form-form');
+    this.kommentar = page.getByTestId('therapie-form-kommentar');
+    this.bewilligteBe = page.getByTestId('therapie-form-bewilligteBe');
+    this.arbeitsthema = page.getByTestId('therapie-form-arbeitsthema');
+    this.submit = page.getByTestId('therapie-form-submit');
+  }
+
+  async gotoNew(): Promise<void> {
+    await this.page.goto('/therapien/new');
+  }
+
+  errorFor(field: string): Locator {
+    return this.page.getByTestId(`therapie-form-${field}-error`);
+  }
+
+  async fillCore(fields: TherapieFormFields): Promise<void> {
+    await this.kindSelect.selectOption(fields.kindId);
+    await this.auftraggeberSelect.selectOption(fields.auftraggeberId);
+    await this.formSelect.selectOption(fields.form);
+    await this.bewilligteBe.fill(String(fields.bewilligteBe));
+    if (fields.arbeitsthema !== undefined) {
+      await this.arbeitsthema.fill(fields.arbeitsthema);
+    }
+    if (fields.form === 'sonstiges' && fields.kommentar !== undefined) {
+      await this.kommentar.fill(fields.kommentar);
+    }
+  }
+
+  async submitAndWait(): Promise<void> {
+    await this.submit.click();
+  }
+}

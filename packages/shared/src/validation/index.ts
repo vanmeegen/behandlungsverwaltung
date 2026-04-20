@@ -6,3 +6,4 @@ export * from './aktenzeichen';
 export * from './geburtsdatum';
 export * from './kind';
 export * from './auftraggeber';
+export * from './therapie';

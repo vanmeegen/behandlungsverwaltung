@@ -21,9 +21,14 @@ export const KindList = observer(({ store }: KindListProps) => {
         <ul>
           {store.items.map((kind) => (
             <li key={kind.id} data-testselector="kind-row">
-              <span data-testselector={`kind-row-nachname-${kind.id}`}>{kind.nachname}</span>
-              {', '}
-              <span data-testselector={`kind-row-vorname-${kind.id}`}>{kind.vorname}</span>
+              <Link
+                to={`/kinder/${kind.id}/detail`}
+                data-testselector={`kind-row-detail-${kind.id}`}
+              >
+                <span data-testselector={`kind-row-nachname-${kind.id}`}>{kind.nachname}</span>
+                {', '}
+                <span data-testselector={`kind-row-vorname-${kind.id}`}>{kind.vorname}</span>
+              </Link>
               <Link to={`/kinder/${kind.id}`} data-testselector={`kind-row-edit-${kind.id}`}>
                 Bearbeiten
               </Link>

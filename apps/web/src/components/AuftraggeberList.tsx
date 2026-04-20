@@ -34,7 +34,12 @@ export const AuftraggeberList = observer(({ store }: AuftraggeberListProps) => {
         <ul>
           {store.items.map((ag) => (
             <li key={ag.id} data-testselector="auftraggeber-row">
-              {displayName(ag)}
+              <Link
+                to={`/auftraggeber/${ag.id}/detail`}
+                data-testselector={`auftraggeber-row-detail-${ag.id}`}
+              >
+                {displayName(ag)}
+              </Link>
               <Link
                 to={`/auftraggeber/${ag.id}`}
                 data-testselector={`auftraggeber-row-edit-${ag.id}`}

@@ -186,7 +186,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 
 ## Phase 4: Therapie
 
-### 4.1 Server: validation <!-- implements AC-TH-01, PRD §2.3 -->
+### 4.1 Server: validation ✅ <!-- implements AC-TH-01, PRD §2.3 -->
 
 - **Red (unit, server)**: `apps/server/src/__tests__/schema/therapie.spec.ts` — validation table covering **every** field in §2.3:
   - `form = sonstiges` without `kommentar` → error "Kommentar ist Pflicht bei Sonstiges" (AC-TH-01); with kommentar → ok.
@@ -198,12 +198,12 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
   - valid input: every column (`kindId`, `auftraggeberId`, `form`, `kommentar`, `bewilligteBe`, `arbeitsthema`) persisted as given.
 - **Green**: `packages/shared/src/validation/therapie.ts` Zod `.superRefine` for the kommentar-conditional; `bewilligteBe: z.number().int().positive()`; `arbeitsthema: z.string().trim().min(1).optional().nullable()`.
 
-### 4.2 Server: list by Kind + by Auftraggeber
+### 4.2 Server: list by Kind + by Auftraggeber ✅
 
 - **Red (unit, server)**: same file — `therapienByKind(kindId)` returns only matching rows; analogous for Auftraggeber.
 - **Green**: queries with where-clauses.
 
-### 4.3 Web: store + form + nested listings
+### 4.3 Web: store + form + nested listings ✅
 
 - **Red (unit, web)**: `TherapieStore.spec.ts` (CRUD); `TherapieForm.spec.tsx`:
   - conditional kommentar field (shown + required only for form=sonstiges — AC-TH-01 UI echo)
@@ -215,7 +215,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
     `KindDetail.spec.tsx` (renders list of Therapien from injected store); `AuftraggeberDetail.spec.tsx` (same).
 - **Green**: implement (with `draftTherapie` observable on `TherapieStore`).
 
-### 4.4 E2E: Therapie CRUD with dual-parent visibility <!-- implements AC-TH-02, AC-TH-01, UC-3.7 -->
+### 4.4 E2E: Therapie CRUD with dual-parent visibility ✅ <!-- implements AC-TH-02, AC-TH-01, UC-3.7 -->
 
 - **Red (e2e)**: `apps/web/e2e/uc-3.7-therapie.e2e.ts`. Three scenarios:
   - **Happy (UC-3.7 Szenario 1)**: seed Kind "Anna Musterfrau" + Auftraggeber "Jugendamt Köln"; open Therapieliste → Neu → pick both, form=Lerntherapie, bewilligteBe=60, arbeitsthema="Mathe-Grundlagen" → submit. Assert therapie row appears on **both** `KindDetailPage` and `AuftraggeberDetailPage`. **Field readback**: GraphQL `therapien { id kindId auftraggeberId form kommentar bewilligteBe arbeitsthema }` asserts every column (form=lerntherapie, kommentar=null, bewilligteBe=60, arbeitsthema="Mathe-Grundlagen", both FKs correct) matches input.
@@ -223,7 +223,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
   - **Sonstiges-edge (UC-3.7 Szenario 2 / AC-TH-01 e2e echo)**: form=Sonstiges with empty kommentar → error "Kommentar ist Pflicht bei Sonstiges"; Therapieliste unchanged.
 - **Green**: wire the nested routes; `data-testselector` on therapie rows and fields.
 
-### 4.5 Commit gate
+### 4.5 Commit gate ✅
 
 - `bun run lint && bun run typecheck && bun run test:ci && bun run e2e`; commit `feat(therapie): link kind and auftraggeber with therapieform validation`.
 

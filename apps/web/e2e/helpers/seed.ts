@@ -99,3 +99,47 @@ export async function readAuftraggeber(): Promise<SeededAuftraggeber[]> {
   );
   return data.auftraggeber;
 }
+
+export async function seedAuftraggeber(
+  input: Omit<SeededAuftraggeber, 'id'>,
+): Promise<SeededAuftraggeber> {
+  const data = await gql<{ createAuftraggeber: SeededAuftraggeber }>(
+    /* GraphQL */ `mutation Seed($input: AuftraggeberInput!) { createAuftraggeber(input: $input) { ${AUFTRAGGEBER_COLUMNS} } }`,
+    { input },
+  );
+  return data.createAuftraggeber;
+}
+
+export type SeededTherapieForm =
+  | 'dyskalkulie'
+  | 'lerntherapie'
+  | 'heilpaedagogik'
+  | 'elternberatung'
+  | 'sonstiges';
+
+export interface SeededTherapie {
+  id: string;
+  kindId: string;
+  auftraggeberId: string;
+  form: SeededTherapieForm;
+  kommentar: string | null;
+  bewilligteBe: number;
+  arbeitsthema: string | null;
+}
+
+const THERAPIE_COLUMNS = /* GraphQL */ `
+  id
+  kindId
+  auftraggeberId
+  form
+  kommentar
+  bewilligteBe
+  arbeitsthema
+`;
+
+export async function readTherapien(): Promise<SeededTherapie[]> {
+  const data = await gql<{ therapien: SeededTherapie[] }>(
+    /* GraphQL */ `query { therapien { ${THERAPIE_COLUMNS} } }`,
+  );
+  return data.therapien;
+}
