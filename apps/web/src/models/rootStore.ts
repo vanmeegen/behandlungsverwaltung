@@ -1,5 +1,6 @@
 import { createGraphQLClient } from '../api/graphqlClient';
 import { AuftraggeberStore } from './AuftraggeberStore';
+import { BehandlungStore } from './BehandlungStore';
 import { HelloModel } from './HelloModel';
 import { KindStore } from './KindStore';
 import { TherapieStore } from './TherapieStore';
@@ -11,6 +12,7 @@ export interface RootStore {
   kindStore: KindStore;
   auftraggeberStore: AuftraggeberStore;
   therapieStore: TherapieStore;
+  behandlungStore: BehandlungStore;
 }
 
 export const rootStore: RootStore = {
@@ -18,4 +20,5 @@ export const rootStore: RootStore = {
   kindStore: new KindStore(fetcher),
   auftraggeberStore: new AuftraggeberStore(fetcher),
   therapieStore: new TherapieStore(fetcher),
+  behandlungStore: new BehandlungStore(fetcher),
 };

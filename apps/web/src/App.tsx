@@ -7,6 +7,7 @@ import { AuftraggeberListPage } from './pages/AuftraggeberListPage';
 import { KindDetailPage } from './pages/KindDetailPage';
 import { KindFormPage } from './pages/KindFormPage';
 import { KindListPage } from './pages/KindListPage';
+import { SchnellerfassungPage } from './pages/SchnellerfassungPage';
 import { TherapieFormPage } from './pages/TherapieFormPage';
 import { TherapieListPage } from './pages/TherapieListPage';
 
@@ -28,6 +29,10 @@ export function App(): JSX.Element {
         {' · '}
         <Link to="/therapien" data-testselector="nav-therapien">
           Therapien
+        </Link>
+        {' · '}
+        <Link to="/schnellerfassung" data-testselector="nav-schnellerfassung">
+          Schnellerfassung
         </Link>
       </nav>
       <Routes>
@@ -83,6 +88,17 @@ export function App(): JSX.Element {
               therapieStore={rootStore.therapieStore}
               kindStore={rootStore.kindStore}
               auftraggeberStore={rootStore.auftraggeberStore}
+            />
+          }
+        />
+        <Route
+          path="/schnellerfassung"
+          element={
+            <SchnellerfassungPage
+              kindStore={rootStore.kindStore}
+              auftraggeberStore={rootStore.auftraggeberStore}
+              therapieStore={rootStore.therapieStore}
+              behandlungStore={rootStore.behandlungStore}
             />
           }
         />

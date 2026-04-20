@@ -231,7 +231,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 
 ## Phase 5: Behandlung — mobile-first Schnellerfassung
 
-### 5.1 Server: validation + create/list <!-- implements AC-BEH-02, PRD §2.4 -->
+### 5.1 Server: validation + create/list ✅ <!-- implements AC-BEH-02, PRD §2.4 -->
 
 - **Red (unit, server)**: `apps/server/src/__tests__/schema/behandlung.spec.ts` — validation table covering **every** field in §2.4:
   - `be = 0` / `-1` → error "BE muss ≥ 1 sein" (AC-BEH-02); `be = 1` ok.
@@ -242,7 +242,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 - `behandlungenByTherapie(therapieId)` returns in date-desc order.
 - **Green**: shared `behandlungSchema` with `z.number().int().min(1)`; resolver resolves effective `arbeitsthema`.
 
-### 5.2 Server: Arbeitsthema with Therapie-Vorbelegung <!-- implements AC-BEH-03 (updated) -->
+### 5.2 Server: Arbeitsthema with Therapie-Vorbelegung ✅ <!-- implements AC-BEH-03 (updated) -->
 
 - **Red (unit, server)**: extend `behandlung.spec.ts`:
   - given a Therapie with `arbeitsthema="Mathe-Grundlagen"`, creating a Behandlung without an explicit `arbeitsthema` → persisted row has `arbeitsthema="Mathe-Grundlagen"` (Vorbelegung).
@@ -250,7 +250,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
   - given a Therapie with `arbeitsthema=null` and no override, persisted row has `arbeitsthema=null`.
 - **Green**: resolver computes effective `arbeitsthema` at create time (eager snapshot, no lazy fallback at read time).
 
-### 5.3 Web: `SchnellerfassungPage` mobile form <!-- implements AC-BEH-03 (updated), UC-3.1 -->
+### 5.3 Web: `SchnellerfassungPage` mobile form ✅ <!-- implements AC-BEH-03 (updated), UC-3.1 -->
 
 - **Red (unit, web)**: `Schnellerfassung.spec.tsx` — renders Kind picker, Therapie picker filtered to that Kind, BE stepper (+/− buttons, value ≥ 1, default 1), Datum defaulting to today (`new Date().toISOString().slice(0, 10)`), and an **Arbeitsthema text input pre-filled with the selected Therapie's `arbeitsthema`** (reactively updated when the Therapie picker changes, **only while the user has not manually edited the field**). Assert:
   - leaving Arbeitsthema unchanged submits the Therapie default (`store.create` called with `arbeitsthema` equal to the Therapie value).
@@ -261,18 +261,18 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 - **Green**: component + store.
 - **Refactor**: stepper as a reusable `BeStepper` component; pre-fill logic isolated in a MobX-driven helper (no React `useState` for app state).
 
-### 5.4 Web: `BehandlungStore`
+### 5.4 Web: `BehandlungStore` ✅
 
 - **Red (unit, web)**: `BehandlungStore.spec.ts` — `create()` delegates to fetcher; `listByTherapie(therapieId)` caches per therapie.
 - **Green**: implement.
 
-### 5.5 E2E: Schnellerfassung flow (all fields verified) <!-- implements AC-BEH-01, UC-3.1 -->
+### 5.5 E2E: Schnellerfassung flow (all fields verified) ✅ <!-- implements AC-BEH-01, UC-3.1 -->
 
 - **Red (e2e)**: `apps/web/e2e/uc-3.1-schnellerfassung.e2e.ts` — seed Kind "Anna Musterfrau" + Auftraggeber + Therapie with `arbeitsthema="Mathe-Grundlagen"` via GraphQL. Viewport 390×844. Two scenarios:
   - **Vorbelegung (UC-3.1 Szenario 1)**: open Schnellerfassung, pick Kind + Therapie; assert Arbeitsthema-Input is pre-filled with "Mathe-Grundlagen"; tap `+` twice → BE shows 2; leave datum = today, arbeitsthema unchanged; submit. Assertions: success toast; row in `TherapieDetailPage.behandlungen` shows today + "2 BE". **Field readback**: GraphQL `behandlungen(therapieId) { id therapieId datum be arbeitsthema }` asserts `datum=today`, `be=2`, `arbeitsthema="Mathe-Grundlagen"`, `therapieId` correct.
   - **Override**: repeat, overwrite Arbeitsthema with "Bruchrechnung" before submit → DB row stores `arbeitsthema="Bruchrechnung"`.
 
-### 5.6 Commit gate
+### 5.6 Commit gate ✅
 
 - `bun run lint && bun run typecheck && bun run test:ci && bun run e2e`; commit `feat(behandlung): mobile-first schnellerfassung and listing`.
 

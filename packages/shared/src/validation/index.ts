@@ -7,3 +7,4 @@ export * from './geburtsdatum';
 export * from './kind';
 export * from './auftraggeber';
 export * from './therapie';
+export * from './behandlung';

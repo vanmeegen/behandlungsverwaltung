@@ -4,6 +4,7 @@ export * from './kindInput';
 export * from './auftraggeber';
 export * from './auftraggeberInput';
 export * from './therapieInput';
+export * from './behandlungInput';
 export * from './therapie';
 export * from './behandlung';
 export * from './rechnung';

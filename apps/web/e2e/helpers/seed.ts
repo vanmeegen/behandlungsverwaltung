@@ -143,3 +143,35 @@ export async function readTherapien(): Promise<SeededTherapie[]> {
   );
   return data.therapien;
 }
+
+export async function seedTherapie(input: Omit<SeededTherapie, 'id'>): Promise<SeededTherapie> {
+  const data = await gql<{ createTherapie: SeededTherapie }>(
+    /* GraphQL */ `mutation Seed($input: TherapieInput!) { createTherapie(input: $input) { ${THERAPIE_COLUMNS} } }`,
+    { input },
+  );
+  return data.createTherapie;
+}
+
+export interface SeededBehandlung {
+  id: string;
+  therapieId: string;
+  datum: string;
+  be: number;
+  arbeitsthema: string | null;
+}
+
+const BEHANDLUNG_COLUMNS = /* GraphQL */ `
+  id
+  therapieId
+  datum
+  be
+  arbeitsthema
+`;
+
+export async function readBehandlungenByTherapie(therapieId: string): Promise<SeededBehandlung[]> {
+  const data = await gql<{ behandlungenByTherapie: SeededBehandlung[] }>(
+    /* GraphQL */ `query Q($therapieId: ID!) { behandlungenByTherapie(therapieId: $therapieId) { ${BEHANDLUNG_COLUMNS} } }`,
+    { therapieId },
+  );
+  return data.behandlungenByTherapie;
+}
