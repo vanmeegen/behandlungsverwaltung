@@ -1,4 +1,5 @@
-import { Link, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
+import { AppShell } from './components/AppShell';
 import { Hello } from './components/Hello';
 import { rootStore } from './models/rootStore';
 import { AuftraggeberDetailPage } from './pages/AuftraggeberDetailPage';
@@ -17,45 +18,8 @@ import { TherapieListPage } from './pages/TherapieListPage';
 
 export function App(): JSX.Element {
   return (
-    <main>
-      <nav>
-        <Link to="/" data-testselector="nav-home">
-          Start
-        </Link>
-        {' · '}
-        <Link to="/kinder" data-testselector="nav-kinder">
-          Kinder
-        </Link>
-        {' · '}
-        <Link to="/auftraggeber" data-testselector="nav-auftraggeber">
-          Auftraggeber
-        </Link>
-        {' · '}
-        <Link to="/therapien" data-testselector="nav-therapien">
-          Therapien
-        </Link>
-        {' · '}
-        <Link to="/schnellerfassung" data-testselector="nav-schnellerfassung">
-          Schnellerfassung
-        </Link>
-        {' · '}
-        <Link to="/vorlagen" data-testselector="nav-vorlagen">
-          Vorlagen
-        </Link>
-        {' · '}
-        <Link to="/rechnungen/neu" data-testselector="nav-rechnung-neu">
-          Rechnung erstellen
-        </Link>
-        {' · '}
-        <Link to="/rechnungen" data-testselector="nav-rechnungen">
-          Rechnungsübersicht
-        </Link>
-        {' · '}
-        <Link to="/stundennachweis" data-testselector="nav-stundennachweis">
-          Stundennachweis
-        </Link>
-      </nav>
-      <Routes>
+    <Routes>
+      <Route element={<AppShell uiStore={rootStore.uiStore} />}>
         <Route path="/" element={<Hello model={rootStore.helloModel} />} />
         <Route path="/kinder" element={<KindListPage store={rootStore.kindStore} />} />
         <Route path="/kinder/new" element={<KindFormPage store={rootStore.kindStore} />} />
@@ -161,7 +125,7 @@ export function App(): JSX.Element {
             />
           }
         />
-      </Routes>
-    </main>
+      </Route>
+    </Routes>
   );
 }

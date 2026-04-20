@@ -1,5 +1,13 @@
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
-import { Link } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import type { Auftraggeber, AuftraggeberStore } from '../models/AuftraggeberStore';
 
 interface AuftraggeberListProps {
@@ -21,35 +29,53 @@ function displayName(ag: Auftraggeber): JSX.Element {
 
 export const AuftraggeberList = observer(({ store }: AuftraggeberListProps) => {
   return (
-    <section data-testselector="auftraggeber-list">
-      <header>
-        <h1>Auftraggeber</h1>
-        <Link to="/auftraggeber/new" data-testselector="auftraggeber-list-new">
+    <Box data-testselector="auftraggeber-list">
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+        <Typography variant="h4" component="h1">
+          Auftraggeber
+        </Typography>
+        <Button
+          component={RouterLink}
+          to="/auftraggeber/new"
+          data-testselector="auftraggeber-list-new"
+        >
           Neu
-        </Link>
-      </header>
+        </Button>
+      </Stack>
       {store.items.length === 0 ? (
-        <p data-testselector="auftraggeber-list-empty">Noch keine Auftraggeber erfasst.</p>
+        <Typography data-testselector="auftraggeber-list-empty" color="text.secondary">
+          Noch keine Auftraggeber erfasst.
+        </Typography>
       ) : (
-        <ul>
+        <List>
           {store.items.map((ag) => (
-            <li key={ag.id} data-testselector="auftraggeber-row">
-              <Link
+            <ListItem
+              key={ag.id}
+              data-testselector="auftraggeber-row"
+              disablePadding
+              secondaryAction={
+                <Button
+                  component={RouterLink}
+                  to={`/auftraggeber/${ag.id}`}
+                  size="small"
+                  variant="outlined"
+                  data-testselector={`auftraggeber-row-edit-${ag.id}`}
+                >
+                  Bearbeiten
+                </Button>
+              }
+            >
+              <ListItemButton
+                component={RouterLink}
                 to={`/auftraggeber/${ag.id}/detail`}
                 data-testselector={`auftraggeber-row-detail-${ag.id}`}
               >
-                {displayName(ag)}
-              </Link>
-              <Link
-                to={`/auftraggeber/${ag.id}`}
-                data-testselector={`auftraggeber-row-edit-${ag.id}`}
-              >
-                Bearbeiten
-              </Link>
-            </li>
+                <ListItemText primary={displayName(ag)} />
+              </ListItemButton>
+            </ListItem>
           ))}
-        </ul>
+        </List>
       )}
-    </section>
+    </Box>
   );
 });

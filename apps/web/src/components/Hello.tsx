@@ -1,5 +1,9 @@
-import { useEffect } from 'react';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
+import { useEffect } from 'react';
 import type { HelloModel } from '../models/HelloModel';
 
 interface HelloProps {
@@ -13,17 +17,26 @@ export const Hello = observer(({ model }: HelloProps) => {
 
   if (model.loading) {
     return (
-      <p role="status" data-testselector="hello-loading">
-        Lade…
-      </p>
+      <Box
+        role="status"
+        data-testselector="hello-loading"
+        sx={{ display: 'flex', gap: 2, alignItems: 'center' }}
+      >
+        <CircularProgress size={24} />
+        <Typography>Lade…</Typography>
+      </Box>
     );
   }
   if (model.error) {
     return (
-      <p role="alert" data-testselector="hello-error">
+      <Alert severity="error" role="alert" data-testselector="hello-error">
         Fehler: {model.error}
-      </p>
+      </Alert>
     );
   }
-  return <h1 data-testselector="hello-greeting">{model.message}</h1>;
+  return (
+    <Typography variant="h4" component="h1" data-testselector="hello-greeting">
+      {model.message}
+    </Typography>
+  );
 });

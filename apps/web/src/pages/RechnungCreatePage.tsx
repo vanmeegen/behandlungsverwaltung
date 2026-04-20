@@ -1,3 +1,13 @@
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
 import { useEffect, type ChangeEvent, type FormEvent } from 'react';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
@@ -43,27 +53,34 @@ export const RechnungCreatePage = observer(
     };
 
     const monthValue = `${draft.year}-${String(draft.month).padStart(2, '0')}`;
+    const duplicate = rechnungStore.error?.code === 'DUPLICATE_RECHNUNG';
 
     return (
-      <section data-testselector="rechnung-create-page">
-        <h1>Rechnung erstellen</h1>
-        <form onSubmit={onSubmit}>
-          <label>
-            Abrechnungsmonat
-            <input
+      <Box data-testselector="rechnung-create-page">
+        <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+          Rechnung erstellen
+        </Typography>
+        <Box component="form" onSubmit={onSubmit}>
+          <Stack spacing={2}>
+            <TextField
+              label="Abrechnungsmonat"
               type="month"
-              data-testselector="rechnung-create-monat"
               value={monthValue}
               onChange={onMonthChange}
+              inputProps={{ 'data-testselector': 'rechnung-create-monat' }}
+              InputLabelProps={{ shrink: true }}
             />
-          </label>
 
-          <label>
-            Kind
-            <select
-              data-testselector="rechnung-create-kindId"
+            <TextField
+              select
+              label="Kind"
               value={draft.kindId}
               onChange={(e): void => draft.setKindId(e.target.value)}
+              SelectProps={{
+                native: true,
+                inputProps: { 'data-testselector': 'rechnung-create-kindId' },
+              }}
+              InputLabelProps={{ shrink: true }}
             >
               <option value="">– bitte wählen –</option>
               {kindStore.items.map((k) => (
@@ -71,15 +88,18 @@ export const RechnungCreatePage = observer(
                   {k.nachname}, {k.vorname}
                 </option>
               ))}
-            </select>
-          </label>
+            </TextField>
 
-          <label>
-            Auftraggeber
-            <select
-              data-testselector="rechnung-create-auftraggeberId"
+            <TextField
+              select
+              label="Auftraggeber"
               value={draft.auftraggeberId}
               onChange={(e): void => draft.setAuftraggeberId(e.target.value)}
+              SelectProps={{
+                native: true,
+                inputProps: { 'data-testselector': 'rechnung-create-auftraggeberId' },
+              }}
+              InputLabelProps={{ shrink: true }}
             >
               <option value="">– bitte wählen –</option>
               {auftraggeberStore.items.map((a) => (
@@ -87,48 +107,70 @@ export const RechnungCreatePage = observer(
                   {auftraggeberLabel(a)}
                 </option>
               ))}
-            </select>
-          </label>
+            </TextField>
 
-          <button type="submit" data-testselector="rechnung-create-submit">
-            Rechnung erzeugen
-          </button>
-        </form>
+            <Button type="submit" data-testselector="rechnung-create-submit">
+              Rechnung erzeugen
+            </Button>
+          </Stack>
+        </Box>
 
         {rechnungStore.lastCreated && (
-          <p
+          <Alert
+            severity="success"
             role="status"
             data-testselector="rechnung-create-success"
-          >{`Rechnung erstellt: ${rechnungStore.lastCreated.nummer}`}</p>
+            sx={{ mt: 2 }}
+          >
+            {`Rechnung erstellt: ${rechnungStore.lastCreated.nummer}`}
+          </Alert>
         )}
 
-        {rechnungStore.error?.code === 'DUPLICATE_RECHNUNG' && (
-          <div role="alertdialog" data-testselector="duplicate-confirm">
-            <p>{rechnungStore.error.message}</p>
-            <button
-              type="button"
+        <Dialog
+          open={duplicate}
+          onClose={(): void => rechnungStore.dismissError()}
+          PaperProps={{
+            role: 'alertdialog',
+            'data-testselector': 'duplicate-confirm',
+          }}
+        >
+          <DialogContent>
+            <DialogContentText>{rechnungStore.error?.message}</DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button
               data-testselector="duplicate-confirm-dismiss"
               onClick={(): void => rechnungStore.dismissError()}
             >
               OK
-            </button>
-          </div>
-        )}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {rechnungStore.error?.code === 'KEINE_BEHANDLUNGEN' && (
-          <p role="alert" data-testselector="keine-behandlungen">
+          <Alert
+            severity="warning"
+            role="alert"
+            data-testselector="keine-behandlungen"
+            sx={{ mt: 2 }}
+          >
             {rechnungStore.error.message}
-          </p>
+          </Alert>
         )}
 
         {rechnungStore.error &&
           rechnungStore.error.code !== 'DUPLICATE_RECHNUNG' &&
           rechnungStore.error.code !== 'KEINE_BEHANDLUNGEN' && (
-            <p role="alert" data-testselector="rechnung-create-error">
+            <Alert
+              severity="error"
+              role="alert"
+              data-testselector="rechnung-create-error"
+              sx={{ mt: 2 }}
+            >
               {rechnungStore.error.message}
-            </p>
+            </Alert>
           )}
-      </section>
+      </Box>
     );
   },
 );

@@ -1,3 +1,5 @@
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
@@ -28,9 +30,11 @@ export const AuftraggeberFormPage = observer(({ store }: AuftraggeberFormPagePro
   }, [id, store]);
 
   return (
-    <section>
-      <h1>{id ? 'Auftraggeber bearbeiten' : 'Neuer Auftraggeber'}</h1>
+    <Box>
+      <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+        {id ? 'Auftraggeber bearbeiten' : 'Neuer Auftraggeber'}
+      </Typography>
       <AuftraggeberForm store={store} />
-    </section>
+    </Box>
   );
 });

@@ -7,6 +7,7 @@ import { RechnungStore } from './RechnungStore';
 import { StundennachweisStore } from './StundennachweisStore';
 import { TemplateStore } from './TemplateStore';
 import { TherapieStore } from './TherapieStore';
+import { UiStore } from './UiStore';
 
 const fetcher = createGraphQLClient();
 
@@ -19,6 +20,7 @@ export interface RootStore {
   templateStore: TemplateStore;
   rechnungStore: RechnungStore;
   stundennachweisStore: StundennachweisStore;
+  uiStore: UiStore;
 }
 
 export const rootStore: RootStore = {
@@ -30,4 +32,5 @@ export const rootStore: RootStore = {
   templateStore: new TemplateStore(fetcher),
   rechnungStore: new RechnungStore(fetcher),
   stundennachweisStore: new StundennachweisStore(fetcher),
+  uiStore: new UiStore(),
 };

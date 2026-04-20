@@ -1,3 +1,7 @@
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
@@ -24,8 +28,8 @@ export const AuftraggeberDetailPage = observer(
     const therapien = id ? (therapieStore.byAuftraggeber[id] ?? []) : [];
 
     return (
-      <section data-testselector="auftraggeber-detail-page">
-        <h1>
+      <Box data-testselector="auftraggeber-detail-page">
+        <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
           {ag?.typ === 'firma' && (
             <span data-testselector="auftraggeber-detail-firmenname">{ag.firmenname}</span>
           )}
@@ -37,12 +41,16 @@ export const AuftraggeberDetailPage = observer(
             </>
           )}
           {!ag && 'Auftraggeber'}
-        </h1>
-        <section>
-          <h2>Therapien</h2>
-          <TherapieList items={therapien} />
-        </section>
-      </section>
+        </Typography>
+        <Card variant="outlined">
+          <CardContent>
+            <Typography variant="h6" component="h2" sx={{ mb: 1 }}>
+              Therapien
+            </Typography>
+            <TherapieList items={therapien} />
+          </CardContent>
+        </Card>
+      </Box>
     );
   },
 );

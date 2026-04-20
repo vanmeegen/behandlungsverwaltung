@@ -1,5 +1,11 @@
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
-import { useEffect } from 'react';
+import { useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BeStepper } from '../components/BeStepper';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
@@ -44,7 +50,7 @@ export const SchnellerfassungPage = observer(
       draft.setTherapie(id, t?.arbeitsthema ?? null);
     };
 
-    const onSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+    const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
       event.preventDefault();
       const saved = await behandlungStore.saveDraft();
       if (saved) {
@@ -54,15 +60,22 @@ export const SchnellerfassungPage = observer(
     };
 
     return (
-      <section data-testselector="schnellerfassung-page">
-        <h1>Behandlung erfassen</h1>
-        <form onSubmit={onSubmit}>
-          <label>
-            Kind
-            <select
-              data-testselector="schnellerfassung-kindId"
+      <Box data-testselector="schnellerfassung-page">
+        <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+          Behandlung erfassen
+        </Typography>
+        <Box component="form" onSubmit={onSubmit}>
+          <Stack spacing={2}>
+            <TextField
+              select
+              label="Kind"
               value={draft.kindId}
               onChange={(e): void => draft.setKindId(e.target.value)}
+              SelectProps={{
+                native: true,
+                inputProps: { 'data-testselector': 'schnellerfassung-kindId' },
+              }}
+              InputLabelProps={{ shrink: true }}
             >
               <option value="">– bitte wählen –</option>
               {kindStore.items.map((k) => (
@@ -70,16 +83,27 @@ export const SchnellerfassungPage = observer(
                   {k.nachname}, {k.vorname}
                 </option>
               ))}
-            </select>
-          </label>
+            </TextField>
 
-          <label>
-            Therapie
-            <select
-              data-testselector="schnellerfassung-therapieId"
+            <TextField
+              select
+              label="Therapie"
               value={draft.therapieId}
               onChange={(e): void => onTherapieChange(e.target.value)}
               disabled={!draft.kindId}
+              SelectProps={{
+                native: true,
+                inputProps: { 'data-testselector': 'schnellerfassung-therapieId' },
+              }}
+              InputLabelProps={{ shrink: true }}
+              error={Boolean(draft.errors.therapieId)}
+              helperText={
+                draft.errors.therapieId ? (
+                  <span role="alert" data-testselector="schnellerfassung-therapieId-error">
+                    {draft.errors.therapieId}
+                  </span>
+                ) : null
+              }
             >
               <option value="">– bitte wählen –</option>
               {therapienForKind.map((t) => {
@@ -91,59 +115,60 @@ export const SchnellerfassungPage = observer(
                   </option>
                 );
               })}
-            </select>
-            {draft.errors.therapieId && (
-              <span role="alert" data-testselector="schnellerfassung-therapieId-error">
-                {draft.errors.therapieId}
-              </span>
-            )}
-          </label>
+            </TextField>
 
-          <div>
-            <span>Behandlungseinheiten</span>
-            <BeStepper
-              value={draft.be}
-              onIncrement={draft.incrementBe}
-              onDecrement={draft.decrementBe}
-              testPrefix="schnellerfassung-be"
-            />
-          </div>
+            <Box>
+              <Typography component="span" sx={{ mr: 2 }}>
+                Behandlungseinheiten
+              </Typography>
+              <BeStepper
+                value={draft.be}
+                onIncrement={draft.incrementBe}
+                onDecrement={draft.decrementBe}
+                testPrefix="schnellerfassung-be"
+              />
+            </Box>
 
-          <label>
-            Datum
-            <input
+            <TextField
+              label="Datum"
               type="date"
-              data-testselector="schnellerfassung-datum"
               value={draft.datum}
-              onChange={(e): void => draft.setDatum(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>): void => draft.setDatum(e.target.value)}
+              inputProps={{ 'data-testselector': 'schnellerfassung-datum' }}
+              InputLabelProps={{ shrink: true }}
+              error={Boolean(draft.errors.datum)}
+              helperText={
+                draft.errors.datum ? (
+                  <span role="alert" data-testselector="schnellerfassung-datum-error">
+                    {draft.errors.datum}
+                  </span>
+                ) : null
+              }
             />
-            {draft.errors.datum && (
-              <span role="alert" data-testselector="schnellerfassung-datum-error">
-                {draft.errors.datum}
-              </span>
-            )}
-          </label>
 
-          <label>
-            Arbeitsthema
-            <input
-              data-testselector="schnellerfassung-arbeitsthema"
+            <TextField
+              label="Arbeitsthema"
               value={draft.arbeitsthema}
               onChange={(e): void => draft.setArbeitsthema(e.target.value)}
+              inputProps={{ 'data-testselector': 'schnellerfassung-arbeitsthema' }}
             />
-          </label>
 
-          <button type="submit" data-testselector="schnellerfassung-submit">
-            Speichern
-          </button>
+            <Button type="submit" data-testselector="schnellerfassung-submit">
+              Speichern
+            </Button>
 
-          {behandlungStore.error && (
-            <p role="alert" data-testselector="schnellerfassung-server-error">
-              {behandlungStore.error}
-            </p>
-          )}
-        </form>
-      </section>
+            {behandlungStore.error && (
+              <Alert
+                severity="error"
+                role="alert"
+                data-testselector="schnellerfassung-server-error"
+              >
+                {behandlungStore.error}
+              </Alert>
+            )}
+          </Stack>
+        </Box>
+      </Box>
     );
   },
 );

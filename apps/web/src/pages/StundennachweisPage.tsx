@@ -1,3 +1,9 @@
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
 import { useEffect, type ChangeEvent, type FormEvent } from 'react';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
@@ -45,24 +51,31 @@ export const StundennachweisPage = observer(
     const monthValue = `${draft.year}-${String(draft.month).padStart(2, '0')}`;
 
     return (
-      <section data-testselector="stundennachweis-page">
-        <h1>Stundennachweis drucken</h1>
-        <form onSubmit={onSubmit}>
-          <label>
-            Abrechnungsmonat
-            <input
+      <Box data-testselector="stundennachweis-page">
+        <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+          Stundennachweis drucken
+        </Typography>
+        <Box component="form" onSubmit={onSubmit}>
+          <Stack spacing={2}>
+            <TextField
+              label="Abrechnungsmonat"
               type="month"
-              data-testselector="stundennachweis-monat"
               value={monthValue}
               onChange={onMonthChange}
+              inputProps={{ 'data-testselector': 'stundennachweis-monat' }}
+              InputLabelProps={{ shrink: true }}
             />
-          </label>
-          <label>
-            Kind
-            <select
-              data-testselector="stundennachweis-kindId"
+
+            <TextField
+              select
+              label="Kind"
               value={draft.kindId}
               onChange={(e): void => draft.setKindId(e.target.value)}
+              SelectProps={{
+                native: true,
+                inputProps: { 'data-testselector': 'stundennachweis-kindId' },
+              }}
+              InputLabelProps={{ shrink: true }}
             >
               <option value="">– bitte wählen –</option>
               {kindStore.items.map((k) => (
@@ -70,14 +83,18 @@ export const StundennachweisPage = observer(
                   {k.nachname}, {k.vorname}
                 </option>
               ))}
-            </select>
-          </label>
-          <label>
-            Auftraggeber
-            <select
-              data-testselector="stundennachweis-auftraggeberId"
+            </TextField>
+
+            <TextField
+              select
+              label="Auftraggeber"
               value={draft.auftraggeberId}
               onChange={(e): void => draft.setAuftraggeberId(e.target.value)}
+              SelectProps={{
+                native: true,
+                inputProps: { 'data-testselector': 'stundennachweis-auftraggeberId' },
+              }}
+              InputLabelProps={{ shrink: true }}
             >
               <option value="">– bitte wählen –</option>
               {auftraggeberStore.items.map((a) => (
@@ -85,25 +102,36 @@ export const StundennachweisPage = observer(
                   {auftraggeberLabel(a)}
                 </option>
               ))}
-            </select>
-          </label>
-          <button type="submit" data-testselector="stundennachweis-submit">
-            Stundennachweis drucken
-          </button>
-        </form>
+            </TextField>
+
+            <Button type="submit" data-testselector="stundennachweis-submit">
+              Stundennachweis drucken
+            </Button>
+          </Stack>
+        </Box>
 
         {stundennachweisStore.lastCreated && (
-          <p role="status" data-testselector="stundennachweis-success">
+          <Alert
+            severity="success"
+            role="status"
+            data-testselector="stundennachweis-success"
+            sx={{ mt: 2 }}
+          >
             Stundennachweis erstellt: {stundennachweisStore.lastCreated.dateiname}
-          </p>
+          </Alert>
         )}
 
         {stundennachweisStore.error && (
-          <p role="alert" data-testselector="stundennachweis-error">
+          <Alert
+            severity="error"
+            role="alert"
+            data-testselector="stundennachweis-error"
+            sx={{ mt: 2 }}
+          >
             {stundennachweisStore.error.message}
-          </p>
+          </Alert>
         )}
-      </section>
+      </Box>
     );
   },
 );

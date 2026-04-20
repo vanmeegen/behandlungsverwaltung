@@ -1,3 +1,12 @@
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { useEffect, type ChangeEvent, type FormEvent } from 'react';
@@ -103,27 +112,37 @@ export const TemplateUploadPage = observer(
     };
 
     return (
-      <section data-testselector="template-upload-page">
-        <h1>PDF-Vorlage hochladen</h1>
-        <form onSubmit={onSubmit}>
-          <label>
-            Art
-            <select
-              data-testselector="template-upload-kind"
+      <Box data-testselector="template-upload-page">
+        <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+          PDF-Vorlage hochladen
+        </Typography>
+        <Box component="form" onSubmit={onSubmit}>
+          <Stack spacing={2}>
+            <TextField
+              select
+              label="Art"
               value={draft.kind}
               onChange={(e): void => draft.setKind(e.target.value as TemplateKindValue)}
+              SelectProps={{
+                native: true,
+                inputProps: { 'data-testselector': 'template-upload-kind' },
+              }}
+              InputLabelProps={{ shrink: true }}
             >
               <option value="rechnung">Rechnung</option>
               <option value="stundennachweis">Stundennachweis</option>
-            </select>
-          </label>
+            </TextField>
 
-          <label>
-            Auftraggeber (leer = global)
-            <select
-              data-testselector="template-upload-auftraggeberId"
+            <TextField
+              select
+              label="Auftraggeber (leer = global)"
               value={draft.auftraggeberId}
               onChange={(e): void => draft.setAuftraggeberId(e.target.value)}
+              SelectProps={{
+                native: true,
+                inputProps: { 'data-testselector': 'template-upload-auftraggeberId' },
+              }}
+              InputLabelProps={{ shrink: true }}
             >
               <option value="">– global –</option>
               {auftraggeberStore.items.map((a) => (
@@ -131,57 +150,66 @@ export const TemplateUploadPage = observer(
                   {auftraggeberLabel(a)}
                 </option>
               ))}
-            </select>
-          </label>
+            </TextField>
 
-          <label>
-            PDF-Datei
-            <input
-              key={templateStore.items.length}
-              type="file"
-              accept="application/pdf"
-              data-testselector="template-upload-file"
-              onChange={onFileChange}
-            />
-          </label>
+            <Button component="label" variant="outlined">
+              PDF-Datei auswählen
+              <input
+                key={templateStore.items.length}
+                type="file"
+                accept="application/pdf"
+                hidden
+                data-testselector="template-upload-file"
+                onChange={onFileChange}
+              />
+            </Button>
 
-          <button type="submit" data-testselector="template-upload-submit">
-            Hochladen
-          </button>
+            <Button type="submit" data-testselector="template-upload-submit">
+              Hochladen
+            </Button>
 
-          {draft.error && (
-            <p role="alert" data-testselector="template-upload-error">
-              {draft.error}
-            </p>
-          )}
-          {templateStore.error && (
-            <p role="alert" data-testselector="template-upload-server-error">
-              {templateStore.error}
-            </p>
-          )}
-          {draft.fileName && !templateStore.error && !draft.error && (
-            <p data-testselector="template-upload-file-name">{draft.fileName}</p>
-          )}
-        </form>
+            {draft.error && (
+              <Alert severity="error" role="alert" data-testselector="template-upload-error">
+                {draft.error}
+              </Alert>
+            )}
+            {templateStore.error && (
+              <Alert severity="error" role="alert" data-testselector="template-upload-server-error">
+                {templateStore.error}
+              </Alert>
+            )}
+            {draft.fileName && !templateStore.error && !draft.error && (
+              <Typography data-testselector="template-upload-file-name" color="text.secondary">
+                {draft.fileName}
+              </Typography>
+            )}
+          </Stack>
+        </Box>
 
-        <section>
-          <h2>Vorhandene Vorlagen</h2>
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h5" component="h2" sx={{ mb: 1 }}>
+            Vorhandene Vorlagen
+          </Typography>
           {templateStore.items.length === 0 ? (
-            <p data-testselector="template-list-empty">Noch keine Vorlagen vorhanden.</p>
+            <Typography data-testselector="template-list-empty" color="text.secondary">
+              Noch keine Vorlagen vorhanden.
+            </Typography>
           ) : (
-            <ul data-testselector="template-list">
+            <List data-testselector="template-list">
               {templateStore.items.map((tpl) => (
-                <li
+                <ListItem
                   key={tpl.id}
                   data-testselector={`template-row-${tpl.kind}-${tpl.auftraggeberId ?? 'global'}`}
                 >
-                  {tpl.kind} · {tpl.auftraggeberId ?? 'global'} · {tpl.filename}
-                </li>
+                  <ListItemText
+                    primary={`${tpl.kind} · ${tpl.auftraggeberId ?? 'global'} · ${tpl.filename}`}
+                  />
+                </ListItem>
               ))}
-            </ul>
+            </List>
           )}
-        </section>
-      </section>
+        </Box>
+      </Box>
     );
   },
 );

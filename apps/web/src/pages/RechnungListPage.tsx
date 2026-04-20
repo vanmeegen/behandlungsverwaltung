@@ -1,4 +1,15 @@
 import { formatEuro } from '@behandlungsverwaltung/shared';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
 import { useEffect, type ChangeEvent } from 'react';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
@@ -21,11 +32,11 @@ export const RechnungListPage = observer(
       void rechnungStore.load(filter.toInput());
     }, [rechnungStore, kindStore, auftraggeberStore, filter]);
 
-    function onKindChange(e: ChangeEvent<HTMLSelectElement>): void {
+    function onKindChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void {
       filter.setKindId(e.target.value);
       void rechnungStore.load(filter.toInput());
     }
-    function onAgChange(e: ChangeEvent<HTMLSelectElement>): void {
+    function onAgChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void {
       filter.setAuftraggeberId(e.target.value);
       void rechnungStore.load(filter.toInput());
     }
@@ -57,89 +68,113 @@ export const RechnungListPage = observer(
     }
 
     return (
-      <section data-testselector="rechnung-list-page">
-        <h1>Rechnungsübersicht</h1>
-        <div data-testselector="rechnung-list-filter">
-          <label>
-            Kind
-            <select
-              data-testselector="rechnung-list-filter-kindId"
-              value={filter.kindId}
-              onChange={onKindChange}
-            >
-              <option value="">– alle –</option>
-              {kindStore.items.map((k) => (
-                <option key={k.id} value={k.id}>
-                  {k.nachname}, {k.vorname}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Auftraggeber
-            <select
-              data-testselector="rechnung-list-filter-auftraggeberId"
-              value={filter.auftraggeberId}
-              onChange={onAgChange}
-            >
-              <option value="">– alle –</option>
-              {auftraggeberStore.items.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.typ === 'firma' ? a.firmenname : `${a.nachname ?? ''}, ${a.vorname ?? ''}`}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Monat
-            <input
-              type="month"
-              data-testselector="rechnung-list-filter-monat"
-              value={monthValue}
-              onChange={onMonthChange}
-            />
-          </label>
-        </div>
+      <Box data-testselector="rechnung-list-page">
+        <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+          Rechnungsübersicht
+        </Typography>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          sx={{ mb: 2 }}
+          data-testselector="rechnung-list-filter"
+        >
+          <TextField
+            select
+            label="Kind"
+            value={filter.kindId}
+            onChange={onKindChange}
+            SelectProps={{
+              native: true,
+              inputProps: { 'data-testselector': 'rechnung-list-filter-kindId' },
+            }}
+            InputLabelProps={{ shrink: true }}
+          >
+            <option value="">– alle –</option>
+            {kindStore.items.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.nachname}, {k.vorname}
+              </option>
+            ))}
+          </TextField>
+
+          <TextField
+            select
+            label="Auftraggeber"
+            value={filter.auftraggeberId}
+            onChange={onAgChange}
+            SelectProps={{
+              native: true,
+              inputProps: { 'data-testselector': 'rechnung-list-filter-auftraggeberId' },
+            }}
+            InputLabelProps={{ shrink: true }}
+          >
+            <option value="">– alle –</option>
+            {auftraggeberStore.items.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.typ === 'firma' ? a.firmenname : `${a.nachname ?? ''}, ${a.vorname ?? ''}`}
+              </option>
+            ))}
+          </TextField>
+
+          <TextField
+            label="Monat"
+            type="month"
+            value={monthValue}
+            onChange={onMonthChange}
+            inputProps={{ 'data-testselector': 'rechnung-list-filter-monat' }}
+            InputLabelProps={{ shrink: true }}
+          />
+        </Stack>
 
         {rechnungStore.items.length === 0 ? (
-          <p data-testselector="rechnung-list-empty">Keine Rechnungen vorhanden.</p>
+          <Typography data-testselector="rechnung-list-empty" color="text.secondary">
+            Keine Rechnungen vorhanden.
+          </Typography>
         ) : (
-          <table data-testselector="rechnung-list-table">
-            <thead>
-              <tr>
-                <th>Nummer</th>
-                <th>Monat</th>
-                <th>Kind</th>
-                <th>Auftraggeber</th>
-                <th>Gesamtsumme</th>
-                <th>PDF</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rechnungStore.items.map((r) => (
-                <tr key={r.id} data-testselector={`rechnung-row-${r.nummer}`}>
-                  <td>{r.nummer}</td>
-                  <td>{`${String(r.monat).padStart(2, '0')}/${r.jahr}`}</td>
-                  <td>{kindLabel(r)}</td>
-                  <td>{agLabel(r)}</td>
-                  <td data-testselector={`rechnung-row-${r.nummer}-gesamtsumme`}>
-                    {formatEuro(r.gesamtCents)}
-                  </td>
-                  <td>
-                    <a
-                      href={`/bills/${r.dateiname}`}
-                      download={r.dateiname}
-                      data-testselector={`rechnung-row-${r.nummer}-download`}
+          <TableContainer>
+            <Table data-testselector="rechnung-list-table">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Nummer</TableCell>
+                  <TableCell>Monat</TableCell>
+                  <TableCell>Kind</TableCell>
+                  <TableCell>Auftraggeber</TableCell>
+                  <TableCell align="right">Gesamtsumme</TableCell>
+                  <TableCell>PDF</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rechnungStore.items.map((r) => (
+                  <TableRow key={r.id} data-testselector={`rechnung-row-${r.nummer}`}>
+                    <TableCell>{r.nummer}</TableCell>
+                    <TableCell>{`${String(r.monat).padStart(2, '0')}/${r.jahr}`}</TableCell>
+                    <TableCell>{kindLabel(r)}</TableCell>
+                    <TableCell>{agLabel(r)}</TableCell>
+                    <TableCell
+                      align="right"
+                      data-testselector={`rechnung-row-${r.nummer}-gesamtsumme`}
                     >
-                      PDF
-                    </a>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      {formatEuro(r.gesamtCents)}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        component="a"
+                        href={`/bills/${r.dateiname}`}
+                        download={r.dateiname}
+                        size="small"
+                        variant="outlined"
+                        data-testselector={`rechnung-row-${r.nummer}-download`}
+                      >
+                        PDF
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
-      </section>
+      </Box>
     );
   },
 );

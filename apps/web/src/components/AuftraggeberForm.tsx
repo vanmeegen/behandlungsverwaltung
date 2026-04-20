@@ -1,3 +1,13 @@
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import FormControl from '@mui/material/FormControl';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FormLabel from '@mui/material/FormLabel';
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
 import { observer } from 'mobx-react-lite';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -8,20 +18,22 @@ interface AuftraggeberFormProps {
   redirectOnSuccess?: string;
 }
 
-function FieldError({
-  field,
-  errors,
-}: {
-  field: keyof AuftraggeberFieldErrors;
-  errors: AuftraggeberFieldErrors;
-}): JSX.Element | null {
+function errorProps(
+  errors: AuftraggeberFieldErrors,
+  field: keyof AuftraggeberFieldErrors,
+): {
+  error: boolean;
+  helperText: JSX.Element | null;
+} {
   const message = errors[field];
-  if (!message) return null;
-  return (
-    <span role="alert" data-testselector={`auftraggeber-form-${field}-error`}>
-      {message}
-    </span>
-  );
+  return {
+    error: Boolean(message),
+    helperText: message ? (
+      <span role="alert" data-testselector={`auftraggeber-form-${field}-error`}>
+        {message}
+      </span>
+    ) : null,
+  };
 }
 
 export const AuftraggeberForm = observer(
@@ -45,130 +57,127 @@ export const AuftraggeberForm = observer(
       };
 
     return (
-      <form onSubmit={onSubmit} data-testselector="auftraggeber-form">
-        <fieldset>
-          <legend>Typ</legend>
-          <label>
-            <input
-              type="radio"
-              name="typ"
-              value="firma"
-              data-testselector="auftraggeber-form-typ-firma"
-              checked={draft.typ === 'firma'}
-              onChange={(): void => draft.setTyp('firma')}
-            />
-            Firma
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="typ"
-              value="person"
-              data-testselector="auftraggeber-form-typ-person"
-              checked={draft.typ === 'person'}
-              onChange={(): void => draft.setTyp('person')}
-            />
-            Person
-          </label>
-        </fieldset>
+      <Box component="form" onSubmit={onSubmit} data-testselector="auftraggeber-form">
+        <Stack spacing={2}>
+          <FormControl component="fieldset">
+            <FormLabel component="legend">Typ</FormLabel>
+            <RadioGroup
+              row
+              value={draft.typ}
+              onChange={(event): void => draft.setTyp(event.target.value as 'firma' | 'person')}
+            >
+              <FormControlLabel
+                value="firma"
+                label="Firma"
+                control={
+                  <Radio
+                    inputProps={
+                      {
+                        'data-testselector': 'auftraggeber-form-typ-firma',
+                      } as React.InputHTMLAttributes<HTMLInputElement>
+                    }
+                  />
+                }
+              />
+              <FormControlLabel
+                value="person"
+                label="Person"
+                control={
+                  <Radio
+                    inputProps={
+                      {
+                        'data-testselector': 'auftraggeber-form-typ-person',
+                      } as React.InputHTMLAttributes<HTMLInputElement>
+                    }
+                  />
+                }
+              />
+            </RadioGroup>
+          </FormControl>
 
-        {draft.typ === 'firma' && (
-          <label>
-            Firmenname
-            <input
-              data-testselector="auftraggeber-form-firmenname"
+          {draft.typ === 'firma' && (
+            <TextField
+              label="Firmenname"
               value={draft.firmenname}
               onChange={makeHandler(draft.setFirmenname)}
+              inputProps={{ 'data-testselector': 'auftraggeber-form-firmenname' }}
+              {...errorProps(draft.errors, 'firmenname')}
             />
-            <FieldError field="firmenname" errors={draft.errors} />
-          </label>
-        )}
+          )}
 
-        {draft.typ === 'person' && (
-          <>
-            <label>
-              Vorname
-              <input
-                data-testselector="auftraggeber-form-vorname"
+          {draft.typ === 'person' && (
+            <>
+              <TextField
+                label="Vorname"
                 value={draft.vorname}
                 onChange={makeHandler(draft.setVorname)}
+                inputProps={{ 'data-testselector': 'auftraggeber-form-vorname' }}
+                {...errorProps(draft.errors, 'vorname')}
               />
-              <FieldError field="vorname" errors={draft.errors} />
-            </label>
-
-            <label>
-              Nachname
-              <input
-                data-testselector="auftraggeber-form-nachname"
+              <TextField
+                label="Nachname"
                 value={draft.nachname}
                 onChange={makeHandler(draft.setNachname)}
+                inputProps={{ 'data-testselector': 'auftraggeber-form-nachname' }}
+                {...errorProps(draft.errors, 'nachname')}
               />
-              <FieldError field="nachname" errors={draft.errors} />
-            </label>
-          </>
-        )}
+            </>
+          )}
 
-        <label>
-          Straße
-          <input
-            data-testselector="auftraggeber-form-strasse"
+          <TextField
+            label="Straße"
             value={draft.strasse}
             onChange={makeHandler(draft.setStrasse)}
+            inputProps={{ 'data-testselector': 'auftraggeber-form-strasse' }}
+            {...errorProps(draft.errors, 'strasse')}
           />
-          <FieldError field="strasse" errors={draft.errors} />
-        </label>
 
-        <label>
-          Hausnummer
-          <input
-            data-testselector="auftraggeber-form-hausnummer"
+          <TextField
+            label="Hausnummer"
             value={draft.hausnummer}
             onChange={makeHandler(draft.setHausnummer)}
+            inputProps={{ 'data-testselector': 'auftraggeber-form-hausnummer' }}
+            {...errorProps(draft.errors, 'hausnummer')}
           />
-          <FieldError field="hausnummer" errors={draft.errors} />
-        </label>
 
-        <label>
-          PLZ
-          <input
-            data-testselector="auftraggeber-form-plz"
+          <TextField
+            label="PLZ"
             value={draft.plz}
             onChange={makeHandler(draft.setPlz)}
+            inputProps={{ 'data-testselector': 'auftraggeber-form-plz' }}
+            {...errorProps(draft.errors, 'plz')}
           />
-          <FieldError field="plz" errors={draft.errors} />
-        </label>
 
-        <label>
-          Stadt
-          <input
-            data-testselector="auftraggeber-form-stadt"
+          <TextField
+            label="Stadt"
             value={draft.stadt}
             onChange={makeHandler(draft.setStadt)}
+            inputProps={{ 'data-testselector': 'auftraggeber-form-stadt' }}
+            {...errorProps(draft.errors, 'stadt')}
           />
-          <FieldError field="stadt" errors={draft.errors} />
-        </label>
 
-        <label>
-          Stundensatz (€)
-          <input
-            inputMode="decimal"
-            data-testselector="auftraggeber-form-stundensatz"
+          <TextField
+            label="Stundensatz (€)"
             value={draft.stundensatz}
             onChange={makeHandler(draft.setStundensatz)}
+            inputProps={{
+              'data-testselector': 'auftraggeber-form-stundensatz',
+              inputMode: 'decimal',
+            }}
+            {...errorProps(draft.errors, 'stundensatzCents')}
           />
-          <FieldError field="stundensatzCents" errors={draft.errors} />
-        </label>
 
-        <button type="submit" data-testselector="auftraggeber-form-submit">
-          Speichern
-        </button>
+          <Button type="submit" data-testselector="auftraggeber-form-submit">
+            Speichern
+          </Button>
 
-        {store.error && (
-          <p role="alert" data-testselector="auftraggeber-form-server-error">
-            {store.error}
-          </p>
-        )}
-      </form>
+          {store.error && (
+            <Alert severity="error" role="alert" data-testselector="auftraggeber-form-server-error">
+              {store.error}
+            </Alert>
+          )}
+        </Stack>
+      </Box>
     );
   },
 );

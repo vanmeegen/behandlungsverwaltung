@@ -10,7 +10,7 @@ Behandlungsverwaltung is a single-file distributable desktop/web application for
 
 - **Runtime / Package manager**: [Bun](https://bun.sh) (workspaces, native test runner, single-file compilation)
 - **Language**: TypeScript 5.6 in strict mode
-- **Frontend**: React 18 + [MobX](https://mobx.js.org) / `mobx-react-lite`, built with [Vite 5](https://vitejs.dev)
+- **Frontend**: React 18 + [MobX](https://mobx.js.org) / `mobx-react-lite`, built with [Vite 5](https://vitejs.dev) and mui (material-ui)
 - **Backend**: [`graphql-yoga`](https://the-guild.dev/graphql/yoga-server) + [Pothos](https://pothos-graphql.dev) schema builder, served by Bun
 - **Database**: SQLite via `bun:sqlite`, schema managed with [Drizzle ORM](https://orm.drizzle.team) + `drizzle-kit`
 - **Testing**: [Vitest](https://vitest.dev) (web, jsdom) and `bun test` (server)

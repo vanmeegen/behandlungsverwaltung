@@ -1,3 +1,7 @@
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
@@ -23,8 +27,8 @@ export const KindDetailPage = observer(({ kindStore, therapieStore }: KindDetail
   const therapien = id ? (therapieStore.byKind[id] ?? []) : [];
 
   return (
-    <section data-testselector="kind-detail-page">
-      <h1>
+    <Box data-testselector="kind-detail-page">
+      <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
         {kind ? (
           <>
             <span data-testselector="kind-detail-nachname">{kind.nachname}</span>
@@ -34,11 +38,15 @@ export const KindDetailPage = observer(({ kindStore, therapieStore }: KindDetail
         ) : (
           'Kind'
         )}
-      </h1>
-      <section>
-        <h2>Therapien</h2>
-        <TherapieList items={therapien} />
-      </section>
-    </section>
+      </Typography>
+      <Card variant="outlined">
+        <CardContent>
+          <Typography variant="h6" component="h2" sx={{ mb: 1 }}>
+            Therapien
+          </Typography>
+          <TherapieList items={therapien} />
+        </CardContent>
+      </Card>
+    </Box>
   );
 });

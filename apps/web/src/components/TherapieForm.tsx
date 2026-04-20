@@ -1,5 +1,10 @@
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
 import { observer } from 'mobx-react-lite';
-import type { ChangeEvent, FormEvent } from 'react';
+import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
 import type { KindStore } from '../models/KindStore';
@@ -25,20 +30,22 @@ const FORM_LABEL: Record<TherapieFormValue, string> = {
   sonstiges: 'Sonstiges',
 };
 
-function FieldError({
-  field,
-  errors,
-}: {
-  field: keyof TherapieFieldErrors;
-  errors: TherapieFieldErrors;
-}): JSX.Element | null {
+function errorProps(
+  errors: TherapieFieldErrors,
+  field: keyof TherapieFieldErrors,
+): {
+  error: boolean;
+  helperText: JSX.Element | null;
+} {
   const message = errors[field];
-  if (!message) return null;
-  return (
-    <span role="alert" data-testselector={`therapie-form-${field}-error`}>
-      {message}
-    </span>
-  );
+  return {
+    error: Boolean(message),
+    helperText: message ? (
+      <span role="alert" data-testselector={`therapie-form-${field}-error`}>
+        {message}
+      </span>
+    ) : null,
+  };
 }
 
 function auftraggeberLabel(ag: {
@@ -70,18 +77,20 @@ export const TherapieForm = observer(
       }
     };
 
-    const onFormChange = (event: ChangeEvent<HTMLSelectElement>): void => {
-      draft.setForm(event.target.value as TherapieFormValue);
-    };
-
     return (
-      <form onSubmit={onSubmit} data-testselector="therapie-form">
-        <label>
-          Kind
-          <select
-            data-testselector="therapie-form-kindId"
+      <Box component="form" onSubmit={onSubmit} data-testselector="therapie-form">
+        <Stack spacing={2}>
+          <TextField
+            select
+            label="Kind"
             value={draft.kindId}
             onChange={(e): void => draft.setKindId(e.target.value)}
+            SelectProps={{
+              native: true,
+              inputProps: { 'data-testselector': 'therapie-form-kindId' },
+            }}
+            InputLabelProps={{ shrink: true }}
+            {...errorProps(draft.errors, 'kindId')}
           >
             <option value="">– bitte wählen –</option>
             {kindStore.items.map((k) => (
@@ -89,16 +98,19 @@ export const TherapieForm = observer(
                 {k.nachname}, {k.vorname}
               </option>
             ))}
-          </select>
-          <FieldError field="kindId" errors={draft.errors} />
-        </label>
+          </TextField>
 
-        <label>
-          Auftraggeber
-          <select
-            data-testselector="therapie-form-auftraggeberId"
+          <TextField
+            select
+            label="Auftraggeber"
             value={draft.auftraggeberId}
             onChange={(e): void => draft.setAuftraggeberId(e.target.value)}
+            SelectProps={{
+              native: true,
+              inputProps: { 'data-testselector': 'therapie-form-auftraggeberId' },
+            }}
+            InputLabelProps={{ shrink: true }}
+            {...errorProps(draft.errors, 'auftraggeberId')}
           >
             <option value="">– bitte wählen –</option>
             {auftraggeberStore.items.map((a) => (
@@ -106,70 +118,72 @@ export const TherapieForm = observer(
                 {auftraggeberLabel(a)}
               </option>
             ))}
-          </select>
-          <FieldError field="auftraggeberId" errors={draft.errors} />
-        </label>
+          </TextField>
 
-        <label>
-          Therapieform
-          <select data-testselector="therapie-form-form" value={draft.form} onChange={onFormChange}>
+          <TextField
+            select
+            label="Therapieform"
+            value={draft.form}
+            onChange={(e): void => draft.setForm(e.target.value as TherapieFormValue)}
+            SelectProps={{
+              native: true,
+              inputProps: { 'data-testselector': 'therapie-form-form' },
+            }}
+            InputLabelProps={{ shrink: true }}
+            {...errorProps(draft.errors, 'form')}
+          >
             {THERAPIE_FORM_VALUES.map((f) => (
               <option key={f} value={f}>
                 {FORM_LABEL[f]}
               </option>
             ))}
-          </select>
-          <FieldError field="form" errors={draft.errors} />
-        </label>
+          </TextField>
 
-        {draft.form === 'sonstiges' && (
-          <label>
-            Kommentar
-            <input
-              data-testselector="therapie-form-kommentar"
+          {draft.form === 'sonstiges' && (
+            <TextField
+              label="Kommentar"
               value={draft.kommentar}
               onChange={(e): void => draft.setKommentar(e.target.value)}
+              inputProps={{ 'data-testselector': 'therapie-form-kommentar' }}
+              {...errorProps(draft.errors, 'kommentar')}
             />
-            <FieldError field="kommentar" errors={draft.errors} />
-          </label>
-        )}
+          )}
 
-        <label>
-          Bewilligte Behandlungseinheiten
-          <input
+          <TextField
+            label="Bewilligte Behandlungseinheiten"
             type="number"
-            min={1}
-            inputMode="numeric"
-            data-testselector="therapie-form-bewilligteBe"
             value={draft.bewilligteBe === 0 ? '' : draft.bewilligteBe}
             onChange={(e): void => {
               const raw = e.target.value;
               draft.setBewilligteBe(raw === '' ? 0 : Number.parseInt(raw, 10));
             }}
+            inputProps={{
+              'data-testselector': 'therapie-form-bewilligteBe',
+              inputMode: 'numeric',
+              min: 1,
+            }}
+            {...errorProps(draft.errors, 'bewilligteBe')}
           />
-          <FieldError field="bewilligteBe" errors={draft.errors} />
-        </label>
 
-        <label>
-          Arbeitsthema (optional)
-          <input
-            data-testselector="therapie-form-arbeitsthema"
+          <TextField
+            label="Arbeitsthema (optional)"
             value={draft.arbeitsthema}
             onChange={(e): void => draft.setArbeitsthema(e.target.value)}
+            inputProps={{ 'data-testselector': 'therapie-form-arbeitsthema' }}
+            {...errorProps(draft.errors, 'arbeitsthema')}
           />
-          <FieldError field="arbeitsthema" errors={draft.errors} />
-        </label>
 
-        <button type="submit" data-testselector="therapie-form-submit">
-          Speichern
-        </button>
+          <Button type="submit" data-testselector="therapie-form-submit">
+            Speichern
+          </Button>
 
-        {therapieStore.error && (
-          <p role="alert" data-testselector="therapie-form-server-error">
-            {therapieStore.error}
-          </p>
-        )}
-      </form>
+          {therapieStore.error && (
+            <Alert severity="error" role="alert" data-testselector="therapie-form-server-error">
+              {therapieStore.error}
+            </Alert>
+          )}
+        </Stack>
+      </Box>
     );
   },
 );

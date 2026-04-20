@@ -1,5 +1,11 @@
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
-import { Link } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import type { Therapie, TherapieFormValue } from '../models/TherapieStore';
 
 interface TherapieListProps {
@@ -18,29 +24,50 @@ const FORM_LABEL: Record<TherapieFormValue, string> = {
 export const TherapieList = observer(
   ({ items, emptyText = 'Noch keine Therapien erfasst.' }: TherapieListProps) => {
     if (items.length === 0) {
-      return <p data-testselector="therapie-list-empty">{emptyText}</p>;
+      return (
+        <Typography data-testselector="therapie-list-empty" color="text.secondary">
+          {emptyText}
+        </Typography>
+      );
     }
     return (
-      <ul data-testselector="therapie-list">
+      <List data-testselector="therapie-list">
         {items.map((t) => (
-          <li key={t.id} data-testselector="therapie-row">
-            <span data-testselector={`therapie-row-form-${t.id}`}>{FORM_LABEL[t.form]}</span>
-            {' · '}
-            <span data-testselector={`therapie-row-be-${t.id}`}>{t.bewilligteBe} BE</span>
-            {t.arbeitsthema && (
-              <>
-                {' · '}
-                <span data-testselector={`therapie-row-arbeitsthema-${t.id}`}>
-                  {t.arbeitsthema}
-                </span>
-              </>
-            )}
-            <Link to={`/therapien/${t.id}`} data-testselector={`therapie-row-edit-${t.id}`}>
-              Bearbeiten
-            </Link>
-          </li>
+          <ListItem
+            key={t.id}
+            data-testselector="therapie-row"
+            secondaryAction={
+              <Button
+                component={RouterLink}
+                to={`/therapien/${t.id}`}
+                size="small"
+                variant="outlined"
+                data-testselector={`therapie-row-edit-${t.id}`}
+              >
+                Bearbeiten
+              </Button>
+            }
+          >
+            <ListItemText
+              primary={
+                <Box component="span">
+                  <span data-testselector={`therapie-row-form-${t.id}`}>{FORM_LABEL[t.form]}</span>
+                  {' · '}
+                  <span data-testselector={`therapie-row-be-${t.id}`}>{t.bewilligteBe} BE</span>
+                  {t.arbeitsthema && (
+                    <>
+                      {' · '}
+                      <span data-testselector={`therapie-row-arbeitsthema-${t.id}`}>
+                        {t.arbeitsthema}
+                      </span>
+                    </>
+                  )}
+                </Box>
+              }
+            />
+          </ListItem>
         ))}
-      </ul>
+      </List>
     );
   },
 );

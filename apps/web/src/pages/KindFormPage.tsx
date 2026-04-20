@@ -1,3 +1,5 @@
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
@@ -28,9 +30,11 @@ export const KindFormPage = observer(({ store }: KindFormPageProps) => {
   }, [id, store]);
 
   return (
-    <section>
-      <h1>{id ? 'Kind bearbeiten' : 'Neues Kind'}</h1>
+    <Box>
+      <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+        {id ? 'Kind bearbeiten' : 'Neues Kind'}
+      </Typography>
       <KindForm store={store} />
-    </section>
+    </Box>
   );
 });

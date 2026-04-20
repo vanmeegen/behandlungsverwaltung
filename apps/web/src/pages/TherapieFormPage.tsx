@@ -1,3 +1,5 @@
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
@@ -35,14 +37,16 @@ export const TherapieFormPage = observer(
     }, [id, therapieStore, kindStore, auftraggeberStore]);
 
     return (
-      <section>
-        <h1>{id ? 'Therapie bearbeiten' : 'Neue Therapie'}</h1>
+      <Box>
+        <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+          {id ? 'Therapie bearbeiten' : 'Neue Therapie'}
+        </Typography>
         <TherapieForm
           therapieStore={therapieStore}
           kindStore={kindStore}
           auftraggeberStore={auftraggeberStore}
         />
-      </section>
+      </Box>
     );
   },
 );

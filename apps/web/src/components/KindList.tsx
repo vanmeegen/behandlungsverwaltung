@@ -1,5 +1,13 @@
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
-import { Link } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import type { KindStore } from '../models/KindStore';
 
 interface KindListProps {
@@ -8,34 +16,59 @@ interface KindListProps {
 
 export const KindList = observer(({ store }: KindListProps) => {
   return (
-    <section data-testselector="kind-list">
-      <header>
-        <h1>Kinder</h1>
-        <Link to="/kinder/new" data-testselector="kind-list-new">
+    <Box data-testselector="kind-list">
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+        <Typography variant="h4" component="h1">
+          Kinder
+        </Typography>
+        <Button component={RouterLink} to="/kinder/new" data-testselector="kind-list-new">
           Neu
-        </Link>
-      </header>
+        </Button>
+      </Stack>
       {store.items.length === 0 ? (
-        <p data-testselector="kind-list-empty">Noch keine Kinder erfasst.</p>
+        <Typography data-testselector="kind-list-empty" color="text.secondary">
+          Noch keine Kinder erfasst.
+        </Typography>
       ) : (
-        <ul>
+        <List>
           {store.items.map((kind) => (
-            <li key={kind.id} data-testselector="kind-row">
-              <Link
+            <ListItem
+              key={kind.id}
+              data-testselector="kind-row"
+              disablePadding
+              secondaryAction={
+                <Button
+                  component={RouterLink}
+                  to={`/kinder/${kind.id}`}
+                  size="small"
+                  variant="outlined"
+                  data-testselector={`kind-row-edit-${kind.id}`}
+                >
+                  Bearbeiten
+                </Button>
+              }
+            >
+              <ListItemButton
+                component={RouterLink}
                 to={`/kinder/${kind.id}/detail`}
                 data-testselector={`kind-row-detail-${kind.id}`}
               >
-                <span data-testselector={`kind-row-nachname-${kind.id}`}>{kind.nachname}</span>
-                {', '}
-                <span data-testselector={`kind-row-vorname-${kind.id}`}>{kind.vorname}</span>
-              </Link>
-              <Link to={`/kinder/${kind.id}`} data-testselector={`kind-row-edit-${kind.id}`}>
-                Bearbeiten
-              </Link>
-            </li>
+                <ListItemText
+                  primary={
+                    <>
+                      <span data-testselector={`kind-row-nachname-${kind.id}`}>
+                        {kind.nachname}
+                      </span>
+                      {', '}
+                      <span data-testselector={`kind-row-vorname-${kind.id}`}>{kind.vorname}</span>
+                    </>
+                  }
+                />
+              </ListItemButton>
+            </ListItem>
           ))}
-        </ul>
+        </List>
       )}
-    </section>
+    </Box>
   );
 });
