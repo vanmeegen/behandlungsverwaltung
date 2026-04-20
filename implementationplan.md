@@ -57,7 +57,7 @@ Add `zod` to `packages/shared/package.json` dependencies; wire `bun test` in the
 
 Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`therapien`/`behandlungen`/`rechnungen` plus the supporting `rechnungBehandlungen` and `templateFiles`), migrations generated, GraphQL types declared, no resolvers yet except read-only smoke queries.
 
-### 1.1 Drizzle tables
+### 1.1 Drizzle tables ✅
 
 - **Red (unit, server)**: add `apps/server/src/__tests__/db/schema.spec.ts` that imports each new table (`kinder`, `auftraggeber`, `therapien`, `behandlungen`, `rechnungen`, `templateFiles`) and asserts its columns via `getTableColumns` and that foreign keys point where expected.
 - **Green**: extend `apps/server/src/db/schema.ts` with the tables below (all money as integer cents; all dates as `integer { mode: 'timestamp' }`; ids as `integer primaryKey autoIncrement`):
