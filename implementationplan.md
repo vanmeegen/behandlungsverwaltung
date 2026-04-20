@@ -112,7 +112,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 - **Red (unit, server)**: same file — list returns inserted Kinder ordered by nachname; updateKind applies partial updates.
 - **Green**: implement.
 
-### 2.3 Web: `KindStore` MobX model
+### 2.3 Web: `KindStore` MobX model ✅
 
 - **Red (unit, web)**: `apps/web/src/__tests__/stores/KindStore.spec.ts` — given a mocked fetcher returning two Kinder, `store.load()` populates `store.items`; `store.create({...})` optimistically appends; error surfaces on `store.error`.
 - **Green**: `apps/web/src/models/KindStore.ts` — follows `HelloModel` pattern (constructor takes `GraphQLFetcher`, `makeAutoObservable`, `runInAction` in async gutters).
