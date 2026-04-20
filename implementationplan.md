@@ -62,10 +62,10 @@ Goal: all five tables exist, migrations generated, GraphQL types declared, no re
 - **Green**: extend `apps/server/src/db/schema.ts` with the tables below (all money as integer cents; all dates as `integer { mode: 'timestamp' }`; ids as `integer primaryKey autoIncrement`):
   - `kinder`: vorname, nachname, geburtsdatum, strasse, hausnummer, plz, stadt, aktenzeichen, createdAt, updatedAt
   - `auftraggeber`: typ (`'firma' | 'person'` as `text` with check), firmenname, vorname, nachname, strasse, hausnummer, plz, stadt, stundensatzCents, createdAt, updatedAt
-  - `therapien`: kindId (FK), auftraggeberId (FK), form (`'dyskalkulie'|'lerntherapie'|'heilpaedagogik'|'elternberatung'|'sonstiges'`), kommentar (nullable, required only if form=sonstiges — enforced at app layer), bewilligteBe, createdAt, updatedAt
-  - `behandlungen`: therapieId (FK), datum, be (integer ≥ 1), createdAt, updatedAt
+  - `therapien`: kindId (FK), auftraggeberId (FK), form (`'dyskalkulie'|'lerntherapie'|'heilpaedagogik'|'elternberatung'|'sonstiges'`), kommentar (nullable, required only if form=sonstiges — enforced at app layer), bewilligteBe, **arbeitsthema (nullable — default for Behandlungen; PRD §2.3)**, createdAt, updatedAt
+  - `behandlungen`: therapieId (FK), datum, be (integer ≥ 1), **arbeitsthema (text — pre-filled from Therapie.arbeitsthema on create, overridable per PRD §2.4 / AC-BEH-03)**, createdAt, updatedAt
   - `rechnungen`: nummer (TEXT UNIQUE — `YYYY-MM-NNNN`), jahr, monat, kindId (FK), auftraggeberId (FK), stundensatzCentsSnapshot, gesamtCents, dateiname, createdAt. Unique composite index on `(jahr, monat, kindId, auftraggeberId)` so AC-RECH-05 duplicate detection is purely DB-driven.
-  - `rechnungBehandlungen`: rechnungId (FK), behandlungId (FK), snapshotDate, snapshotBe, snapshotZeilenbetragCents. Snapshots freeze billed lines even if `behandlungen` is later edited/deleted.
+  - `rechnungBehandlungen`: rechnungId (FK), behandlungId (FK), snapshotDate, snapshotBe, **snapshotArbeitsthema** (per-line column in the invoice PDF, PRD §3.2), snapshotZeilenbetragCents. Snapshots freeze billed lines even if `behandlungen` is later edited/deleted.
   - `templateFiles`: id, kind (`'rechnung'|'stundennachweis'`), auftraggeberId (nullable — null = global), filename (relative to `templates/`), createdAt, unique `(kind, auftraggeberId)`.
 - **Refactor**: split `schema.ts` into one file per entity under `apps/server/src/db/schema/`, re-export from `index.ts`. Update `drizzle.config.ts` path if needed.
 - Run `bun run db:generate` and commit the SQL under `apps/server/drizzle/`.
@@ -94,10 +94,16 @@ Goal: all five tables exist, migrations generated, GraphQL types declared, no re
 
 ## Phase 2: Kind (Stammdaten CRUD)
 
-### 2.1 Server: `createKind` mutation <!-- implements AC-KIND-02 -->
+### 2.1 Server: `createKind` mutation <!-- implements AC-KIND-02, PRD §2.1 -->
 
-- **Red (unit, server)**: `apps/server/src/__tests__/schema/kind.createKind.spec.ts` — executes the mutation against an in-memory sqlite; empty PLZ → errors contain `"PLZ ist Pflicht"`; valid input → returns `Kind { id }`.
-- **Green**: Pothos input `KindInput` builds on `addressSchema`; resolver inserts row. Input validation via shared zod schema; errors thrown as `GraphQLError` with a stable `code`.
+- **Red (unit, server)**: `apps/server/src/__tests__/schema/kind.createKind.spec.ts` — parameterised validation table covering **every** field in §2.1:
+  - empty PLZ → `"PLZ ist Pflicht"` (AC-KIND-02)
+  - PLZ with non-digits (e.g. `"ABCDE"`) or wrong length → `"PLZ muss fünf Ziffern enthalten"`
+  - empty `vorname` / `nachname` → respective Pflicht-errors
+  - missing or malformed `geburtsdatum` → `"Geburtsdatum ist Pflicht"` / `"Geburtsdatum ist ungültig"`
+  - `geburtsdatum` in the future → `"Geburtsdatum darf nicht in der Zukunft liegen"`
+  - fully valid input → returns `Kind { id }` and **every one** of the 8 columns (vorname, nachname, geburtsdatum, strasse, hausnummer, plz, stadt, aktenzeichen) is persisted byte-for-byte.
+- **Green**: Pothos input `KindInput` builds on shared `kindSchema` (= `addressSchema` + `vornameSchema` + `nachnameSchema` + `geburtsdatumSchema` + optional `aktenzeichenSchema`). Resolver inserts row. Errors thrown as `GraphQLError` with a stable `code`.
 - **Refactor**: extract `validateOrThrow(schema, input)` helper.
 
 ### 2.2 Server: `kinder` query + `updateKind`
@@ -114,14 +120,22 @@ Goal: all five tables exist, migrations generated, GraphQL types declared, no re
 
 - Pick a router: `react-router-dom` v6 (minimal, client-side only). Install in `apps/web`. Wire in `main.tsx`.
 - **Red (unit, web)**: `apps/web/src/__tests__/components/KindList.spec.tsx` — renders rows with `data-testselector="kind-row"` per Kind.
-- **Red (unit, web)**: `apps/web/src/__tests__/components/KindForm.spec.tsx` — submitting empty PLZ shows error text "PLZ ist Pflicht"; valid submit calls `store.create`. Implements AC-KIND-02 on the UI side.
-- **Green**: `apps/web/src/components/KindList.tsx`, `KindForm.tsx`, `pages/KindListPage.tsx`, `pages/KindFormPage.tsx`. All mobile-first CSS (single column, ≥44px tap targets, sticky primary action bottom).
+- **Red (unit, web)**: `apps/web/src/__tests__/components/KindForm.spec.tsx` — parameterised validation table mirroring §2.1:
+  - empty PLZ → inline error "PLZ ist Pflicht"
+  - empty Vorname / Nachname → inline errors
+  - empty / future Geburtsdatum → inline errors
+  - valid submit of **all 8 fields** calls `store.create` with exactly the typed values (assert via mock fetcher spy).
+  - The form renders an input for **every** DB column (vorname, nachname, geburtsdatum, strasse, hausnummer, plz, stadt, aktenzeichen) — assert each via `data-testselector="kind-form-<field>"`.
+- **Green**: `apps/web/src/components/KindList.tsx`, `KindForm.tsx`, `pages/KindListPage.tsx`, `pages/KindFormPage.tsx`. Mobile-first CSS (single column, ≥44px tap targets, sticky primary action bottom). Validation errors driven by the **same shared zod schema** the server uses — single source of truth.
 
-### 2.5 E2E: create + edit Kind <!-- implements AC-KIND-01, AC-KIND-03 -->
+### 2.5 E2E: create + edit Kind <!-- implements AC-KIND-01, AC-KIND-03, UC-3.5 -->
 
-- **Red (e2e)**: `apps/web/e2e/kind.e2e.ts` using new `apps/web/e2e/pages/KindListPage.ts` and `KindFormPage.ts`. Scenario 1: empty list → open form → fill all fields → submit → row visible. Scenario 2: open existing row → change nachname → save → updated text visible via `data-testselector`, not by text content (use a stable row id selector and `toHaveText()` only against a constant re-exported by the component).
+- **Red (e2e)**: `apps/web/e2e/uc-3.5-kind.e2e.ts` using new `apps/web/e2e/pages/KindListPage.ts` and `KindFormPage.ts`. Three scenarios:
+  - **Happy path (AC-KIND-01 / UC-3.5 Szenario 1)**: empty list → open form → fill **all 8 fields** (vorname="Anna", nachname="Musterfrau", geburtsdatum="2018-03-14", strasse="Hauptstr.", hausnummer="12", plz="50667", stadt="Köln", aktenzeichen="K-2026-001") → submit → success toast; list row "Musterfrau, Anna" visible. **Field readback**: `afterEach` queries `kinder { id vorname nachname geburtsdatum strasse hausnummer plz stadt aktenzeichen }` via GraphQL and asserts **every** column equals the typed value byte-for-byte.
+  - **Edit (AC-KIND-03)**: open existing row → change nachname → save → updated text visible via `data-testselector="kind-row-nachname-<id>"`.
+  - **Edge (UC-3.5 Szenario 2)**: fill all fields except PLZ → submit → error "PLZ ist Pflicht" visible, list remains empty, `kinder` query returns `[]`.
 - Playwright bootstrap uses a **per-run isolated data dir**: the `webServer.command` picks up `DB_PATH=./e2e-data/<uuid>/app.db`, `BEHANDLUNG_HOME=./e2e-data/<uuid>` env vars. See Phase 11 + Risks section.
-- **Green**: whatever markup tweaks are needed to satisfy the page object (add `data-testselector` attributes).
+- **Green**: markup tweaks to satisfy the page objects (add `data-testselector` attributes for every field + row).
 
 ### 2.6 Commit gate
 
@@ -131,21 +145,34 @@ Goal: all five tables exist, migrations generated, GraphQL types declared, no re
 
 ## Phase 3: Auftraggeber
 
-### 3.1 Server: validation <!-- implements AC-AG-02, AC-AG-03 -->
+### 3.1 Server: validation <!-- implements AC-AG-02, AC-AG-03, PRD §2.2 -->
 
-- **Red (unit, server)**: `apps/server/src/__tests__/schema/auftraggeber.spec.ts` — typ=firma without firmenname → error; typ=person without vorname/nachname → error "Vor- und Nachname Pflicht"; any input without PLZ → error "PLZ ist Pflicht".
-- **Green**: `apps/server/src/schema/types/auftraggeber.ts` with `AuftraggeberInput`. Shared `auftraggeberSchema` in `packages/shared/src/validation/auftraggeber.ts` — discriminated union on `typ`.
+- **Red (unit, server)**: `apps/server/src/__tests__/schema/auftraggeber.spec.ts` — validation table covering **every** field in §2.2:
+  - `typ ∉ {firma, person}` → error
+  - `typ=firma` without `firmenname` → error "Firmenname Pflicht"
+  - `typ=person` without `vorname` / `nachname` → error "Vor- und Nachname Pflicht" (AC-AG-02)
+  - any input without PLZ → error "PLZ ist Pflicht" (AC-AG-03)
+  - `stundensatzCents` missing or `≤ 0` → error "Stundensatz muss > 0 sein"
+  - valid firma: all columns (`typ`, `firmenname`, `strasse`, `hausnummer`, `plz`, `stadt`, `stundensatzCents`) persisted; `vorname`/`nachname` null
+  - valid person: all columns persisted; `firmenname` null.
+- **Green**: `apps/server/src/schema/types/auftraggeber.ts` with `AuftraggeberInput`. Shared `auftraggeberSchema` in `packages/shared/src/validation/auftraggeber.ts` — discriminated union on `typ` with `stundensatzCents: z.number().int().positive()`.
 - **Refactor**: the discriminated-union schema also produces the TS type via `z.infer`.
 
 ### 3.2 Web: store + form
 
-- **Red (unit, web)**: `apps/web/src/__tests__/stores/AuftraggeberStore.spec.ts`; `apps/web/src/__tests__/components/AuftraggeberForm.spec.tsx` — switching typ radio shows/hides the right name fields (AC-AG-01 visual split).
-- **Green**: `apps/web/src/models/AuftraggeberStore.ts`, `components/AuftraggeberForm.tsx`, list/form pages. Stundensatz input accepts `"45,00"` and stores cents.
+- **Red (unit, web)**: `apps/web/src/__tests__/stores/AuftraggeberStore.spec.ts`; `apps/web/src/__tests__/components/AuftraggeberForm.spec.tsx`:
+  - switching typ radio shows/hides firmenname vs vorname+nachname (AC-AG-01 visual split).
+  - every Pflicht-field per §2.2 surfaces its error from the shared zod schema when empty.
+  - stundensatz parser: `"45,00"` → 4500; `"45"` → 4500; `"45,5"` → rejected (two decimals required); negative → rejected.
+  - the form renders an input for **every** DB column used by the chosen typ.
+- **Green**: `apps/web/src/models/AuftraggeberStore.ts`, `components/AuftraggeberForm.tsx`, list/form pages. Stundensatz input wired through a shared `parseEuroToCents` util.
 
-### 3.3 E2E: create Firma <!-- implements AC-AG-01 -->
+### 3.3 E2E: create Firma + Person-edge <!-- implements AC-AG-01, AC-AG-02, UC-3.6 -->
 
-- **Red (e2e)**: `apps/web/e2e/auftraggeber.e2e.ts` with `AuftraggeberListPage` / `AuftraggeberFormPage` page objects. Create a Firma; assert the row shows `firmenname` (via `data-testselector="auftraggeber-row-firmenname"`) and the two name-fields are absent from the detail view.
-- **Green**: markup adjustments.
+- **Red (e2e)**: `apps/web/e2e/uc-3.6-auftraggeber.e2e.ts` with `AuftraggeberListPage` / `AuftraggeberFormPage` page objects. Two scenarios:
+  - **Firma happy (AC-AG-01 / UC-3.6 Szenario 1)**: typ=Firma, firmenname="Jugendamt Köln", strasse="Kalker Hauptstr.", hausnummer="247-273", plz="51103", stadt="Köln", stundensatz="45,00" → submit. Row shows firmenname (`data-testselector="auftraggeber-row-firmenname"`); detail view renders no vorname/nachname inputs. **Field readback**: GraphQL `auftraggeber { id typ firmenname vorname nachname strasse hausnummer plz stadt stundensatzCents }` asserts `typ=firma`, `firmenname="Jugendamt Köln"`, `vorname=null`, `nachname=null`, `stundensatzCents=4500`, all other columns as typed.
+  - **Person edge (UC-3.6 Szenario 2)**: typ=Person, leave vorname/nachname empty, fill plz + stundensatz → submit → error "Vor- und Nachname Pflicht"; list remains empty.
+- **Green**: markup adjustments, `data-testselector` on every field and row.
 
 ### 3.4 Commit gate
 
@@ -155,10 +182,17 @@ Goal: all five tables exist, migrations generated, GraphQL types declared, no re
 
 ## Phase 4: Therapie
 
-### 4.1 Server: validation <!-- implements AC-TH-01 -->
+### 4.1 Server: validation <!-- implements AC-TH-01, PRD §2.3 -->
 
-- **Red (unit, server)**: `apps/server/src/__tests__/schema/therapie.spec.ts` — `form = sonstiges` without `kommentar` → error "Kommentar ist Pflicht bei Sonstiges"; with kommentar → ok; other forms ignore kommentar.
-- **Green**: `packages/shared/src/validation/therapie.ts` Zod `.superRefine`.
+- **Red (unit, server)**: `apps/server/src/__tests__/schema/therapie.spec.ts` — validation table covering **every** field in §2.3:
+  - `form = sonstiges` without `kommentar` → error "Kommentar ist Pflicht bei Sonstiges" (AC-TH-01); with kommentar → ok.
+  - other forms ignore kommentar.
+  - `form ∉ {dyskalkulie, lerntherapie, heilpaedagogik, elternberatung, sonstiges}` → error.
+  - missing `kindId` / `auftraggeberId` → Pflicht-error; FK pointing at non-existent row → DB error.
+  - `bewilligteBe` missing or `≤ 0` → error "Bewilligte Behandlungseinheiten müssen > 0 sein".
+  - `arbeitsthema` optional: null persists as null; non-null persists as given; whitespace-only trimmed to null.
+  - valid input: every column (`kindId`, `auftraggeberId`, `form`, `kommentar`, `bewilligteBe`, `arbeitsthema`) persisted as given.
+- **Green**: `packages/shared/src/validation/therapie.ts` Zod `.superRefine` for the kommentar-conditional; `bewilligteBe: z.number().int().positive()`; `arbeitsthema: z.string().trim().min(1).optional().nullable()`.
 
 ### 4.2 Server: list by Kind + by Auftraggeber
 
@@ -167,13 +201,21 @@ Goal: all five tables exist, migrations generated, GraphQL types declared, no re
 
 ### 4.3 Web: store + form + nested listings
 
-- **Red (unit, web)**: `TherapieStore.spec.ts` (CRUD); `TherapieForm.spec.tsx` (conditional kommentar field, AC-TH-01 UI-side echo); `KindDetail.spec.tsx` (renders list of Therapien from injected store); `AuftraggeberDetail.spec.tsx` (same).
+- **Red (unit, web)**: `TherapieStore.spec.ts` (CRUD); `TherapieForm.spec.tsx`:
+  - conditional kommentar field (shown + required only for form=sonstiges — AC-TH-01 UI echo)
+  - `arbeitsthema` text input always visible (optional)
+  - `bewilligteBe` number input required and > 0
+  - `kindId` / `auftraggeberId` dropdowns required
+  - the form renders an input for **every** DB column (kindId, auftraggeberId, form, kommentar, bewilligteBe, arbeitsthema).
+    `KindDetail.spec.tsx` (renders list of Therapien from injected store); `AuftraggeberDetail.spec.tsx` (same).
 - **Green**: implement.
 
-### 4.4 E2E: Therapie appears under both parents <!-- implements AC-TH-02 -->
+### 4.4 E2E: Therapie CRUD with dual-parent visibility <!-- implements AC-TH-02, AC-TH-01, UC-3.7 -->
 
-- **Red (e2e)**: `apps/web/e2e/therapie.e2e.ts` — seed (via UI) a Kind and an Auftraggeber, create Therapie, assert the `therapie-row` appears on both detail pages.
-- **Green**: wire the nested routes.
+- **Red (e2e)**: `apps/web/e2e/uc-3.7-therapie.e2e.ts`. Two scenarios:
+  - **Happy (UC-3.7 Szenario 1)**: seed Kind "Anna Musterfrau" + Auftraggeber "Jugendamt Köln"; open Therapieliste → Neu → pick both, form=Lerntherapie, bewilligteBe=60, arbeitsthema="Mathe-Grundlagen" → submit. Assert therapie row appears on **both** `KindDetailPage` and `AuftraggeberDetailPage`. **Field readback**: GraphQL `therapien { id kindId auftraggeberId form kommentar bewilligteBe arbeitsthema }` asserts every column (form=lerntherapie, kommentar=null, bewilligteBe=60, arbeitsthema="Mathe-Grundlagen", both FKs correct) matches input.
+  - **Edge (UC-3.7 Szenario 2 / AC-TH-01 e2e echo)**: form=Sonstiges with empty kommentar → error "Kommentar ist Pflicht bei Sonstiges"; Therapieliste remains empty.
+- **Green**: wire the nested routes; `data-testselector` on therapie rows and fields.
 
 ### 4.5 Commit gate
 
@@ -183,31 +225,45 @@ Goal: all five tables exist, migrations generated, GraphQL types declared, no re
 
 ## Phase 5: Behandlung — mobile-first Schnellerfassung
 
-### 5.1 Server: validation + create/list <!-- implements AC-BEH-02 -->
+### 5.1 Server: validation + create/list <!-- implements AC-BEH-02, PRD §2.4 -->
 
-- **Red (unit, server)**: `apps/server/src/__tests__/schema/behandlung.spec.ts` — BE=0 → error "BE muss ≥ 1 sein"; BE=−1 → same; BE=1 ok. `behandlungenByTherapie(therapieId)` returns in date-desc order.
-- **Green**: shared `behandlungSchema` with `z.number().int().min(1)`.
+- **Red (unit, server)**: `apps/server/src/__tests__/schema/behandlung.spec.ts` — validation table covering **every** field in §2.4:
+  - `be = 0` / `-1` → error "BE muss ≥ 1 sein" (AC-BEH-02); `be = 1` ok.
+  - missing `therapieId` → Pflicht-error; FK pointing at non-existent Therapie → DB error.
+  - missing `datum` → Pflicht-error; malformed date → error.
+  - `arbeitsthema` absent → resolver substitutes `Therapie.arbeitsthema` (or null if Therapie has none); override given → stored as given; whitespace-only override → treated as "use Therapie default".
+  - valid input: every column (`therapieId`, `datum`, `be`, `arbeitsthema`) persisted as given.
+- `behandlungenByTherapie(therapieId)` returns in date-desc order.
+- **Green**: shared `behandlungSchema` with `z.number().int().min(1)`; resolver resolves effective `arbeitsthema`.
 
-### 5.2 Server: no `leistung` field <!-- implements AC-BEH-03 -->
+### 5.2 Server: Arbeitsthema with Therapie-Vorbelegung <!-- implements AC-BEH-03 (updated) -->
 
-- **Red (unit, server)**: introspect `BehandlungInput`; assert `leistung`/`arbeit`/`work` are absent. (Explicit negative assertion to lock the decision.)
-- **Green**: trivial — ensure we never add those fields.
+- **Red (unit, server)**: extend `behandlung.spec.ts`:
+  - given a Therapie with `arbeitsthema="Mathe-Grundlagen"`, creating a Behandlung without an explicit `arbeitsthema` → persisted row has `arbeitsthema="Mathe-Grundlagen"` (Vorbelegung).
+  - override `arbeitsthema="Bruchrechnung"` on the input → persisted row has `arbeitsthema="Bruchrechnung"`.
+  - given a Therapie with `arbeitsthema=null` and no override, persisted row has `arbeitsthema=null`.
+- **Green**: resolver computes effective `arbeitsthema` at create time (eager snapshot, no lazy fallback at read time).
 
-### 5.3 Web: `SchnellerfassungPage` mobile form <!-- implements AC-BEH-03 -->
+### 5.3 Web: `SchnellerfassungPage` mobile form <!-- implements AC-BEH-03 (updated), UC-3.1 -->
 
-- **Red (unit, web)**: `Schnellerfassung.spec.tsx` — renders Kind picker, Therapie picker filtered to that Kind, BE stepper (+/− buttons, value ≥ 1, default 1), Datum defaulting to today (`new Date().toISOString().slice(0, 10)`). Explicitly assert there is no textarea / input with name/id matching /leistung|arbeit|beschreibung/ (locks AC-BEH-03).
+- **Red (unit, web)**: `Schnellerfassung.spec.tsx` — renders Kind picker, Therapie picker filtered to that Kind, BE stepper (+/− buttons, value ≥ 1, default 1), Datum defaulting to today (`new Date().toISOString().slice(0, 10)`), and an **Arbeitsthema text input pre-filled with the selected Therapie's `arbeitsthema`** (reactively updated when the Therapie picker changes, **only while the user has not manually edited the field**). Assert:
+  - leaving Arbeitsthema unchanged submits the Therapie default (`store.create` called with `arbeitsthema` equal to the Therapie value).
+  - overriding Arbeitsthema submits the override.
+  - switching Therapie after manual edit does NOT overwrite the user's text.
+  - the form renders an input for every DB column (therapieId, datum, be, arbeitsthema).
 - **Green**: component + store.
-- **Refactor**: stepper as a reusable `BeStepper` component.
+- **Refactor**: stepper as a reusable `BeStepper` component; pre-fill logic isolated in a MobX-driven helper (no React `useState` for app state).
 
 ### 5.4 Web: `BehandlungStore`
 
 - **Red (unit, web)**: `BehandlungStore.spec.ts` — `create()` delegates to fetcher; `listByTherapie(therapieId)` caches per therapie.
 - **Green**: implement.
 
-### 5.5 E2E: Schnellerfassung flow <!-- implements AC-BEH-01 -->
+### 5.5 E2E: Schnellerfassung flow (all fields verified) <!-- implements AC-BEH-01, UC-3.1 -->
 
-- **Red (e2e)**: `apps/web/e2e/behandlung.e2e.ts` — seed Kind+Auftraggeber+Therapie via GraphQL mutations using a Playwright `test.beforeEach` helper (`apps/web/e2e/helpers/seed.ts`); open Schnellerfassung, pick Kind + Therapie, tap `+` twice → BE stepper shows 2, submit, assert row visible in `TherapieDetailPage.behandlungen` list.
-- Stretch: one additional e2e that confirms the form is usable with viewport `390×844` (iPhone 14).
+- **Red (e2e)**: `apps/web/e2e/uc-3.1-schnellerfassung.e2e.ts` — seed Kind "Anna Musterfrau" + Auftraggeber + Therapie with `arbeitsthema="Mathe-Grundlagen"` via GraphQL. Viewport 390×844. Two scenarios:
+  - **Vorbelegung (UC-3.1 Szenario 1)**: open Schnellerfassung, pick Kind + Therapie; assert Arbeitsthema-Input is pre-filled with "Mathe-Grundlagen"; tap `+` twice → BE shows 2; leave datum = today, arbeitsthema unchanged; submit. Assertions: success toast; row in `TherapieDetailPage.behandlungen` shows today + "2 BE". **Field readback**: GraphQL `behandlungen(therapieId) { id therapieId datum be arbeitsthema }` asserts `datum=today`, `be=2`, `arbeitsthema="Mathe-Grundlagen"`, `therapieId` correct.
+  - **Override**: repeat, overwrite Arbeitsthema with "Bruchrechnung" before submit → DB row stores `arbeitsthema="Bruchrechnung"`.
 
 ### 5.6 Commit gate
 
@@ -249,7 +305,7 @@ Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded tem
 
 ### 7.1 File-system layout abstraction
 
-- **Red (unit, server)**: `apps/server/src/__tests__/paths/paths.spec.ts` — `paths(homeOverride).templatesDir === join(homeOverride, 'templates')`; `.billsDir`, `.dbPath` analogous. `ensureDataDirs(paths)` creates all three (idempotent). Uses `BEHANDLUNG_HOME` env var, falling back to `os.homedir() + '/.behandlungsverwaltung'`.
+- **Red (unit, server)**: `apps/server/src/__tests__/paths/paths.spec.ts` — `paths(homeOverride)` returns `.templatesDir`, `.billsDir`, **`.timesheetsDir`**, `.dbPath`, each resolving to `join(homeOverride, <subdir>)`. `ensureDataDirs(paths)` creates **all four** entries (three dirs plus db-parent) and is idempotent. Uses `BEHANDLUNG_HOME` env var, falling back to `os.homedir() + '/.behandlungsverwaltung'`.
 - **Green**: `apps/server/src/paths/index.ts`; also update `db/client.ts` to consume the same path resolver.
 
 ### 7.2 Upload mutation <!-- implements AC-TPL-01 -->
@@ -299,18 +355,18 @@ Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded tem
 ### 8.3 PDF render
 
 - **Red (unit, server)**: `apps/server/src/__tests__/pdf/rechnungPdf.spec.ts`:
-  - Takes a fixture template PDF, renders a Rechnung with 2 Behandlungen, returns `Uint8Array`. Parse bytes with `pdf-lib` again, assert:
+  - Takes a fixture template PDF, renders a Rechnung with 2 Behandlungen (each with a distinct `arbeitsthema`), returns `Uint8Array`. Parse bytes with `pdf-lib` again, assert:
     - Page count equals template page count (we draw onto page 0).
-    - Extracted text (via `pdf-parse` in test-only dep) contains the Rechnungsnummer, each Datum in `dd.MM.yyyy`, each `X BE`, each `X,XX €`, the Gesamtsumme, and the USt-Befreiungstext `"Gemäß § 4 Nr. 14 UStG umsatzsteuerfrei"`. Locks AC-RECH-08.
+    - Extracted text (via `pdf-parse` in test-only dep) contains the Rechnungsnummer, each Datum in `dd.MM.yyyy`, each **Arbeitsthema** between Datum and BE (PRD §3.2 line format: "Datum · Arbeitsthema · BE · Einzelpreis · Gesamt"), each `X BE`, each `X,XX €`, the Gesamtsumme, and the USt-Befreiungstext `"Gemäß § 4 Nr. 14 UStG umsatzsteuerfrei"`. Locks AC-RECH-08.
     - No occurrence of "USt", "MwSt", "19%" except the § 4 exemption sentence. Locks AC-RECH-08 negative side.
 - **Green**: `apps/server/src/pdf/rechnungPdf.ts`:
   - Load template, pick page 0, draw text at fixed coordinates under the Briefkopf (decide once, e.g. `{ x: 50, y: page.getHeight() - 180 }` for the Anschrift block; table below). Centralise layout constants in `apps/server/src/pdf/layout.ts`.
   - Embed a unicode TrueType font shipped inside the binary (`apps/server/src/pdf/fonts/DejaVuSans.ttf`). Loaded via `Bun.file()` + fontkit.
 - **Refactor**: separate "draw header", "draw address block", "draw line table", "draw totals", "draw USt hint" to keep the render function readable.
 
-### 8.4 Filename + persistence <!-- implements AC-RECH-09 -->
+### 8.4 Filename + persistence <!-- implements AC-RECH-09 (updated) -->
 
-- **Red (unit, server)**: `apps/server/src/__tests__/services/rechnungService.spec.ts` — full flow: creates rechnung row, writes PDF to `paths.billsDir/YYYY-MM-NNNN.pdf`, updates row with `dateiname`, inserts `rechnungBehandlungen` snapshots. Re-running with same `(year, month, kindId, auftraggeberId)` → throws `RechnungExistiertError` (unique index) — the handler translates this to a GraphQL error with code `DUPLICATE_RECHNUNG`. Locks AC-RECH-05 backend side.
+- **Red (unit, server)**: `apps/server/src/__tests__/services/rechnungService.spec.ts` — full flow for Kind "Anna Musterfrau", Auftraggeber "Jugendamt Köln": creates rechnung row, writes PDF to `paths.billsDir/2026-04-0001-Anna_Musterfrau.pdf` (filename = `YYYY-MM-NNNN-<sanitizeKindesname(vorname, nachname)>.pdf`, per updated AC-RECH-09), updates row with `dateiname`, inserts one `rechnungBehandlungen` snapshot per Behandlung including **`snapshotArbeitsthema`**, `snapshotDate`, `snapshotBe`, `snapshotZeilenbetragCents`. Re-running with same `(year, month, kindId, auftraggeberId)` → throws `RechnungExistiertError` (unique index) — the handler translates this to a GraphQL error with code `DUPLICATE_RECHNUNG`. Locks AC-RECH-05 backend side.
 - **Green**: `apps/server/src/services/rechnungService.ts`.
 
 ### 8.5 GraphQL mutation
@@ -323,9 +379,14 @@ Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded tem
 - **Red (unit, web)**: `RechnungCreatePage.spec.tsx` — month/year picker (default current month), Kind picker, Auftraggeber picker filtered to those linked via Therapie to that Kind, submit button. On duplicate error, a confirm dialog appears with message "Für diesen Monat wurde bereits eine Rechnung erzeugt. Nochmal?" and `data-testselector="duplicate-confirm"`; in v1 we just **warn** and stop — user can delete the file manually. Locks AC-RECH-05 UX side.
 - **Green**: component + `RechnungStore`.
 
-### 8.7 E2E happy path <!-- implements AC-RECH-01, AC-RECH-09 -->
+### 8.7 E2E happy path <!-- implements AC-RECH-01, AC-RECH-09, UC-3.2 -->
 
-- **Red (e2e)**: `apps/web/e2e/rechnung.e2e.ts` — seed (Kind, Auftraggeber, Therapie, 3 Behandlungen in April 2026 with BE=2, stundensatz=45€), upload a template fixture, open Rechnung-create, choose April 2026, submit, assert success toast and `fs.existsSync(paths.billsDir + '/2026-04-0001.pdf')` in the test's afterEach (via a helper `readIsolatedBillsDir()`). Also open the generated PDF with `pdf-parse` from the e2e helper and assert total line: `270,00 €` (3 × 2 × 45).
+- **Red (e2e)**: `apps/web/e2e/uc-3.2-rechnung.e2e.ts` — seed Kind "Anna Musterfrau", Auftraggeber "Jugendamt Köln" with stundensatz=45€, Therapie with `arbeitsthema="Mathe-Grundlagen"`, 3 Behandlungen in April 2026 with BE=2 each, upload a template fixture. Open Rechnung-create, choose April 2026, submit. Assertions:
+  - success toast `Rechnung erstellt: 2026-04-0001`
+  - `fs.existsSync(paths.billsDir + '/2026-04-0001-Anna_Musterfrau.pdf')` in `afterEach` (via helper `readIsolatedBillsDir()`)
+  - generated PDF parsed with `pdf-parse` contains total `270,00 €` (3 × 2 × 45) and "Mathe-Grundlagen" on every line (§3.2 line format)
+  - Rechnungsübersicht row shows nummer `2026-04-0001` and Gesamtsumme `270,00 €`
+  - **Field readback** via GraphQL: `rechnungen { nummer jahr monat kindId auftraggeberId stundensatzCentsSnapshot gesamtCents dateiname rechnungBehandlungen { snapshotDate snapshotBe snapshotArbeitsthema snapshotZeilenbetragCents } }` — assert `stundensatzCentsSnapshot=4500`, `gesamtCents=27000`, `dateiname="2026-04-0001-Anna_Musterfrau.pdf"`, three `rechnungBehandlungen` rows each with `snapshotBe=2`, `snapshotArbeitsthema="Mathe-Grundlagen"`, `snapshotZeilenbetragCents=9000`.
 
 ### 8.8 E2E duplicate warning <!-- implements AC-RECH-05 -->
 
@@ -351,17 +412,22 @@ Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded tem
 
 ### 9.3 Shared Rechnungsnummer + filename <!-- implements AC-STD-04 -->
 
-- **Red (unit, server)**: `services/stundennachweisService.spec.ts` — given a rechnung with `nummer='2026-04-0001'` and Kind `Anna Musterfrau`, file is written as `2026-04-0001-Anna_Musterfrau.pdf`; with `Björn Über-Meier` becomes `..._Bjoern_Ueber_Meier.pdf`.
-- **Green**: reuses `sanitizeKindesname` from shared.
+- **Red (unit, server)**: `services/stundennachweisService.spec.ts` — given a rechnung with `nummer='2026-04-0001'` and Kind "Anna Musterfrau", file is written under **`paths.timesheetsDir`** (not `billsDir`, per PRD §3.3) as `2026-04-0001-Anna_Musterfrau.pdf`; with "Björn Über-Meier" becomes `..._Bjoern_Ueber_Meier.pdf`.
+- **Green**: reuses `sanitizeKindesname` from shared; `stundennachweisService` writes via `Bun.write(paths.timesheetsDir + '/' + filename, bytes)`.
 
 ### 9.4 Web
 
 - **Red (unit, web)**: `StundennachweisPage.spec.tsx` — same selectors as Rechnung (Kind, Auftraggeber, Monat), "Stundennachweis drucken" button, calls store; success → toast with filename.
 - **Green**: implement.
 
-### 9.5 E2E <!-- implements AC-STD-01 -->
+### 9.5 E2E <!-- implements AC-STD-01, UC-3.3 -->
 
-- **Red (e2e)**: `apps/web/e2e/stundennachweis.e2e.ts` — seed an existing Rechnung for April 2026, open Stundennachweis page, submit with same Monat/Kind/Auftraggeber → file `2026-04-0001-<Kindesname>.pdf` exists in isolated bills dir.
+- **Red (e2e)**: `apps/web/e2e/uc-3.3-stundennachweis.e2e.ts` — seed an existing Rechnung for April 2026 (Kind "Anna Musterfrau") + upload a stundennachweis template fixture. Open Stundennachweis page, submit with Kind + Auftraggeber + Monat. Assertions:
+  - success toast `Stundennachweis erstellt`
+  - file `2026-04-0001-Anna_Musterfrau.pdf` exists in isolated **`paths.timesheetsDir`** (not `billsDir`)
+  - parsed PDF contains prefilled Kopf with Kind + Auftraggeber + Monat
+  - table header row reads "Datum · BE · Leistung · Unterschrift" in that order (AC-STD-02)
+  - body rows are empty.
 
 ### 9.6 Commit gate
 
@@ -385,9 +451,9 @@ Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded tem
 - **Red (unit, web)**: `RechnungListPage.spec.tsx` — filter inputs (Kind, Monat, Auftraggeber) drive the query; rows with download links.
 - **Green**: implement; download link = `/bills/<dateiname>` → browser download.
 
-### 10.4 E2E
+### 10.4 E2E <!-- implements UC-3.4 -->
 
-- **Red (e2e)**: `apps/web/e2e/rechnung-uebersicht.e2e.ts` — create two Rechnungen (via the existing Rechnung flow), open overview, filter by Kind, assert only one row visible, click download link, Playwright `page.waitForEvent('download')` saves and asserts non-empty bytes.
+- **Red (e2e)**: `apps/web/e2e/uc-3.4-rechnungsuebersicht.e2e.ts` — seed three Rechnungen (2026-04-0001 Kind "Anna Musterfrau", 2026-04-0002 Kind "Ben Beispiel", 2026-05-0003 Kind "Anna Musterfrau"). Open Übersicht, filter `Kind = "Anna Musterfrau"` → assert exactly two rows with nummern `2026-04-0001` and `2026-05-0003`. Click "PDF" on `2026-04-0001`; Playwright `page.waitForEvent('download')` → assert filename is `2026-04-0001-Anna_Musterfrau.pdf` and byte length > 0.
 
 ### 10.5 Commit gate
 
@@ -401,7 +467,7 @@ Much of this landed in Phase 7.1; this phase makes it a user-visible guarantee.
 
 ### 11.1 Server bootstrap
 
-- **Red (unit, server)**: `apps/server/src/__tests__/bootstrap.spec.ts` — given `BEHANDLUNG_HOME` pointing at a non-existent temp dir, calling `bootstrap()` creates `app.db`, `templates/`, `bills/`. Re-running is idempotent.
+- **Red (unit, server)**: `apps/server/src/__tests__/bootstrap.spec.ts` — given `BEHANDLUNG_HOME` pointing at a non-existent temp dir, calling `bootstrap()` creates `app.db`, `templates/`, `bills/`, **`timesheets/`**. Re-running is idempotent.
 - **Green**: implement `apps/server/src/bootstrap.ts` using the Phase 7.1 `paths` + `ensureDataDirs` + `createAndMigrateDb`. Have `src/index.ts` and `src/standalone.ts` call it.
 
 ### 11.2 Standalone binary behaviour
@@ -411,7 +477,7 @@ Much of this landed in Phase 7.1; this phase makes it a user-visible guarantee.
 
 ### 11.3 E2E <!-- implements AC-SYS-01 -->
 
-- **Red (e2e)**: `apps/web/e2e/bootstrap.e2e.ts` — dedicated project-level test that points `BEHANDLUNG_HOME` at a freshly-empty dir (`e2e-data/<uuid>/`), the webServer starts, the home page loads, and the three filesystem entries exist. Note: this test must run with its own `webServer` restart because it deliberately starts from an empty dir — use Playwright `test.describe.configure({ mode: 'serial' })` and a shared `globalSetup` that prepares the dir.
+- **Red (e2e)**: `apps/web/e2e/bootstrap.e2e.ts` — dedicated project-level test that points `BEHANDLUNG_HOME` at a freshly-empty dir (`e2e-data/<uuid>/`), the webServer starts, the home page loads, and the **four** filesystem entries exist (`app.db`, `templates/`, `bills/`, `timesheets/`). Note: this test must run with its own `webServer` restart because it deliberately starts from an empty dir — use Playwright `test.describe.configure({ mode: 'serial' })` and a shared `globalSetup` that prepares the dir.
 
 ### 11.4 Commit gate
 
@@ -456,7 +522,7 @@ Much of this landed in Phase 7.1; this phase makes it a user-visible guarantee.
 - AC-TH-02: Phase 4.4 e2e
 - AC-BEH-01: Phase 5.5 e2e
 - AC-BEH-02: Phase 5.1 server
-- AC-BEH-03: Phase 5.2 server + Phase 5.3 web (negative UI assertion)
+- AC-BEH-03: Phase 5.2 server + Phase 5.3 web (Arbeitsthema Vorbelegung from Therapie)
 - AC-RECH-01: Phase 8.7 e2e
 - AC-RECH-02: Phase 8.2 shared math
 - AC-RECH-03: Phase 6.1 shared + Phase 6.2 server
@@ -465,14 +531,34 @@ Much of this landed in Phase 7.1; this phase makes it a user-visible guarantee.
 - AC-RECH-06: Phase 7.3 resolver
 - AC-RECH-07: Phase 7.3 resolver
 - AC-RECH-08: Phase 8.3 PDF render (USt-text present, no USt-Ausweis)
-- AC-RECH-09: Phase 8.4 filename + Phase 8.7 e2e
-- AC-STD-01: Phase 9.5 e2e
+- AC-RECH-09: Phase 8.4 filename `YYYY-MM-NNNN-<Vorname_Nachname>.pdf` + Phase 8.7 e2e
+- AC-STD-01: Phase 9.5 e2e (file in `timesheets/`)
 - AC-STD-02: Phase 9.1 PDF test (table columns in order)
 - AC-STD-03: Phase 9.2 template resolver test
 - AC-STD-04: Phase 9.3 filename test
 - AC-TPL-01: Phase 7.2 server + Phase 7.5 e2e
 - AC-TPL-02: Phase 7.3 resolver test (file re-read without DB copy)
-- AC-SYS-01: Phase 7.1 paths + Phase 11.1/11.3 bootstrap test + e2e
+- AC-SYS-01: Phase 7.1 paths (4 dirs incl. `timesheets/`) + Phase 11.1/11.3 bootstrap test + e2e
+
+---
+
+## UC coverage matrix (PRD §10 Gherkin → Playwright e2e)
+
+Every Gherkin scenario in PRD §10 maps 1:1 to a Playwright spec. Each UC file contains **all** scenarios from its Gherkin feature (happy + edge).
+
+| UC     | Spec file                                        | Phase     | Scenarios covered                                          |
+| ------ | ------------------------------------------------ | --------- | ---------------------------------------------------------- |
+| UC-3.1 | `apps/web/e2e/uc-3.1-schnellerfassung.e2e.ts`    | 5.5       | Vorbelegung + Override                                     |
+| UC-3.2 | `apps/web/e2e/uc-3.2-rechnung.e2e.ts`            | 8.7 + 8.8 | Happy April 2026 + Duplicate-Warnhinweis                   |
+| UC-3.3 | `apps/web/e2e/uc-3.3-stundennachweis.e2e.ts`     | 9.5       | Happy (file in `timesheets/`)                              |
+| UC-3.4 | `apps/web/e2e/uc-3.4-rechnungsuebersicht.e2e.ts` | 10.4      | Filter + Download                                          |
+| UC-3.5 | `apps/web/e2e/uc-3.5-kind.e2e.ts`                | 2.5       | Happy (all 8 fields) + Edit + PLZ-Pflicht-Edge             |
+| UC-3.6 | `apps/web/e2e/uc-3.6-auftraggeber.e2e.ts`        | 3.3       | Firma-Happy + Person-ohne-Namen-Edge                       |
+| UC-3.7 | `apps/web/e2e/uc-3.7-therapie.e2e.ts`            | 4.4       | Happy (incl. arbeitsthema) + Sonstiges-ohne-Kommentar-Edge |
+
+## Database-field e2e coverage rule
+
+**No persisted database column may be without e2e coverage.** Every happy-path UC e2e ends with a GraphQL query in `afterEach` that fetches the persisted entity and asserts **every column** equals the typed input byte-for-byte. This is the binding reading of the user's rule "no single data in the database is without e2e coverage" and is enforced spec-by-spec in the Phase-level descriptions above (2.5, 3.3, 4.4, 5.5, 8.7).
 
 ---
 

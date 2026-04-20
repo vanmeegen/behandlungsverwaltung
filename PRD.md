@@ -36,6 +36,8 @@ Auftraggeber. Die PLZ darf in keinem Fall leer gespeichert werden.
   Elternberatung · **Sonstiges**
 - Kommentarfeld (nur bei „Sonstiges", dann Pflicht)
 - Gesamtzahl bewilligter Behandlungseinheiten
+- Arbeitsthema (optional): dient als **Vorbelegung** für das
+  Arbeitsthema jeder daraus erfassten Behandlung (§2.4).
 
 ### 2.4 Behandlung (zuvor „Termin", wird durchgängig **Behandlung** genannt)
 
