@@ -1,6 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const WEB_PORT = 5173;
+// BEHANDLUNG_HOME for the dev server during e2e runs. templates/, bills/
+// and timesheets/ land under this dir. Kept separate from the real user's
+// ~/.behandlungsverwaltung and wiped in globalSetup.
+const CONFIG_DIR = dirname(fileURLToPath(import.meta.url));
+const E2E_HOME = resolve(CONFIG_DIR, '../server/data/e2e-home');
 
 export default defineConfig({
   testDir: './e2e',
@@ -28,6 +35,7 @@ export default defineConfig({
     // mutation only registers in this mode.
     env: {
       BEHANDLUNG_TEST_MODE: '1',
+      BEHANDLUNG_HOME: E2E_HOME,
     },
     url: `http://localhost:${WEB_PORT}`,
     // Reuse a running `bun run dev` if one is on :5173. Caveat: a dev

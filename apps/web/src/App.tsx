@@ -8,6 +8,7 @@ import { KindDetailPage } from './pages/KindDetailPage';
 import { KindFormPage } from './pages/KindFormPage';
 import { KindListPage } from './pages/KindListPage';
 import { SchnellerfassungPage } from './pages/SchnellerfassungPage';
+import { TemplateUploadPage } from './pages/TemplateUploadPage';
 import { TherapieFormPage } from './pages/TherapieFormPage';
 import { TherapieListPage } from './pages/TherapieListPage';
 
@@ -33,6 +34,10 @@ export function App(): JSX.Element {
         {' · '}
         <Link to="/schnellerfassung" data-testselector="nav-schnellerfassung">
           Schnellerfassung
+        </Link>
+        {' · '}
+        <Link to="/vorlagen" data-testselector="nav-vorlagen">
+          Vorlagen
         </Link>
       </nav>
       <Routes>
@@ -99,6 +104,15 @@ export function App(): JSX.Element {
               auftraggeberStore={rootStore.auftraggeberStore}
               therapieStore={rootStore.therapieStore}
               behandlungStore={rootStore.behandlungStore}
+            />
+          }
+        />
+        <Route
+          path="/vorlagen"
+          element={
+            <TemplateUploadPage
+              templateStore={rootStore.templateStore}
+              auftraggeberStore={rootStore.auftraggeberStore}
             />
           }
         />

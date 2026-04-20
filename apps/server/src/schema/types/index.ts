@@ -5,6 +5,8 @@ export * from './auftraggeber';
 export * from './auftraggeberInput';
 export * from './therapieInput';
 export * from './behandlungInput';
+export * from './templateFile';
+export * from './templateFileInput';
 export * from './therapie';
 export * from './behandlung';
 export * from './rechnung';

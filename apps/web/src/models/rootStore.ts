@@ -3,6 +3,7 @@ import { AuftraggeberStore } from './AuftraggeberStore';
 import { BehandlungStore } from './BehandlungStore';
 import { HelloModel } from './HelloModel';
 import { KindStore } from './KindStore';
+import { TemplateStore } from './TemplateStore';
 import { TherapieStore } from './TherapieStore';
 
 const fetcher = createGraphQLClient();
@@ -13,6 +14,7 @@ export interface RootStore {
   auftraggeberStore: AuftraggeberStore;
   therapieStore: TherapieStore;
   behandlungStore: BehandlungStore;
+  templateStore: TemplateStore;
 }
 
 export const rootStore: RootStore = {
@@ -21,4 +23,5 @@ export const rootStore: RootStore = {
   auftraggeberStore: new AuftraggeberStore(fetcher),
   therapieStore: new TherapieStore(fetcher),
   behandlungStore: new BehandlungStore(fetcher),
+  templateStore: new TemplateStore(fetcher),
 };

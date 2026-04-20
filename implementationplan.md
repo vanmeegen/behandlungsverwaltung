@@ -310,18 +310,18 @@ This phase is the tip of the spear for AC-RECH-03 and AC-RECH-04; all logic live
 
 Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded template and overlaying text onto a fixed region (`pdfkit` cannot overlay on existing PDFs; we need that). `@pdf-lib/fontkit` for embedding a unicode font (German umlauts).
 
-### 7.1 File-system layout abstraction
+### 7.1 File-system layout abstraction ✅
 
 - **Red (unit, server)**: `apps/server/src/__tests__/paths/paths.spec.ts` — `paths(homeOverride)` returns `.templatesDir`, `.billsDir`, **`.timesheetsDir`**, `.dbPath`, each resolving to `join(homeOverride, <subdir>)`. `ensureDataDirs(paths)` creates **all four** entries (three dirs plus db-parent) and is idempotent. Uses `BEHANDLUNG_HOME` env var, falling back to `os.homedir() + '/.behandlungsverwaltung'`.
 - **Green**: `apps/server/src/paths/index.ts`; also update `db/client.ts` to consume the same path resolver.
 
-### 7.2 Upload mutation <!-- implements AC-TPL-01 -->
+### 7.2 Upload mutation ✅ <!-- implements AC-TPL-01 -->
 
 - **Red (unit, server)**: `apps/server/src/__tests__/schema/templates.spec.ts` — `uploadTemplate({ kind, auftraggeberId, base64, filename })` writes the file under `templatesDir`, inserts into `templateFiles`, returns the stored row. Re-upload with same `(kind, auftraggeberId)` replaces file + row (unique index).
 - **Green**: mutation uses `Buffer.from(base64, 'base64')` → `Bun.write(path, bytes)`. Reject non-PDF by magic bytes `%PDF-`.
 - **Refactor**: small `isPdf(bytes)` helper.
 
-### 7.3 Resolve-template function <!-- implements AC-RECH-06, AC-RECH-07, AC-STD-03, AC-TPL-02 -->
+### 7.3 Resolve-template function ✅ <!-- implements AC-RECH-06, AC-RECH-07, AC-STD-03, AC-TPL-02 -->
 
 - **Red (unit, server)**: `apps/server/src/__tests__/services/templates.resolve.spec.ts`:
   - Auftraggeber has a rechnung-template row → returns that path.
@@ -331,19 +331,19 @@ Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded tem
   - When the file on disk is modified between resolve calls, the next call **reads the updated bytes** (we never cache file contents). Locks AC-TPL-02.
 - **Green**: `apps/server/src/services/templateResolver.ts`.
 
-### 7.4 Web: template upload screen
+### 7.4 Web: template upload screen ✅
 
 - **Red (unit, web)**: `TemplateUploadPage.spec.tsx` — two file inputs (Rechnung / Stundennachweis), Auftraggeber selector (empty = global), submit reads file as base64 and calls `store.upload(...)`.
 - **Green**: `apps/web/src/models/TemplateStore.ts`, `apps/web/src/pages/TemplateUploadPage.tsx`.
 
-### 7.5 E2E <!-- implements AC-TPL-01 -->
+### 7.5 E2E ✅ <!-- implements AC-TPL-01 -->
 
 - **Red (e2e)**: `apps/web/e2e/templates.e2e.ts` — use Playwright's `setInputFiles()` with a fixture PDF in `apps/web/e2e/fixtures/template-rechnung.pdf` (checked into repo, ~a few KB blank PDF). Upload once as a global rechnung template (auftraggeberId=null), then a second time as a per-Auftraggeber stundennachweis template. Assertions:
   - file exists in isolated `BEHANDLUNG_HOME/templates/` (`fs.statSync` sanity check in `afterEach`).
   - **Field readback**: GraphQL `templateFiles { id kind auftraggeberId filename createdAt }` asserts the inserted rows — one with `kind='rechnung'`, `auftraggeberId=null`, `filename` matching the stored path; one with `kind='stundennachweis'`, `auftraggeberId` = the seeded Auftraggeber id, `filename` matching the stored path.
 - **Green**: wire `FormData`/base64 as needed.
 
-### 7.6 Commit gate
+### 7.6 Commit gate ✅
 
 - `bun run lint && bun run typecheck && bun run test:ci && bun run e2e`; commit `feat(templates): upload and resolve per-auftraggeber templates with global fallback`.
 
