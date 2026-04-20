@@ -55,7 +55,7 @@ Add `zod` to `packages/shared/package.json` dependencies; wire `bun test` in the
 
 ## Phase 1: Domain foundation (Drizzle + GraphQL scaffolding, no UI)
 
-Goal: all five tables exist, migrations generated, GraphQL types declared, no resolvers yet except read-only smoke queries.
+Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`therapien`/`behandlungen`/`rechnungen` plus the supporting `rechnungBehandlungen` and `templateFiles`), migrations generated, GraphQL types declared, no resolvers yet except read-only smoke queries.
 
 ### 1.1 Drizzle tables
 
@@ -561,19 +561,19 @@ Much of this landed in Phase 7.1; this phase makes it a user-visible guarantee.
 
 Every Gherkin scenario in PRD §10 maps 1:1 to a Playwright spec. Each UC file contains **all** scenarios from its Gherkin feature (happy + edge).
 
-| UC     | Spec file                                        | Phase     | Scenarios covered                                          |
-| ------ | ------------------------------------------------ | --------- | ---------------------------------------------------------- |
-| UC-3.1 | `apps/web/e2e/uc-3.1-schnellerfassung.e2e.ts`    | 5.5       | Vorbelegung + Override                                     |
-| UC-3.2 | `apps/web/e2e/uc-3.2-rechnung.e2e.ts`            | 8.7 + 8.8 | Happy April 2026 + Duplicate-Warnhinweis                   |
-| UC-3.3 | `apps/web/e2e/uc-3.3-stundennachweis.e2e.ts`     | 9.5       | Happy (file in `timesheets/`)                              |
-| UC-3.4 | `apps/web/e2e/uc-3.4-rechnungsuebersicht.e2e.ts` | 10.4      | Filter + Download                                          |
-| UC-3.5 | `apps/web/e2e/uc-3.5-kind.e2e.ts`                | 2.5       | Happy (all 8 fields) + Edit + PLZ-Pflicht-Edge             |
-| UC-3.6 | `apps/web/e2e/uc-3.6-auftraggeber.e2e.ts`        | 3.3       | Firma-Happy + Person-ohne-Namen-Edge                       |
-| UC-3.7 | `apps/web/e2e/uc-3.7-therapie.e2e.ts`            | 4.4       | Happy (incl. arbeitsthema) + Sonstiges-ohne-Kommentar-Edge |
+| UC     | Spec file                                        | Phase     | Scenarios covered                                                    |
+| ------ | ------------------------------------------------ | --------- | -------------------------------------------------------------------- |
+| UC-3.1 | `apps/web/e2e/uc-3.1-schnellerfassung.e2e.ts`    | 5.5       | Vorbelegung + Override                                               |
+| UC-3.2 | `apps/web/e2e/uc-3.2-rechnung.e2e.ts`            | 8.7 + 8.8 | Happy April 2026 + Duplicate-Warnhinweis                             |
+| UC-3.3 | `apps/web/e2e/uc-3.3-stundennachweis.e2e.ts`     | 9.5       | Happy (file in `timesheets/`)                                        |
+| UC-3.4 | `apps/web/e2e/uc-3.4-rechnungsuebersicht.e2e.ts` | 10.4      | Filter + Download                                                    |
+| UC-3.5 | `apps/web/e2e/uc-3.5-kind.e2e.ts`                | 2.5       | Happy (all 8 fields) + Edit + PLZ-Pflicht-Edge                       |
+| UC-3.6 | `apps/web/e2e/uc-3.6-auftraggeber.e2e.ts`        | 3.3       | Firma-Happy + Person-Happy + Person-ohne-Namen-Edge                  |
+| UC-3.7 | `apps/web/e2e/uc-3.7-therapie.e2e.ts`            | 4.4       | Lerntherapie-Happy + Sonstiges-Happy + Sonstiges-ohne-Kommentar-Edge |
 
 ## Database-field e2e coverage rule
 
-**No persisted database column may be without e2e coverage.** Every happy-path UC e2e ends with a GraphQL query in `afterEach` that fetches the persisted entity and asserts **every column** equals the typed input byte-for-byte. This is the binding reading of the user's rule "no single data in the database is without e2e coverage" and is enforced spec-by-spec in the Phase-level descriptions above (2.5, 3.3, 4.4, 5.5, 8.7).
+**No persisted database column may be without e2e coverage.** Every happy-path UC e2e ends with a GraphQL query in `afterEach` that fetches the persisted entity and asserts **every column** equals the typed input byte-for-byte. This is the binding reading of the user's rule "no single data in the database is without e2e coverage" and is enforced spec-by-spec in the Phase-level descriptions above (2.5, 3.3, 4.4, 5.5, 7.5, 8.7).
 
 ---
 
@@ -625,7 +625,9 @@ PRD AC-RECH-05 says "warn before a duplicate". UX: first call fails with `DUPLIC
 
 ## Definition of Done for the whole project
 
-- All 26 ACs from PRD §9 have at least one corresponding test (unit or e2e per their tag) and the tests are passing in `bun run test:ci` / `bun run e2e`.
+- All **27** ACs from PRD §9 have at least one corresponding test (unit or e2e per their tag) and the tests are passing in `bun run test:ci` / `bun run e2e`.
+- All **7** UCs from PRD §10 have a passing `uc-<n>-*.e2e.ts` spec covering every Gherkin scenario of that feature.
+- Every persisted database column is asserted by a happy-path e2e field-readback (see rule above).
 - `bun run ci` (lint → typecheck → test:ci → standalone build) passes.
-- The standalone binary creates `~/.behandlungsverwaltung/{app.db,templates/,bills/}` on a fresh machine and serves the PWA at `http://localhost:4000`.
+- The standalone binary creates `~/.behandlungsverwaltung/{app.db,templates/,bills/,timesheets/}` on a fresh machine and serves the PWA at `http://localhost:4000`.
 - `implementationplan.md` has every phase checkmarked.
