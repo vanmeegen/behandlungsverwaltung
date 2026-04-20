@@ -1,2 +1,7 @@
 export * from './plz';
 export * from './address';
+export * from './vorname';
+export * from './nachname';
+export * from './aktenzeichen';
+export * from './geburtsdatum';
+export * from './kind';

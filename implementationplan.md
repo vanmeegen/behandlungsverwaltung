@@ -95,7 +95,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 
 ## Phase 2: Kind (Stammdaten CRUD)
 
-### 2.1 Server: `createKind` mutation <!-- implements AC-KIND-02, PRD §2.1 -->
+### 2.1 Server: `createKind` mutation ✅ <!-- implements AC-KIND-02, PRD §2.1 -->
 
 - **Red (unit, server)**: `apps/server/src/__tests__/schema/kind.createKind.spec.ts` — parameterised validation table covering **every** field in §2.1:
   - empty PLZ → `"PLZ ist Pflicht"` (AC-KIND-02)

@@ -1,5 +1,6 @@
 export * from './enums';
 export * from './kind';
+export * from './kindInput';
 export * from './auftraggeber';
 export * from './therapie';
 export * from './behandlung';

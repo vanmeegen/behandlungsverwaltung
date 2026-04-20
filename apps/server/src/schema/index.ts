@@ -1,7 +1,8 @@
 import { builder } from './builder';
-// Side-effect import: registers all domain object types + enums with the builder
-// so they're included in the schema and introspectable before Phase 2+ adds queries.
+// Side-effect imports: register all domain object + input types and mutations
+// with the builder so they're included in the schema.
 import './types';
+import './mutations';
 
 export * from './types';
 

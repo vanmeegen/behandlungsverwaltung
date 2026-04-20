@@ -17,6 +17,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@behandlungsverwaltung/shared": "workspace:*",
     "@pothos/core": "^4.3.0",
     "drizzle-orm": "^0.36.4",
     "graphql": "^16.9.0",

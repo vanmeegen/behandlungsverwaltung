@@ -9,4 +9,4 @@ export interface SchemaContext {
 export const builder = new SchemaBuilder<{ Context: SchemaContext }>({});
 
 builder.queryType({});
-// Mutation type will be added once the first mutation field lands.
+builder.mutationType({});
