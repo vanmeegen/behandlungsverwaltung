@@ -8,6 +8,7 @@ import { KindDetailPage } from './pages/KindDetailPage';
 import { KindFormPage } from './pages/KindFormPage';
 import { KindListPage } from './pages/KindListPage';
 import { RechnungCreatePage } from './pages/RechnungCreatePage';
+import { RechnungListPage } from './pages/RechnungListPage';
 import { SchnellerfassungPage } from './pages/SchnellerfassungPage';
 import { StundennachweisPage } from './pages/StundennachweisPage';
 import { TemplateUploadPage } from './pages/TemplateUploadPage';
@@ -44,6 +45,10 @@ export function App(): JSX.Element {
         {' · '}
         <Link to="/rechnungen/neu" data-testselector="nav-rechnung-neu">
           Rechnung erstellen
+        </Link>
+        {' · '}
+        <Link to="/rechnungen" data-testselector="nav-rechnungen">
+          Rechnungsübersicht
         </Link>
         {' · '}
         <Link to="/stundennachweis" data-testselector="nav-stundennachweis">
@@ -133,6 +138,16 @@ export function App(): JSX.Element {
               kindStore={rootStore.kindStore}
               auftraggeberStore={rootStore.auftraggeberStore}
               rechnungStore={rootStore.rechnungStore}
+            />
+          }
+        />
+        <Route
+          path="/rechnungen"
+          element={
+            <RechnungListPage
+              rechnungStore={rootStore.rechnungStore}
+              kindStore={rootStore.kindStore}
+              auftraggeberStore={rootStore.auftraggeberStore}
             />
           }
         />
