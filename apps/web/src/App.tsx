@@ -7,6 +7,7 @@ import { AuftraggeberListPage } from './pages/AuftraggeberListPage';
 import { KindDetailPage } from './pages/KindDetailPage';
 import { KindFormPage } from './pages/KindFormPage';
 import { KindListPage } from './pages/KindListPage';
+import { RechnungCreatePage } from './pages/RechnungCreatePage';
 import { SchnellerfassungPage } from './pages/SchnellerfassungPage';
 import { TemplateUploadPage } from './pages/TemplateUploadPage';
 import { TherapieFormPage } from './pages/TherapieFormPage';
@@ -38,6 +39,10 @@ export function App(): JSX.Element {
         {' · '}
         <Link to="/vorlagen" data-testselector="nav-vorlagen">
           Vorlagen
+        </Link>
+        {' · '}
+        <Link to="/rechnungen/neu" data-testselector="nav-rechnung-neu">
+          Rechnung erstellen
         </Link>
       </nav>
       <Routes>
@@ -113,6 +118,16 @@ export function App(): JSX.Element {
             <TemplateUploadPage
               templateStore={rootStore.templateStore}
               auftraggeberStore={rootStore.auftraggeberStore}
+            />
+          }
+        />
+        <Route
+          path="/rechnungen/neu"
+          element={
+            <RechnungCreatePage
+              kindStore={rootStore.kindStore}
+              auftraggeberStore={rootStore.auftraggeberStore}
+              rechnungStore={rootStore.rechnungStore}
             />
           }
         />

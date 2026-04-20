@@ -3,4 +3,5 @@ import './auftraggeber';
 import './therapie';
 import './behandlung';
 import './templates';
+import './rechnung';
 import './testReset';

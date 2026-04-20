@@ -175,3 +175,69 @@ export async function readBehandlungenByTherapie(therapieId: string): Promise<Se
   );
   return data.behandlungenByTherapie;
 }
+
+export async function seedBehandlung(input: {
+  therapieId: string;
+  datum: string;
+  be: number;
+  arbeitsthema?: string;
+}): Promise<SeededBehandlung> {
+  const data = await gql<{ createBehandlung: SeededBehandlung }>(
+    /* GraphQL */ `mutation Seed($input: BehandlungInput!) { createBehandlung(input: $input) { ${BEHANDLUNG_COLUMNS} } }`,
+    { input },
+  );
+  return data.createBehandlung;
+}
+
+export async function uploadFixtureTemplate(input: {
+  kind: 'rechnung' | 'stundennachweis';
+  auftraggeberId: string | null;
+  base64: string;
+}): Promise<{ id: string; kind: string; filename: string }> {
+  const data = await gql<{
+    uploadTemplate: { id: string; kind: string; filename: string };
+  }>(
+    /* GraphQL */ `
+      mutation Seed($input: UploadTemplateInput!) {
+        uploadTemplate(input: $input) {
+          id
+          kind
+          filename
+        }
+      }
+    `,
+    { input },
+  );
+  return data.uploadTemplate;
+}
+
+export interface SeededRechnung {
+  id: string;
+  nummer: string;
+  jahr: number;
+  monat: number;
+  kindId: string;
+  auftraggeberId: string;
+  stundensatzCentsSnapshot: number;
+  gesamtCents: number;
+  dateiname: string;
+}
+
+export async function readRechnungen(): Promise<SeededRechnung[]> {
+  const data = await gql<{ rechnungen: SeededRechnung[] }>(/* GraphQL */ `
+    query {
+      rechnungen {
+        id
+        nummer
+        jahr
+        monat
+        kindId
+        auftraggeberId
+        stundensatzCentsSnapshot
+        gesamtCents
+        dateiname
+      }
+    }
+  `);
+  return data.rechnungen;
+}

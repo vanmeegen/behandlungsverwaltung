@@ -7,6 +7,7 @@ export * from './therapieInput';
 export * from './behandlungInput';
 export * from './templateFile';
 export * from './templateFileInput';
+export * from './rechnungInput';
 export * from './therapie';
 export * from './behandlung';
 export * from './rechnung';

@@ -351,17 +351,17 @@ Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded tem
 
 ## Phase 8: Rechnung erzeugen (Monatsrechnung, PDF, file persistence, duplicates)
 
-### 8.1 Aggregation
+### 8.1 Aggregation ✅
 
 - **Red (unit, server)**: `apps/server/src/__tests__/services/rechnungAggregation.spec.ts` — given seeded Behandlungen across two months and two Kinder, `collectBehandlungen(db, { year, month, kindId, auftraggeberId })` returns only matching rows, ordered by datum ascending. Empty result → service throws `KeineBehandlungenError` (surfaced to UI).
 - **Green**: Drizzle query with `and()`.
 
-### 8.2 Line math <!-- implements AC-RECH-02 -->
+### 8.2 Line math ✅ <!-- implements AC-RECH-02 -->
 
 - **Red (unit, shared)**: `packages/shared/src/__tests__/rechnungMath.spec.ts` — `computeRechnungsLines([{ be: 3 }], stundensatzCents: 4500)` → `[{ be: 3, zeilenbetragCents: 13500 }]`; total sum helper agrees.
 - **Green**: pure function in `packages/shared/src/domain/rechnungMath.ts`.
 
-### 8.3 PDF render
+### 8.3 PDF render ✅
 
 - **Red (unit, server)**: `apps/server/src/__tests__/pdf/rechnungPdf.spec.ts`:
   - Takes a fixture template PDF, renders a Rechnung with 2 Behandlungen (each with a distinct `arbeitsthema`), returns `Uint8Array`. Parse bytes with `pdf-lib` again, assert:
@@ -373,17 +373,17 @@ Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded tem
   - Embed a unicode TrueType font shipped inside the binary (`apps/server/src/pdf/fonts/DejaVuSans.ttf`). Loaded via `Bun.file()` + fontkit.
 - **Refactor**: separate "draw header", "draw address block", "draw line table", "draw totals", "draw USt hint" to keep the render function readable.
 
-### 8.4 Filename + persistence <!-- implements AC-RECH-09 (updated) -->
+### 8.4 Filename + persistence ✅ <!-- implements AC-RECH-09 (updated) -->
 
 - **Red (unit, server)**: `apps/server/src/__tests__/services/rechnungService.spec.ts` — full flow for Kind "Anna Musterfrau", Auftraggeber "Jugendamt Köln": creates rechnung row, writes PDF to `paths.billsDir/2026-04-0001-Anna_Musterfrau.pdf` (filename = `YYYY-MM-NNNN-<sanitizeKindesname(vorname, nachname)>.pdf`, per updated AC-RECH-09), updates row with `dateiname`, inserts one `rechnungBehandlungen` snapshot per Behandlung including **`snapshotArbeitsthema`**, `snapshotDate`, `snapshotBe`, `snapshotZeilenbetragCents`. Re-running with same `(year, month, kindId, auftraggeberId)` → throws `RechnungExistiertError` (unique index) — the handler translates this to a GraphQL error with code `DUPLICATE_RECHNUNG`. Locks AC-RECH-05 backend side.
 - **Green**: `apps/server/src/services/rechnungService.ts`.
 
-### 8.5 GraphQL mutation
+### 8.5 GraphQL mutation ✅
 
 - **Red (unit, server)**: schema spec — `createMonatsrechnung(input)` returns Rechnung + dateiname; dup returns `DUPLICATE_RECHNUNG`.
 - **Green**: resolver delegates to service.
 
-### 8.6 Web: Monatsrechnung screen
+### 8.6 Web: Monatsrechnung screen ✅
 
 - **Red (unit, web)**: `RechnungCreatePage.spec.tsx` covering:
   - month/year picker (default current month), Kind picker, Auftraggeber picker filtered to those linked via Therapie to that Kind, submit button.
@@ -392,7 +392,7 @@ Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded tem
   - **KeineBehandlungen path**: on `KEINE_BEHANDLUNGEN` GraphQL error (Phase 8.1), the UI renders an inline message "Für den gewählten Monat liegen keine Behandlungen vor." in a `data-testselector="keine-behandlungen"` banner; the submit button stays enabled but no PDF is produced.
 - **Green**: component + `RechnungStore` with `draftRechnung` observable.
 
-### 8.7 E2E happy path <!-- implements AC-RECH-01, AC-RECH-09, UC-3.2 -->
+### 8.7 E2E happy path ✅ <!-- implements AC-RECH-01, AC-RECH-09, UC-3.2 -->
 
 - **Red (e2e)**: `apps/web/e2e/uc-3.2-rechnung.e2e.ts` — seed Kind "Anna Musterfrau", Auftraggeber "Jugendamt Köln" with stundensatz=45€, Therapie with `arbeitsthema="Mathe-Grundlagen"`, 3 Behandlungen in April 2026 with BE=2 each, upload a template fixture. Open Rechnung-create, choose April 2026, submit. Assertions:
   - success toast `Rechnung erstellt: 2026-04-0001`
@@ -401,11 +401,11 @@ Decision locked in Risks: **`pdf-lib`** for both reading the user's uploaded tem
   - Rechnungsübersicht row shows nummer `2026-04-0001` and Gesamtsumme `270,00 €`
   - **Field readback** via GraphQL: `rechnungen { nummer jahr monat kindId auftraggeberId stundensatzCentsSnapshot gesamtCents dateiname rechnungBehandlungen { snapshotDate snapshotBe snapshotArbeitsthema snapshotZeilenbetragCents } }` — assert `stundensatzCentsSnapshot=4500`, `gesamtCents=27000`, `dateiname="2026-04-0001-Anna_Musterfrau.pdf"`, three `rechnungBehandlungen` rows each with `snapshotBe=2`, `snapshotArbeitsthema="Mathe-Grundlagen"`, `snapshotZeilenbetragCents=9000`.
 
-### 8.8 E2E duplicate warning <!-- implements AC-RECH-05, UC-3.2 Szenario 2 -->
+### 8.8 E2E duplicate warning ✅ <!-- implements AC-RECH-05, UC-3.2 Szenario 2 -->
 
 - **Red (e2e)**: after the first Rechnung is created (re-use Phase 8.7 seed), try to create it again for the same month/Kind/Auftraggeber → assert `data-testselector="duplicate-confirm"` dialog appears containing the exact text "Für diesen Monat wurde bereits eine Rechnung erzeugt." (matches UC-3.2 Szenario 2). After dismissing the dialog, `rechnungen` table still has exactly one row for that month/Kind/Auftraggeber (no second insert).
 
-### 8.9 Commit gate
+### 8.9 Commit gate ✅
 
 - `bun run lint && bun run typecheck && bun run test:ci && bun run e2e`; commit `feat(rechnung): generate monthly invoice pdf with duplicate detection`.
 

@@ -3,18 +3,22 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { resolveDbPath } from './db/client';
 import { createAndMigrateDb } from './db/migrate';
+import { ensureDataDirs, paths } from './paths';
 import { schema } from './schema';
 import type { SchemaContext } from './schema/builder';
 
 const dbPath = resolveDbPath();
 mkdirSync(dirname(dbPath), { recursive: true });
 const db = createAndMigrateDb(dbPath);
+const appPaths = paths();
+ensureDataDirs(appPaths);
 
 const yoga = createYoga<object, SchemaContext>({
   schema,
   graphqlEndpoint: '/graphql',
-  context: () => ({ requestId: crypto.randomUUID(), db }),
+  context: () => ({ requestId: crypto.randomUUID(), db, paths: appPaths }),
   landingPage: false,
+  maskedErrors: false,
 });
 
 const PORT = Number(Bun.env.PORT ?? 4000);
