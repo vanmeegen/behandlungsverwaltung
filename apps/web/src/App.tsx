@@ -1,13 +1,27 @@
+import { Link, Route, Routes } from 'react-router-dom';
 import { Hello } from './components/Hello';
-import { HelloModel } from './models/HelloModel';
-import { createGraphQLClient } from './api/graphqlClient';
+import { rootStore } from './models/rootStore';
+import { KindFormPage } from './pages/KindFormPage';
+import { KindListPage } from './pages/KindListPage';
 
-const helloModel = new HelloModel(createGraphQLClient());
-
-export function App() {
+export function App(): JSX.Element {
   return (
     <main>
-      <Hello model={helloModel} />
+      <nav>
+        <Link to="/" data-testselector="nav-home">
+          Start
+        </Link>
+        {' · '}
+        <Link to="/kinder" data-testselector="nav-kinder">
+          Kinder
+        </Link>
+      </nav>
+      <Routes>
+        <Route path="/" element={<Hello model={rootStore.helloModel} />} />
+        <Route path="/kinder" element={<KindListPage store={rootStore.kindStore} />} />
+        <Route path="/kinder/new" element={<KindFormPage store={rootStore.kindStore} />} />
+        <Route path="/kinder/:id" element={<KindFormPage store={rootStore.kindStore} />} />
+      </Routes>
     </main>
   );
 }

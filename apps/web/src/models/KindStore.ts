@@ -1,5 +1,8 @@
+import { kindSchema } from '@behandlungsverwaltung/shared';
 import { makeAutoObservable, runInAction } from 'mobx';
 import type { GraphQLFetcher } from '../api/graphqlClient';
+
+export type KindFieldErrors = Partial<Record<keyof KindFormInput, string>>;
 
 export interface Kind {
   id: string;
@@ -94,9 +97,27 @@ export class KindDraft {
   plz = '';
   stadt = '';
   aktenzeichen = '';
+  errors: KindFieldErrors = {};
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
+  }
+
+  validate(): boolean {
+    const result = kindSchema.safeParse(this.toInput());
+    if (result.success) {
+      this.errors = {};
+      return true;
+    }
+    const next: KindFieldErrors = {};
+    for (const issue of result.error.issues) {
+      const key = issue.path[0];
+      if (typeof key !== 'string') continue;
+      const field = key as keyof KindFormInput;
+      if (!next[field]) next[field] = issue.message;
+    }
+    this.errors = next;
+    return false;
   }
 
   setVorname(v: string): void {
@@ -142,6 +163,7 @@ export class KindDraft {
       if (key === 'id') continue;
       this[key] = '';
     }
+    this.errors = {};
   }
 
   toInput(): KindFormInput {
@@ -228,6 +250,7 @@ export class KindStore {
   }
 
   async saveDraft(): Promise<Kind | null> {
+    if (!this.draftKind.validate()) return null;
     const input = this.draftKind.toInput();
     if (this.draftKind.editingId) {
       return this.update(this.draftKind.editingId, input);

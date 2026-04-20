@@ -117,7 +117,7 @@ Goal: all seven tables exist (five domain entities `kinder`/`auftraggeber`/`ther
 - **Red (unit, web)**: `apps/web/src/__tests__/stores/KindStore.spec.ts` — given a mocked fetcher returning two Kinder, `store.load()` populates `store.items`; `store.create({...})` optimistically appends; error surfaces on `store.error`.
 - **Green**: `apps/web/src/models/KindStore.ts` — follows `HelloModel` pattern (constructor takes `GraphQLFetcher`, `makeAutoObservable`, `runInAction` in async gutters).
 
-### 2.4 Web: `KindListPage`, `KindFormPage`, routing
+### 2.4 Web: `KindListPage`, `KindFormPage`, routing ✅
 
 - Pick a router: `react-router-dom` v6 (minimal, client-side only). Install in `apps/web`. Wire in `main.tsx`.
 - **Red (unit, web)**: `apps/web/src/__tests__/components/KindList.spec.tsx` — renders rows with `data-testselector="kind-row"` per Kind.
