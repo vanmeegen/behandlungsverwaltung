@@ -1,4 +1,7 @@
-const RECHNUNGSNUMMER_REGEX = /^(\d{4})-(\d{2})-(\d{4})$/;
+export const RECHNUNGSNUMMER_PREFIX = 'RE-';
+export const STUNDENNACHWEIS_PREFIX = 'ST-';
+
+const RECHNUNGSNUMMER_REGEX = /^RE-(\d{4})-(\d{2})-(\d{4})$/;
 
 export interface ParsedRechnungsnummer {
   year: number;
@@ -28,7 +31,16 @@ export function formatRechnungsnummer(year: number, month: number, lfd: number):
   if (!Number.isInteger(lfd) || lfd < 1 || lfd > 9999) {
     throw new Error(`Laufende Nummer außerhalb des Bereichs 1..9999: ${lfd}`);
   }
-  return `${year}-${String(month).padStart(2, '0')}-${String(lfd).padStart(4, '0')}`;
+  return `${RECHNUNGSNUMMER_PREFIX}${year}-${String(month).padStart(2, '0')}-${String(lfd).padStart(4, '0')}`;
+}
+
+export function stundennachweisFileStem(rechnungsnummer: string): string {
+  if (!rechnungsnummer.startsWith(RECHNUNGSNUMMER_PREFIX)) {
+    throw new Error(
+      `Rechnungsnummer muss mit "${RECHNUNGSNUMMER_PREFIX}" beginnen: ${rechnungsnummer}`,
+    );
+  }
+  return STUNDENNACHWEIS_PREFIX + rechnungsnummer.slice(RECHNUNGSNUMMER_PREFIX.length);
 }
 
 export function generateRechnungsnummer(

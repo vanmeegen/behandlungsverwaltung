@@ -65,27 +65,27 @@ describe('allocateNummer (PRD §4)', () => {
   });
 
   it('returns 2026-04-0001 on an empty DB for April 2026 (AC-RECH-03)', async () => {
-    expect(allocateNummer(ctx.db, 2026, 4)).toBe('2026-04-0001');
+    expect(allocateNummer(ctx.db, 2026, 4)).toBe('RE-2026-04-0001');
   });
 
   it('continues the yearly counter across months (AC-RECH-04)', async () => {
     await seedRechnungen(ctx, [
-      { nummer: '2026-04-0001', jahr: 2026, monat: 4 },
-      { nummer: '2026-04-0002', jahr: 2026, monat: 4 },
+      { nummer: 'RE-2026-04-0001', jahr: 2026, monat: 4 },
+      { nummer: 'RE-2026-04-0002', jahr: 2026, monat: 4 },
     ]);
-    expect(allocateNummer(ctx.db, 2026, 5)).toBe('2026-05-0003');
+    expect(allocateNummer(ctx.db, 2026, 5)).toBe('RE-2026-05-0003');
   });
 
   it('resets the counter on a new year', async () => {
-    await seedRechnungen(ctx, [{ nummer: '2025-12-0099', jahr: 2025, monat: 12 }]);
-    expect(allocateNummer(ctx.db, 2026, 1)).toBe('2026-01-0001');
+    await seedRechnungen(ctx, [{ nummer: 'RE-2025-12-0099', jahr: 2025, monat: 12 }]);
+    expect(allocateNummer(ctx.db, 2026, 1)).toBe('RE-2026-01-0001');
   });
 
   it('ignores invoices from other years when computing the next lfd', async () => {
     await seedRechnungen(ctx, [
-      { nummer: '2025-11-0050', jahr: 2025, monat: 11 },
-      { nummer: '2026-02-0001', jahr: 2026, monat: 2 },
+      { nummer: 'RE-2025-11-0050', jahr: 2025, monat: 11 },
+      { nummer: 'RE-2026-02-0001', jahr: 2026, monat: 2 },
     ]);
-    expect(allocateNummer(ctx.db, 2026, 3)).toBe('2026-03-0002');
+    expect(allocateNummer(ctx.db, 2026, 3)).toBe('RE-2026-03-0002');
   });
 });

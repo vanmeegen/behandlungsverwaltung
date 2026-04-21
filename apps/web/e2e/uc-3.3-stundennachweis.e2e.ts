@@ -91,7 +91,7 @@ test.describe('UC-3.3 Stundennachweis drucken', () => {
     page,
   }) => {
     const { kindId, auftraggeberId, rechnungNummer } = await seedHappyPath();
-    expect(rechnungNummer).toBe('2026-04-0001');
+    expect(rechnungNummer).toBe('RE-2026-04-0001');
 
     const formPage = new StundennachweisPage(page);
     await formPage.goto();
@@ -100,7 +100,7 @@ test.describe('UC-3.3 Stundennachweis drucken', () => {
     await formPage.chooseAuftraggeber(auftraggeberId);
     await formPage.submitAndWait();
 
-    const expectedDateiname = '2026-04-0001-Anna_Musterfrau.pdf';
+    const expectedDateiname = 'ST-2026-04-0001-Anna_Musterfrau.pdf';
     await expect(formPage.successToast).toHaveText(
       `Stundennachweis erstellt: ${expectedDateiname}`,
     );
@@ -114,7 +114,7 @@ test.describe('UC-3.3 Stundennachweis drucken', () => {
     const pdfBytes = readFileSync(timesheetsPath);
     const parser = new PDFParse({ data: new Uint8Array(pdfBytes) });
     const { text } = (await parser.getText()) as { text: string };
-    expect(text).toContain('Stundennachweis 2026-04-0001');
+    expect(text).toContain('Stundennachweis RE-2026-04-0001');
     expect(text).toContain('Kind: Anna Musterfrau');
     expect(text).toContain('Auftraggeber: Jugendamt Köln');
     expect(text).toContain('Monat: 04/2026');

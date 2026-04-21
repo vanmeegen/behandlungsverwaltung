@@ -1,4 +1,4 @@
-import { sanitizeKindesname } from '@behandlungsverwaltung/shared';
+import { sanitizeKindesname, stundennachweisFileStem } from '@behandlungsverwaltung/shared';
 import { and, eq } from 'drizzle-orm';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -88,7 +88,12 @@ export async function createStundennachweis(
     auftraggeberDisplayName: auftraggeberDisplayName(ag),
   });
 
-  const dateiname = `${rechnung.nummer}-${sanitizeKindesname(kind.vorname, kind.nachname)}.pdf`;
+  // PRD §3.3: Stundennachweis-Dateiname trägt ST- statt RE-,
+  // die Rechnungsnummer selbst bleibt unverändert (§4).
+  const dateiname = `${stundennachweisFileStem(rechnung.nummer)}-${sanitizeKindesname(
+    kind.vorname,
+    kind.nachname,
+  )}.pdf`;
   writeFileSync(join(paths.timesheetsDir, dateiname), pdfBytes);
 
   return { nummer: rechnung.nummer, dateiname };

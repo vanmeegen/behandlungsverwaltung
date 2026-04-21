@@ -92,7 +92,7 @@ test.describe('UC-3.4 Rechnungsübersicht', () => {
       2026,
       4,
     );
-    expect(annaApril).toBe('2026-04-0001');
+    expect(annaApril).toBe('RE-2026-04-0001');
 
     // Ben April (1×2 BE → 90,00 €) — gets nummer 0002.
     const ben = await seedKind({
@@ -125,7 +125,7 @@ test.describe('UC-3.4 Rechnungsübersicht', () => {
       kindId: ben.id,
       auftraggeberId: ag.id,
     });
-    expect(benApril.nummer).toBe('2026-04-0002');
+    expect(benApril.nummer).toBe('RE-2026-04-0002');
 
     // Anna May (2×2 BE → 180,00 €) — gets nummer 0003.
     const annaMay = await seedAnnaMonth(
@@ -136,32 +136,32 @@ test.describe('UC-3.4 Rechnungsübersicht', () => {
       2026,
       5,
     );
-    expect(annaMay).toBe('2026-05-0003');
+    expect(annaMay).toBe('RE-2026-05-0003');
 
     // Open the Übersicht: all three visible initially, ordered by nummer desc.
     const listPage = new RechnungListPage(page);
     await listPage.goto();
-    await expect(listPage.row('2026-05-0003')).toBeVisible();
-    await expect(listPage.row('2026-04-0002')).toBeVisible();
-    await expect(listPage.row('2026-04-0001')).toBeVisible();
+    await expect(listPage.row('RE-2026-05-0003')).toBeVisible();
+    await expect(listPage.row('RE-2026-04-0002')).toBeVisible();
+    await expect(listPage.row('RE-2026-04-0001')).toBeVisible();
 
     // Filter Kind = Anna → exactly two rows (Ben gone).
     await listPage.filterByKind(anna.id);
-    await expect(listPage.row('2026-04-0002')).toHaveCount(0);
-    await expect(listPage.row('2026-04-0001')).toBeVisible();
-    await expect(listPage.row('2026-05-0003')).toBeVisible();
+    await expect(listPage.row('RE-2026-04-0002')).toHaveCount(0);
+    await expect(listPage.row('RE-2026-04-0001')).toBeVisible();
+    await expect(listPage.row('RE-2026-05-0003')).toBeVisible();
 
-    const april = normalize((await listPage.gesamtsumme('2026-04-0001').textContent()) ?? '');
-    const may = normalize((await listPage.gesamtsumme('2026-05-0003').textContent()) ?? '');
+    const april = normalize((await listPage.gesamtsumme('RE-2026-04-0001').textContent()) ?? '');
+    const may = normalize((await listPage.gesamtsumme('RE-2026-05-0003').textContent()) ?? '');
     expect(april).toBe('270,00 €');
     expect(may).toBe('180,00 €');
 
     // Download PDF for 2026-04-0001.
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      listPage.download('2026-04-0001').click(),
+      listPage.download('RE-2026-04-0001').click(),
     ]);
-    expect(download.suggestedFilename()).toBe('2026-04-0001-Anna_Musterfrau.pdf');
+    expect(download.suggestedFilename()).toBe('RE-2026-04-0001-Anna_Musterfrau.pdf');
     const path = await download.path();
     const bytes = readFileSync(path);
     expect(bytes.byteLength).toBeGreaterThan(200);

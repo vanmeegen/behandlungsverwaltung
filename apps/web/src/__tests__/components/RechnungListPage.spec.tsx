@@ -46,26 +46,26 @@ const jugendamt: Auftraggeber = {
 
 const r1: Rechnung = {
   id: '1',
-  nummer: '2026-04-0001',
+  nummer: 'RE-2026-04-0001',
   jahr: 2026,
   monat: 4,
   kindId: '10',
   auftraggeberId: '20',
   stundensatzCentsSnapshot: 4500,
   gesamtCents: 27000,
-  dateiname: '2026-04-0001-Anna_Musterfrau.pdf',
+  dateiname: 'RE-2026-04-0001-Anna_Musterfrau.pdf',
 };
 
 const r2: Rechnung = {
   id: '2',
-  nummer: '2026-04-0002',
+  nummer: 'RE-2026-04-0002',
   jahr: 2026,
   monat: 4,
   kindId: '11',
   auftraggeberId: '20',
   stundensatzCentsSnapshot: 4500,
   gesamtCents: 9000,
-  dateiname: '2026-04-0002-Ben_Beispiel.pdf',
+  dateiname: 'RE-2026-04-0002-Ben_Beispiel.pdf',
 };
 
 // Intl may insert NBSP between amount and €.
@@ -107,17 +107,17 @@ describe('<RechnungListPage />', () => {
       expect(screen.getByTestId(id)).toBeInTheDocument();
     }
 
-    const row1 = screen.getByTestId('rechnung-row-2026-04-0001');
+    const row1 = screen.getByTestId('rechnung-row-RE-2026-04-0001');
     expect(row1).toHaveTextContent('Musterfrau, Anna');
     expect(row1).toHaveTextContent('Jugendamt Köln');
     expect(normalize(row1.textContent ?? '')).toContain('270,00 €');
 
-    const row2 = screen.getByTestId('rechnung-row-2026-04-0002');
+    const row2 = screen.getByTestId('rechnung-row-RE-2026-04-0002');
     expect(normalize(row2.textContent ?? '')).toContain('90,00 €');
 
-    const link = screen.getByTestId('rechnung-row-2026-04-0001-download') as HTMLAnchorElement;
-    expect(link.getAttribute('href')).toBe('/bills/2026-04-0001-Anna_Musterfrau.pdf');
-    expect(link.getAttribute('download')).toBe('2026-04-0001-Anna_Musterfrau.pdf');
+    const link = screen.getByTestId('rechnung-row-RE-2026-04-0001-download') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/bills/RE-2026-04-0001-Anna_Musterfrau.pdf');
+    expect(link.getAttribute('download')).toBe('RE-2026-04-0001-Anna_Musterfrau.pdf');
   });
 
   it('changing the Kind filter calls rechnungen query with that kindId', async () => {

@@ -90,16 +90,16 @@ test.describe('UC-3.2 Monatsrechnung erzeugen', () => {
     await formPage.chooseAuftraggeber(auftraggeberId);
     await formPage.submitAndWait();
 
-    await expect(formPage.successToast).toHaveText('Rechnung erstellt: 2026-04-0001');
+    await expect(formPage.successToast).toHaveText('Rechnung erstellt: RE-2026-04-0001');
 
     // DB field readback
     const rows = await readRechnungen();
     expect(rows).toHaveLength(1);
     const r = rows[0]!;
-    expect(r.nummer).toBe('2026-04-0001');
+    expect(r.nummer).toBe('RE-2026-04-0001');
     expect(r.gesamtCents).toBe(27000);
     expect(r.stundensatzCentsSnapshot).toBe(4500);
-    expect(r.dateiname).toBe('2026-04-0001-Anna_Musterfrau.pdf');
+    expect(r.dateiname).toBe('RE-2026-04-0001-Anna_Musterfrau.pdf');
 
     // File on disk
     const pdfPath = join(BILLS_DIR, r.dateiname);
@@ -108,7 +108,7 @@ test.describe('UC-3.2 Monatsrechnung erzeugen', () => {
     const pdfBytes = readFileSync(pdfPath);
     const parser = new PDFParse({ data: new Uint8Array(pdfBytes) });
     const { text } = (await parser.getText()) as { text: string };
-    expect(text).toContain('2026-04-0001');
+    expect(text).toContain('RE-2026-04-0001');
     expect(text).toContain('270,00');
     expect(text).toContain('Mathe-Grundlagen');
     expect(text).toContain('§ 4 Nr. 14 UStG umsatzsteuerfrei');

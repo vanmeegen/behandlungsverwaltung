@@ -64,14 +64,14 @@ function seedRechnung(
   ctx.db
     .insert(rechnungen)
     .values({
-      nummer: overrides.nummer ?? '2026-04-0001',
+      nummer: overrides.nummer ?? 'RE-2026-04-0001',
       jahr: overrides.jahr ?? 2026,
       monat: overrides.monat ?? 4,
       kindId: seed.kindId,
       auftraggeberId: seed.auftraggeberId,
       stundensatzCentsSnapshot: 4500,
       gesamtCents: 27000,
-      dateiname: '2026-04-0001-Anna_Musterfrau.pdf',
+      dateiname: 'RE-2026-04-0001-Anna_Musterfrau.pdf',
     })
     .run();
 }
@@ -102,8 +102,8 @@ describe('createStundennachweis (AC-STD-03, AC-STD-04)', () => {
       kindId: seed.kindId,
       auftraggeberId: seed.auftraggeberId,
     });
-    expect(result.nummer).toBe('2026-04-0001');
-    expect(result.dateiname).toBe('2026-04-0001-Anna_Musterfrau.pdf');
+    expect(result.nummer).toBe('RE-2026-04-0001');
+    expect(result.dateiname).toBe('ST-2026-04-0001-Anna_Musterfrau.pdf');
 
     const billsPath = join(ctx.paths.billsDir, result.dateiname);
     const timesheetsPath = join(ctx.paths.timesheetsDir, result.dateiname);
@@ -118,7 +118,7 @@ describe('createStundennachweis (AC-STD-03, AC-STD-04)', () => {
     ctx.db
       .insert(rechnungen)
       .values({
-        nummer: '2026-05-0002',
+        nummer: 'RE-2026-05-0002',
         jahr: 2026,
         monat: 5,
         kindId: björn.kindId,
@@ -134,7 +134,7 @@ describe('createStundennachweis (AC-STD-03, AC-STD-04)', () => {
       kindId: björn.kindId,
       auftraggeberId: björn.auftraggeberId,
     });
-    expect(result.dateiname).toBe('2026-05-0002-Bjoern_Ueber_Meier.pdf');
+    expect(result.dateiname).toBe('ST-2026-05-0002-Bjoern_Ueber_Meier.pdf');
   });
 
   it('throws RechnungFuerMonatFehltError when no Rechnung exists for the month', async () => {

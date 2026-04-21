@@ -101,7 +101,7 @@ describe('rechnungen query (PRD §3.4, UC-3.4)', () => {
       .insert(rechnungen)
       .values([
         {
-          nummer: '2026-04-0001',
+          nummer: 'RE-2026-04-0001',
           jahr: 2026,
           monat: 4,
           kindId: annaId,
@@ -111,7 +111,7 @@ describe('rechnungen query (PRD §3.4, UC-3.4)', () => {
           dateiname: '2026-04-0001-Anna_Musterfrau.pdf',
         },
         {
-          nummer: '2026-04-0002',
+          nummer: 'RE-2026-04-0002',
           jahr: 2026,
           monat: 4,
           kindId: benId,
@@ -121,7 +121,7 @@ describe('rechnungen query (PRD §3.4, UC-3.4)', () => {
           dateiname: '2026-04-0002-Ben_Beispiel.pdf',
         },
         {
-          nummer: '2026-05-0003',
+          nummer: 'RE-2026-05-0003',
           jahr: 2026,
           monat: 5,
           kindId: annaId,
@@ -151,29 +151,33 @@ describe('rechnungen query (PRD §3.4, UC-3.4)', () => {
 
   it('returns all Rechnungen ordered by nummer desc when unfiltered', async () => {
     const rows = await runQuery();
-    expect(rows.map((r) => r.nummer)).toEqual(['2026-05-0003', '2026-04-0002', '2026-04-0001']);
+    expect(rows.map((r) => r.nummer)).toEqual([
+      'RE-2026-05-0003',
+      'RE-2026-04-0002',
+      'RE-2026-04-0001',
+    ]);
     expect(rows[0]?.gesamtCents).toBe(18000);
     expect(rows[0]?.dateiname).toBe('2026-05-0003-Anna_Musterfrau.pdf');
   });
 
   it('filters by Kind', async () => {
     const rows = await runQuery({ kindId: String(annaId) });
-    expect(rows.map((r) => r.nummer)).toEqual(['2026-05-0003', '2026-04-0001']);
+    expect(rows.map((r) => r.nummer)).toEqual(['RE-2026-05-0003', 'RE-2026-04-0001']);
   });
 
   it('filters by Auftraggeber', async () => {
     const rows = await runQuery({ auftraggeberId: String(elternId) });
-    expect(rows.map((r) => r.nummer)).toEqual(['2026-04-0002']);
+    expect(rows.map((r) => r.nummer)).toEqual(['RE-2026-04-0002']);
   });
 
   it('filters by year + month', async () => {
     const rows = await runQuery({ year: 2026, month: 4 });
-    expect(rows.map((r) => r.nummer)).toEqual(['2026-04-0002', '2026-04-0001']);
+    expect(rows.map((r) => r.nummer)).toEqual(['RE-2026-04-0002', 'RE-2026-04-0001']);
   });
 
   it('combines filters (year + kind)', async () => {
     const rows = await runQuery({ year: 2026, month: 4, kindId: String(annaId) });
-    expect(rows.map((r) => r.nummer)).toEqual(['2026-04-0001']);
+    expect(rows.map((r) => r.nummer)).toEqual(['RE-2026-04-0001']);
   });
 
   it('returns an empty list when no Rechnung matches', async () => {

@@ -7,14 +7,14 @@ describe('RechnungStore.create', () => {
     const fetcher = vi.fn().mockResolvedValue({
       createMonatsrechnung: {
         id: '1',
-        nummer: '2026-04-0001',
+        nummer: 'RE-2026-04-0001',
         jahr: 2026,
         monat: 4,
         kindId: '10',
         auftraggeberId: '20',
         stundensatzCentsSnapshot: 4500,
         gesamtCents: 27000,
-        dateiname: '2026-04-0001-Anna_Musterfrau.pdf',
+        dateiname: 'RE-2026-04-0001-Anna_Musterfrau.pdf',
       },
     });
     const store = new RechnungStore(fetcher as unknown as GraphQLFetcher);
@@ -24,8 +24,8 @@ describe('RechnungStore.create', () => {
       kindId: '10',
       auftraggeberId: '20',
     });
-    expect(result?.nummer).toBe('2026-04-0001');
-    expect(store.lastCreated?.nummer).toBe('2026-04-0001');
+    expect(result?.nummer).toBe('RE-2026-04-0001');
+    expect(store.lastCreated?.nummer).toBe('RE-2026-04-0001');
     expect(store.items).toHaveLength(1);
   });
 

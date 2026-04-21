@@ -112,10 +112,10 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
       kindId,
       auftraggeberId,
     });
-    expect(row.nummer).toBe('2026-04-0001');
+    expect(row.nummer).toBe('RE-2026-04-0001');
     expect(row.gesamtCents).toBe(27000);
     expect(row.stundensatzCentsSnapshot).toBe(4500);
-    expect(row.dateiname).toBe('2026-04-0001-Anna_Musterfrau.pdf');
+    expect(row.dateiname).toBe('RE-2026-04-0001-Anna_Musterfrau.pdf');
 
     const filePath = join(ctx.paths.billsDir, row.dateiname);
     expect(existsSync(filePath)).toBe(true);

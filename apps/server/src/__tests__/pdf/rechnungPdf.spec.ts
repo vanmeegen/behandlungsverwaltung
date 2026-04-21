@@ -38,7 +38,7 @@ async function makeBlankA4Template(): Promise<Uint8Array> {
 }
 
 const DEFAULT_INPUT: Omit<RechnungPdfInput, 'templateBytes'> = {
-  nummer: '2026-04-0001',
+  nummer: 'RE-2026-04-0001',
   year: 2026,
   month: 4,
   kind: {
@@ -94,7 +94,7 @@ async function renderText(): Promise<string> {
 describe('renderRechnungPdf (PRD §3.2, §5, AC-RECH-08)', () => {
   it('includes the Rechnungsnummer', async () => {
     const text = await renderText();
-    expect(text).toContain('2026-04-0001');
+    expect(text).toContain('RE-2026-04-0001');
   });
 
   it('includes the Abrechnungsmonat (04/2026)', async () => {

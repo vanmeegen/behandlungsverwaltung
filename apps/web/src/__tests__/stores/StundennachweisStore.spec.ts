@@ -6,8 +6,8 @@ describe('StundennachweisStore.saveDraft', () => {
   it('dispatches createStundennachweis and stores the result as lastCreated', async () => {
     const fetcher = vi.fn().mockResolvedValue({
       createStundennachweis: {
-        nummer: '2026-04-0001',
-        dateiname: '2026-04-0001-Anna_Musterfrau.pdf',
+        nummer: 'RE-2026-04-0001',
+        dateiname: 'ST-2026-04-0001-Anna_Musterfrau.pdf',
       },
     });
     const store = new StundennachweisStore(fetcher as unknown as GraphQLFetcher);
@@ -17,8 +17,8 @@ describe('StundennachweisStore.saveDraft', () => {
     store.draftStundennachweis.setAuftraggeberId('20');
 
     const r = await store.saveDraft();
-    expect(r?.nummer).toBe('2026-04-0001');
-    expect(store.lastCreated?.dateiname).toBe('2026-04-0001-Anna_Musterfrau.pdf');
+    expect(r?.nummer).toBe('RE-2026-04-0001');
+    expect(store.lastCreated?.dateiname).toBe('ST-2026-04-0001-Anna_Musterfrau.pdf');
     expect(store.error).toBeNull();
   });
 

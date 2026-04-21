@@ -66,8 +66,8 @@ describe('<StundennachweisPage />', () => {
   it('submits createStundennachweis with the chosen year/month/kind/auftraggeber', async () => {
     const fetcher = vi.fn().mockResolvedValue({
       createStundennachweis: {
-        nummer: '2026-04-0001',
-        dateiname: '2026-04-0001-Anna_Musterfrau.pdf',
+        nummer: 'RE-2026-04-0001',
+        dateiname: 'ST-2026-04-0001-Anna_Musterfrau.pdf',
       },
     });
     renderPage(fetcher as unknown as GraphQLFetcher);
@@ -92,7 +92,7 @@ describe('<StundennachweisPage />', () => {
     expect(input).toEqual({ year: 2026, month: 4, kindId: '10', auftraggeberId: '20' });
 
     expect(await screen.findByTestId('stundennachweis-success')).toHaveTextContent(
-      '2026-04-0001-Anna_Musterfrau.pdf',
+      'ST-2026-04-0001-Anna_Musterfrau.pdf',
     );
   });
 

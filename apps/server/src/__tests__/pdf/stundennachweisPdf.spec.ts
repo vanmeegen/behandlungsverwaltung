@@ -20,14 +20,14 @@ describe('renderStundennachweisPdf (AC-STD-02)', () => {
     const template = await makeBlankA4();
     const bytes = await renderStundennachweisPdf({
       templateBytes: template,
-      nummer: '2026-04-0001',
+      nummer: 'RE-2026-04-0001',
       year: 2026,
       month: 4,
       kindDisplayName: 'Anna Musterfrau',
       auftraggeberDisplayName: 'Jugendamt Köln',
     });
     const text = await parsePdfText(bytes);
-    expect(text).toContain('Stundennachweis 2026-04-0001');
+    expect(text).toContain('Stundennachweis RE-2026-04-0001');
     expect(text).toContain('Kind: Anna Musterfrau');
     expect(text).toContain('Auftraggeber: Jugendamt Köln');
     expect(text).toContain('Monat: 04/2026');
@@ -37,7 +37,7 @@ describe('renderStundennachweisPdf (AC-STD-02)', () => {
     const template = await makeBlankA4();
     const bytes = await renderStundennachweisPdf({
       templateBytes: template,
-      nummer: '2026-04-0001',
+      nummer: 'RE-2026-04-0001',
       year: 2026,
       month: 4,
       kindDisplayName: 'Anna Musterfrau',
@@ -58,7 +58,7 @@ describe('renderStundennachweisPdf (AC-STD-02)', () => {
     const template = await makeBlankA4();
     const bytes = await renderStundennachweisPdf({
       templateBytes: template,
-      nummer: '2026-04-0001',
+      nummer: 'RE-2026-04-0001',
       year: 2026,
       month: 4,
       kindDisplayName: 'Anna Musterfrau',

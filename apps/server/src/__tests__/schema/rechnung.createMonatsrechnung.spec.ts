@@ -117,9 +117,9 @@ describe('createMonatsrechnung mutation (AC-RECH-01, AC-RECH-05)', () => {
     expect(result.errors).toBeUndefined();
     const created = (result.data as { createMonatsrechnung: Record<string, unknown> })
       .createMonatsrechnung;
-    expect(created.nummer).toBe('2026-04-0001');
+    expect(created.nummer).toBe('RE-2026-04-0001');
     expect(created.gesamtCents).toBe(9000);
-    expect(created.dateiname).toBe('2026-04-0001-Anna_Musterfrau.pdf');
+    expect(created.dateiname).toBe('RE-2026-04-0001-Anna_Musterfrau.pdf');
   });
 
   it('rejects a duplicate with code DUPLICATE_RECHNUNG (AC-RECH-05)', async () => {
