@@ -66,18 +66,21 @@ zurückgesetzt.
 
 ### 3.2 Monatsrechnung erstellen
 
-Therapeutin wählt Monat, Kind und Auftraggeber. Das System
+Therapeutin wählt Monat, Kind, Auftraggeber und **Rechnungsdatum**
+(Vorbelegung: heute). Das System
 
 - sammelt alle Behandlungen dieses Kinds für diesen Auftraggeber im Monat,
 - erzeugt **eine Rechnung** mit einer Zeile pro Behandlung. Die
   Rechnungszeile hat die folgenden **Spalten in dieser Reihenfolge**:
 
-  | Bezeichnung | Menge | Einheit | Einzel € | Gesamt € |
-  - **Bezeichnung** = die **Tätigkeit** der Behandlung (§2.4)
-  - **Menge** = Anzahl **BE**
+  | Pos | Anzahl | Einheit | Bezeichnung | Einzel € | Gesamt € |
+  - **Pos** = laufende Positionsnummer innerhalb der Rechnung
+  - **Anzahl** = Anzahl **BE** der Behandlung
   - **Einheit** = fest der Text „BE"
+  - **Bezeichnung** = `<DD.MM.YYYY> · <Tätigkeit>` der Behandlung
+    (Fallback auf die Therapieform, wenn die Tätigkeit fehlt, §2.4)
   - **Einzel €** = Stundensatz des Auftraggebers (§2.2)
-  - **Gesamt €** = Menge × Einzel
+  - **Gesamt €** = Anzahl × Einzel
 
 - vergibt die Rechnungsnummer (Abschnitt 4),
 - erzeugt die PDF (siehe Abschnitt 5) und legt sie als Datei im Ordner
