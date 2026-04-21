@@ -1,17 +1,8 @@
 import { z } from 'zod';
 import { TAETIGKEIT_VALUES } from './taetigkeit';
+import { THERAPIE_FORM_VALUES, type TherapieFormValue } from './therapieFormValues';
 
-export const THERAPIE_FORM_VALUES = [
-  'dyskalkulie',
-  'lerntherapie',
-  'lrs_therapie',
-  'resilienztraining',
-  'heilpaedagogik',
-  'elternberatung',
-  'sonstiges',
-] as const;
-
-export type TherapieFormValue = (typeof THERAPIE_FORM_VALUES)[number];
+export { THERAPIE_FORM_VALUES, type TherapieFormValue };
 
 const idSchema = z
   .union([z.string().min(1), z.number().int().positive()], { error: 'ID ist Pflicht' })

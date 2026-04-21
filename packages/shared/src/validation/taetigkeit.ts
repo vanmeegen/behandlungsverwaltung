@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { THERAPIE_FORM_VALUES } from './therapie';
+import { THERAPIE_FORM_VALUES } from './therapieFormValues';
 
 export const TAETIGKEIT_VALUES = [
   ...THERAPIE_FORM_VALUES,
