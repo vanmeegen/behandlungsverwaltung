@@ -1,0 +1,1 @@
+ALTER TABLE `rechnungen` ADD `downloaded_at` integer;

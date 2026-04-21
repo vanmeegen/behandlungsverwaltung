@@ -177,6 +177,7 @@ describe('db/schema — rechnungen (PRD §4)', () => {
         'auftraggeber_id',
         'created_at',
         'dateiname',
+        'downloaded_at',
         'gesamt_cents',
         'id',
         'jahr',

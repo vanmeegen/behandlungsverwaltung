@@ -1,3 +1,4 @@
+import { THERAPIE_FORM_LABELS } from '@behandlungsverwaltung/shared';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -21,14 +22,6 @@ interface TherapieFormProps {
   auftraggeberStore: AuftraggeberStore;
   redirectOnSuccess?: string;
 }
-
-const FORM_LABEL: Record<TherapieFormValue, string> = {
-  dyskalkulie: 'Dyskalkulietherapie',
-  lerntherapie: 'Lerntherapie',
-  heilpaedagogik: 'Heilpädagogik',
-  elternberatung: 'Elternberatung',
-  sonstiges: 'Sonstiges',
-};
 
 function errorProps(
   errors: TherapieFieldErrors,
@@ -134,7 +127,7 @@ export const TherapieForm = observer(
           >
             {THERAPIE_FORM_VALUES.map((f) => (
               <option key={f} value={f}>
-                {FORM_LABEL[f]}
+                {THERAPIE_FORM_LABELS[f]}
               </option>
             ))}
           </TextField>

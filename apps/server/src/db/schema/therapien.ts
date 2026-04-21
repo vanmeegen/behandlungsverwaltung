@@ -5,11 +5,23 @@ import { kinder } from './kinder';
 export const THERAPIE_FORM = [
   'dyskalkulie',
   'lerntherapie',
+  'lrs_therapie',
+  'resilienztraining',
   'heilpaedagogik',
   'elternberatung',
   'sonstiges',
 ] as const;
 export type TherapieForm = (typeof THERAPIE_FORM)[number];
+
+export const TAETIGKEIT = [
+  ...THERAPIE_FORM,
+  'elterngespraech',
+  'lehrergespraech',
+  'bericht',
+  'foerderplan',
+  'teamberatung',
+] as const;
+export type Taetigkeit = (typeof TAETIGKEIT)[number];
 
 export const therapien = sqliteTable('therapien', {
   id: integer('id').primaryKey({ autoIncrement: true }),

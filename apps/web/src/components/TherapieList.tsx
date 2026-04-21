@@ -1,3 +1,4 @@
+import { THERAPIE_FORM_LABELS } from '@behandlungsverwaltung/shared';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import List from '@mui/material/List';
@@ -6,20 +7,12 @@ import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
 import { Link as RouterLink } from 'react-router-dom';
-import type { Therapie, TherapieFormValue } from '../models/TherapieStore';
+import type { Therapie } from '../models/TherapieStore';
 
 interface TherapieListProps {
   items: Therapie[];
   emptyText?: string;
 }
-
-const FORM_LABEL: Record<TherapieFormValue, string> = {
-  dyskalkulie: 'Dyskalkulietherapie',
-  lerntherapie: 'Lerntherapie',
-  heilpaedagogik: 'Heilpädagogik',
-  elternberatung: 'Elternberatung',
-  sonstiges: 'Sonstiges',
-};
 
 export const TherapieList = observer(
   ({ items, emptyText = 'Noch keine Therapien erfasst.' }: TherapieListProps) => {
@@ -51,7 +44,9 @@ export const TherapieList = observer(
             <ListItemText
               primary={
                 <Box component="span">
-                  <span data-testselector={`therapie-row-form-${t.id}`}>{FORM_LABEL[t.form]}</span>
+                  <span data-testselector={`therapie-row-form-${t.id}`}>
+                    {THERAPIE_FORM_LABELS[t.form]}
+                  </span>
                   {' · '}
                   <span data-testselector={`therapie-row-be-${t.id}`}>{t.bewilligteBe} BE</span>
                   {t.arbeitsthema && (

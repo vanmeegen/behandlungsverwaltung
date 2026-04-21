@@ -43,7 +43,29 @@ const EXPECTED_OBJECT_TYPES: Record<string, string[]> = {
 
 const EXPECTED_ENUMS: Record<string, string[]> = {
   AuftraggeberTyp: ['firma', 'person'],
-  TherapieForm: ['dyskalkulie', 'lerntherapie', 'heilpaedagogik', 'elternberatung', 'sonstiges'],
+  TherapieForm: [
+    'dyskalkulie',
+    'lerntherapie',
+    'lrs_therapie',
+    'resilienztraining',
+    'heilpaedagogik',
+    'elternberatung',
+    'sonstiges',
+  ],
+  Taetigkeit: [
+    'dyskalkulie',
+    'lerntherapie',
+    'lrs_therapie',
+    'resilienztraining',
+    'heilpaedagogik',
+    'elternberatung',
+    'sonstiges',
+    'elterngespraech',
+    'lehrergespraech',
+    'bericht',
+    'foerderplan',
+    'teamberatung',
+  ],
   TemplateKind: ['rechnung', 'stundennachweis'],
 };
 
