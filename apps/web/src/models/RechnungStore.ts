@@ -18,6 +18,7 @@ export interface Rechnung {
   stundensatzCentsSnapshot: number;
   gesamtCents: number;
   dateiname: string;
+  downloadedAt: string | null;
 }
 
 export interface CreateMonatsrechnungInput {
@@ -38,6 +39,16 @@ const RECHNUNG_COLUMNS = /* GraphQL */ `
   stundensatzCentsSnapshot
   gesamtCents
   dateiname
+  downloadedAt
+`;
+
+const MARK_DOWNLOADED = /* GraphQL */ `
+  mutation MarkDownloaded($ids: [ID!]!) {
+    markRechnungenDownloaded(ids: $ids) {
+      id
+      downloadedAt
+    }
+  }
 `;
 
 const CREATE_MONATSRECHNUNG = /* GraphQL */ `
@@ -242,5 +253,25 @@ export class RechnungStore {
       auftraggeberId: this.draftRechnung.auftraggeberId,
       force: options.force ?? false,
     });
+  }
+
+  // PRD §3.8: markiert die Rechnungen als "zum Versand heruntergeladen".
+  async markDownloaded(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    try {
+      const data = await this.fetcher<{
+        markRechnungenDownloaded: Array<{ id: string; downloadedAt: string | null }>;
+      }>(MARK_DOWNLOADED, { ids });
+      runInAction(() => {
+        const byId = new Map(data.markRechnungenDownloaded.map((r) => [r.id, r.downloadedAt]));
+        this.items = this.items.map((r) =>
+          byId.has(r.id) ? { ...r, downloadedAt: byId.get(r.id) ?? null } : r,
+        );
+      });
+    } catch (err) {
+      runInAction(() => {
+        this.error = parseErrorCode(err);
+      });
+    }
   }
 }

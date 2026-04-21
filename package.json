@@ -55,5 +55,8 @@
     "*.{json,md,css,html,yml,yaml}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "jszip": "^3.10.1"
   }
 }

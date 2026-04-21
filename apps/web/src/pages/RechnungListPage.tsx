@@ -140,6 +140,7 @@ export const RechnungListPage = observer(
                   <TableCell>Kind</TableCell>
                   <TableCell>Auftraggeber</TableCell>
                   <TableCell align="right">Gesamtsumme</TableCell>
+                  <TableCell>heruntergeladen am</TableCell>
                   <TableCell>PDF</TableCell>
                 </TableRow>
               </TableHead>
@@ -155,6 +156,9 @@ export const RechnungListPage = observer(
                       data-testselector={`rechnung-row-${r.nummer}-gesamtsumme`}
                     >
                       {formatEuro(r.gesamtCents)}
+                    </TableCell>
+                    <TableCell data-testselector={`rechnung-row-${r.nummer}-downloaded-at`}>
+                      {r.downloadedAt ? new Date(r.downloadedAt).toLocaleDateString('de-DE') : '—'}
                     </TableCell>
                     <TableCell>
                       <Button

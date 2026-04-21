@@ -32,6 +32,11 @@ const NAV_ENTRIES: readonly NavEntry[] = [
   { to: '/vorlagen', label: 'Vorlagen', testId: 'nav-vorlagen' },
   { to: '/rechnungen/neu', label: 'Rechnung erstellen', testId: 'nav-rechnung-neu' },
   { to: '/rechnungen', label: 'Rechnungsübersicht', testId: 'nav-rechnungen', end: true },
+  {
+    to: '/rechnungen/download',
+    label: 'Rechnungen herunterladen',
+    testId: 'nav-rechnungen-download',
+  },
   { to: '/stundennachweis', label: 'Stundennachweis', testId: 'nav-stundennachweis' },
 ];
 

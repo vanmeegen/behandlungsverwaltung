@@ -1,10 +1,35 @@
+import { inArray } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
+import { rechnungen } from '../../db/schema';
 import { KeineBehandlungenError } from '../../services/rechnungAggregation';
 import { createMonatsrechnung, RechnungExistiertError } from '../../services/rechnungService';
 import { TemplateFileMissingError, TemplateNotFoundError } from '../../services/templateResolver';
 import { builder, resolvePaths } from '../builder';
 import { RechnungRef } from '../types/rechnung';
 import { CreateMonatsrechnungInputRef } from '../types/rechnungInput';
+
+// PRD §3.8: Markiert Rechnungen nach dem ZIP-Download als "zum Versand
+// heruntergeladen". Der tatsächliche Versand liegt außerhalb der App;
+// wir vermerken nur das Download-Timestamp.
+builder.mutationField('markRechnungenDownloaded', (t) =>
+  t.field({
+    type: [RechnungRef],
+    args: {
+      ids: t.arg.idList({ required: true }),
+    },
+    resolve: (_parent, args, { db }) => {
+      const numericIds = args.ids.map((id) => Number(id)).filter((n) => Number.isInteger(n));
+      if (numericIds.length === 0) return [];
+      const now = new Date();
+      return db
+        .update(rechnungen)
+        .set({ downloadedAt: now })
+        .where(inArray(rechnungen.id, numericIds))
+        .returning()
+        .all();
+    },
+  }),
+);
 
 builder.mutationField('createMonatsrechnung', (t) =>
   t.field({

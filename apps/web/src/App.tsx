@@ -9,6 +9,7 @@ import { KindDetailPage } from './pages/KindDetailPage';
 import { KindFormPage } from './pages/KindFormPage';
 import { KindListPage } from './pages/KindListPage';
 import { RechnungCreatePage } from './pages/RechnungCreatePage';
+import { RechnungDownloadPage } from './pages/RechnungDownloadPage';
 import { RechnungListPage } from './pages/RechnungListPage';
 import { SchnellerfassungPage } from './pages/SchnellerfassungPage';
 import { StundennachweisPage } from './pages/StundennachweisPage';
@@ -111,6 +112,15 @@ export function App(): JSX.Element {
             <RechnungListPage
               rechnungStore={rootStore.rechnungStore}
               kindStore={rootStore.kindStore}
+              auftraggeberStore={rootStore.auftraggeberStore}
+            />
+          }
+        />
+        <Route
+          path="/rechnungen/download"
+          element={
+            <RechnungDownloadPage
+              rechnungStore={rootStore.rechnungStore}
               auftraggeberStore={rootStore.auftraggeberStore}
             />
           }

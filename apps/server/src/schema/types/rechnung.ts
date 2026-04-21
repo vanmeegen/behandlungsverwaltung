@@ -12,6 +12,12 @@ export const RechnungRef = builder.objectRef<Rechnung>('Rechnung').implement({
     stundensatzCentsSnapshot: t.exposeInt('stundensatzCentsSnapshot'),
     gesamtCents: t.exposeInt('gesamtCents'),
     dateiname: t.exposeString('dateiname'),
+    // PRD §3.8: ISO-Timestamp, wenn die Rechnung per UC-3.8 zum Versand
+    // heruntergeladen wurde — sonst null.
+    downloadedAt: t.string({
+      nullable: true,
+      resolve: (r) => (r.downloadedAt ? r.downloadedAt.toISOString() : null),
+    }),
     createdAt: t.string({ resolve: (r) => r.createdAt.toISOString() }),
   }),
 });

@@ -54,6 +54,7 @@ const r1: Rechnung = {
   stundensatzCentsSnapshot: 4500,
   gesamtCents: 27000,
   dateiname: 'RE-2026-04-0001-Anna_Musterfrau.pdf',
+  downloadedAt: null,
 };
 
 const r2: Rechnung = {
@@ -66,6 +67,7 @@ const r2: Rechnung = {
   stundensatzCentsSnapshot: 4500,
   gesamtCents: 9000,
   dateiname: 'RE-2026-04-0002-Ben_Beispiel.pdf',
+  downloadedAt: null,
 };
 
 // Intl may insert NBSP between amount and €.

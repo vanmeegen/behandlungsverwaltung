@@ -1,6 +1,7 @@
 import { createYoga } from 'graphql-yoga';
 import { bootstrap } from './bootstrap';
 import { billsHandler, timesheetsHandler } from './http/billsRoute';
+import { rechnungBundleHandler } from './http/bundleRoute';
 import { schema } from './schema';
 import type { SchemaContext } from './schema/builder';
 
@@ -20,6 +21,9 @@ const server = Bun.serve({
   port: PORT,
   fetch: async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
+    // PRD §3.8 Bundle-Download: muss vor /bills/ liegen, damit der
+    // Prefix-Check nicht greift.
+    if (url.pathname === '/bills/bundle') return rechnungBundleHandler(url, db, appPaths);
     if (url.pathname.startsWith('/bills/')) return billsHandler(url, appPaths);
     if (url.pathname.startsWith('/timesheets/')) return timesheetsHandler(url, appPaths);
     return yoga.fetch(req);
