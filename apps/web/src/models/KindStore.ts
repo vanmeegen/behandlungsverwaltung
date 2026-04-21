@@ -87,6 +87,12 @@ const UPDATE_KIND = /* GraphQL */ `
   }
 `;
 
+const DELETE_KIND = /* GraphQL */ `
+  mutation DeleteKind($id: ID!) {
+    deleteKind(id: $id)
+  }
+`;
+
 export class KindDraft {
   editingId: string | null = null;
   vorname = '';
@@ -256,5 +262,21 @@ export class KindStore {
       return this.update(this.draftKind.editingId, input);
     }
     return this.create(input);
+  }
+
+  async remove(id: string): Promise<boolean> {
+    this.error = null;
+    try {
+      await this.fetcher<{ deleteKind: boolean }>(DELETE_KIND, { id });
+      runInAction(() => {
+        this.items = this.items.filter((k) => k.id !== id);
+      });
+      return true;
+    } catch (err) {
+      runInAction(() => {
+        this.error = err instanceof Error ? err.message : String(err);
+      });
+      return false;
+    }
   }
 }

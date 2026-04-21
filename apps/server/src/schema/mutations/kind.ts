@@ -1,7 +1,7 @@
 import { kindSchema } from '@behandlungsverwaltung/shared';
 import { eq } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
-import { kinder } from '../../db/schema';
+import { kinder, therapien } from '../../db/schema';
 import { validateOrThrow } from '../../services/validate';
 import { builder } from '../builder';
 import { KindRef } from '../types/kind';
@@ -71,6 +71,43 @@ builder.mutationField('updateKind', (t) =>
         throw new GraphQLError('Kind nicht gefunden', { extensions: { code: 'NOT_FOUND' } });
       }
       return row;
+    },
+  }),
+);
+
+builder.mutationField('deleteKind', (t) =>
+  t.field({
+    type: 'Boolean',
+    args: {
+      id: t.arg.id({ required: true }),
+    },
+    // PRD §3.5 / UC-3.5 Löschen: Kind darf nur gelöscht werden, wenn keine
+    // Therapie dranhängt.
+    resolve: (_parent, args, { db }) => {
+      const numericId = Number(args.id);
+      if (!Number.isInteger(numericId)) {
+        throw new GraphQLError('Kind-ID ist ungültig', {
+          extensions: { code: 'VALIDATION_ERROR' },
+        });
+      }
+      const children = db.select().from(therapien).where(eq(therapien.kindId, numericId)).all();
+      if (children.length > 0) {
+        throw new GraphQLError(
+          'Kind ist mit einer Therapie verknüpft und kann nicht gelöscht werden',
+          {
+            extensions: {
+              code: 'REFERENCED_BY_CHILD',
+              entity: 'kind',
+              childCount: children.length,
+            },
+          },
+        );
+      }
+      const result = db.delete(kinder).where(eq(kinder.id, numericId)).returning().all();
+      if (result.length === 0) {
+        throw new GraphQLError('Kind nicht gefunden', { extensions: { code: 'NOT_FOUND' } });
+      }
+      return true;
     },
   }),
 );

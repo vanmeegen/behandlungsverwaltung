@@ -1,7 +1,7 @@
 import { therapieSchema, type TherapieInputType } from '@behandlungsverwaltung/shared';
 import { eq } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
-import { therapien } from '../../db/schema';
+import { behandlungen as behandlungenTbl, therapien } from '../../db/schema';
 import { validateOrThrow } from '../../services/validate';
 import { builder } from '../builder';
 import { TherapieRef } from '../types/therapie';
@@ -81,6 +81,45 @@ builder.mutationField('updateTherapie', (t) =>
         });
       }
       return row;
+    },
+  }),
+);
+
+builder.mutationField('deleteTherapie', (t) =>
+  t.field({
+    type: 'Boolean',
+    args: {
+      id: t.arg.id({ required: true }),
+    },
+    resolve: (_parent, args, { db }) => {
+      const numericId = Number(args.id);
+      if (!Number.isInteger(numericId)) {
+        throw new GraphQLError('Therapie-ID ist ungültig', {
+          extensions: { code: 'VALIDATION_ERROR' },
+        });
+      }
+      const children = db
+        .select()
+        .from(behandlungenTbl)
+        .where(eq(behandlungenTbl.therapieId, numericId))
+        .all();
+      if (children.length > 0) {
+        throw new GraphQLError(
+          'Therapie hat erfasste Behandlungen und kann nicht gelöscht werden',
+          {
+            extensions: {
+              code: 'REFERENCED_BY_CHILD',
+              entity: 'therapie',
+              childCount: children.length,
+            },
+          },
+        );
+      }
+      const result = db.delete(therapien).where(eq(therapien.id, numericId)).returning().all();
+      if (result.length === 0) {
+        throw new GraphQLError('Therapie nicht gefunden', { extensions: { code: 'NOT_FOUND' } });
+      }
+      return true;
     },
   }),
 );

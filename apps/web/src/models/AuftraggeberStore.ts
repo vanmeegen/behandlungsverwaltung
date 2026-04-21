@@ -88,6 +88,12 @@ const UPDATE_AUFTRAGGEBER = /* GraphQL */ `
   }
 `;
 
+const DELETE_AUFTRAGGEBER = /* GraphQL */ `
+  mutation DeleteAuftraggeber($id: ID!) {
+    deleteAuftraggeber(id: $id)
+  }
+`;
+
 function formatCentsAsEuroInput(cents: number): string {
   const euros = Math.floor(cents / 100);
   const rest = cents % 100;
@@ -300,5 +306,21 @@ export class AuftraggeberStore {
       return this.update(this.draftAuftraggeber.editingId, input);
     }
     return this.create(input);
+  }
+
+  async remove(id: string): Promise<boolean> {
+    this.error = null;
+    try {
+      await this.fetcher<{ deleteAuftraggeber: boolean }>(DELETE_AUFTRAGGEBER, { id });
+      runInAction(() => {
+        this.items = this.items.filter((a) => a.id !== id);
+      });
+      return true;
+    } catch (err) {
+      runInAction(() => {
+        this.error = err instanceof Error ? err.message : String(err);
+      });
+      return false;
+    }
   }
 }

@@ -81,6 +81,12 @@ const UPDATE_THERAPIE = /* GraphQL */ `
   }
 `;
 
+const DELETE_THERAPIE = /* GraphQL */ `
+  mutation DeleteTherapie($id: ID!) {
+    deleteTherapie(id: $id)
+  }
+`;
+
 export class TherapieDraft {
   editingId: string | null = null;
   kindId = '';
@@ -273,6 +279,22 @@ export class TherapieStore {
       return this.update(this.draftTherapie.editingId, input);
     }
     return this.create(input);
+  }
+
+  async remove(id: string): Promise<boolean> {
+    this.error = null;
+    try {
+      await this.fetcher<{ deleteTherapie: boolean }>(DELETE_THERAPIE, { id });
+      runInAction(() => {
+        this.items = this.items.filter((t) => t.id !== id);
+      });
+      return true;
+    } catch (err) {
+      runInAction(() => {
+        this.error = err instanceof Error ? err.message : String(err);
+      });
+      return false;
+    }
   }
 }
 

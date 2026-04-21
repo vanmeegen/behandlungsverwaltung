@@ -91,3 +91,50 @@ builder.mutationField('uploadTemplate', (t) =>
     },
   }),
 );
+
+// PRD §3.10 Vorlage entfernen: Datei aus templates/ löschen und DB-Zeile
+// wegnehmen, damit der globale Fallback wieder greift.
+import { unlinkSync } from 'node:fs';
+import { TemplateKindEnum } from '../types/enums';
+
+builder.mutationField('deleteTemplate', (t) =>
+  t.field({
+    type: 'Boolean',
+    args: {
+      kind: t.arg({ type: TemplateKindEnum, required: true }),
+      auftraggeberId: t.arg.id({ required: false }),
+    },
+    resolve: (_parent, args, ctx) => {
+      const { db } = ctx;
+      const paths = resolvePaths(ctx);
+      const numericAgId =
+        args.auftraggeberId === null || args.auftraggeberId === undefined
+          ? null
+          : Number(args.auftraggeberId);
+      const rows = db
+        .select()
+        .from(templateFiles)
+        .where(
+          and(
+            eq(templateFiles.kind, args.kind),
+            numericAgId === null
+              ? isNull(templateFiles.auftraggeberId)
+              : eq(templateFiles.auftraggeberId, numericAgId),
+          ),
+        )
+        .all();
+      if (rows.length === 0) {
+        throw new GraphQLError('Vorlage nicht gefunden', { extensions: { code: 'NOT_FOUND' } });
+      }
+      const row = rows[0]!;
+      try {
+        unlinkSync(join(paths.templatesDir, row.filename));
+      } catch {
+        // Datei fehlt — trotzdem DB-Zeile entfernen, damit der Zustand
+        // konsistent bleibt.
+      }
+      db.delete(templateFiles).where(eq(templateFiles.id, row.id)).run();
+      return true;
+    },
+  }),
+);

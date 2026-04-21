@@ -37,7 +37,7 @@ export const TherapieListPage = observer(({ store }: TherapieListPageProps) => {
           Neu
         </Button>
       </Stack>
-      <TherapieList items={store.items} />
+      <TherapieList items={store.items} store={store} />
     </Box>
   );
 });

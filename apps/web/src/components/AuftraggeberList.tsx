@@ -1,3 +1,4 @@
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import List from '@mui/material/List';
@@ -7,8 +8,10 @@ import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
+import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import type { Auftraggeber, AuftraggeberStore } from '../models/AuftraggeberStore';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface AuftraggeberListProps {
   store: AuftraggeberStore;
@@ -28,6 +31,14 @@ function displayName(ag: Auftraggeber): JSX.Element {
 }
 
 export const AuftraggeberList = observer(({ store }: AuftraggeberListProps) => {
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+
+  async function confirmDelete(): Promise<void> {
+    if (!pendingDelete) return;
+    await store.remove(pendingDelete);
+    setPendingDelete(null);
+  }
+
   return (
     <Box data-testselector="auftraggeber-list">
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
@@ -42,6 +53,16 @@ export const AuftraggeberList = observer(({ store }: AuftraggeberListProps) => {
           Neu
         </Button>
       </Stack>
+      {store.error && (
+        <Alert
+          severity="error"
+          role="alert"
+          sx={{ mb: 2 }}
+          data-testselector="auftraggeber-list-error"
+        >
+          {store.error}
+        </Alert>
+      )}
       {store.items.length === 0 ? (
         <Typography data-testselector="auftraggeber-list-empty" color="text.secondary">
           Noch keine Auftraggeber erfasst.
@@ -54,15 +75,26 @@ export const AuftraggeberList = observer(({ store }: AuftraggeberListProps) => {
               data-testselector="auftraggeber-row"
               disablePadding
               secondaryAction={
-                <Button
-                  component={RouterLink}
-                  to={`/auftraggeber/${ag.id}`}
-                  size="small"
-                  variant="outlined"
-                  data-testselector={`auftraggeber-row-edit-${ag.id}`}
-                >
-                  Bearbeiten
-                </Button>
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    component={RouterLink}
+                    to={`/auftraggeber/${ag.id}`}
+                    size="small"
+                    variant="outlined"
+                    data-testselector={`auftraggeber-row-edit-${ag.id}`}
+                  >
+                    Bearbeiten
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    onClick={(): void => setPendingDelete(ag.id)}
+                    data-testselector={`auftraggeber-row-delete-${ag.id}`}
+                  >
+                    Löschen
+                  </Button>
+                </Stack>
               }
             >
               <ListItemButton
@@ -76,6 +108,15 @@ export const AuftraggeberList = observer(({ store }: AuftraggeberListProps) => {
           ))}
         </List>
       )}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Auftraggeber wirklich löschen?"
+        message="Auftraggeber wirklich löschen?"
+        testSelector="auftraggeber-delete-confirm"
+        onConfirm={confirmDelete}
+        onCancel={(): void => setPendingDelete(null)}
+      />
     </Box>
   );
 });

@@ -93,3 +93,50 @@ builder.mutationField('updateAuftraggeber', (t) =>
     },
   }),
 );
+
+import { therapien as therapienTbl } from '../../db/schema';
+
+builder.mutationField('deleteAuftraggeber', (t) =>
+  t.field({
+    type: 'Boolean',
+    args: {
+      id: t.arg.id({ required: true }),
+    },
+    resolve: (_parent, args, { db }) => {
+      const numericId = Number(args.id);
+      if (!Number.isInteger(numericId)) {
+        throw new GraphQLError('Auftraggeber-ID ist ungültig', {
+          extensions: { code: 'VALIDATION_ERROR' },
+        });
+      }
+      const children = db
+        .select()
+        .from(therapienTbl)
+        .where(eq(therapienTbl.auftraggeberId, numericId))
+        .all();
+      if (children.length > 0) {
+        throw new GraphQLError(
+          'Auftraggeber ist mit einer Therapie verknüpft und kann nicht gelöscht werden',
+          {
+            extensions: {
+              code: 'REFERENCED_BY_CHILD',
+              entity: 'auftraggeber',
+              childCount: children.length,
+            },
+          },
+        );
+      }
+      const result = db
+        .delete(auftraggeber)
+        .where(eq(auftraggeber.id, numericId))
+        .returning()
+        .all();
+      if (result.length === 0) {
+        throw new GraphQLError('Auftraggeber nicht gefunden', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+      return true;
+    },
+  }),
+);
