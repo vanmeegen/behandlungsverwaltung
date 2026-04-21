@@ -86,6 +86,7 @@ test.describe('UC-3.2 Monatsrechnung erzeugen', () => {
     const formPage = new RechnungCreatePage(page);
     await formPage.goto();
     await formPage.setMonat(2026, 4);
+    await formPage.setRechnungsdatum('2026-05-02');
     await formPage.chooseKind(kindId);
     await formPage.chooseAuftraggeber(auftraggeberId);
     await formPage.submitAndWait();
@@ -111,6 +112,16 @@ test.describe('UC-3.2 Monatsrechnung erzeugen', () => {
     expect(text).toContain('RE-2026-04-0001');
     expect(text).toContain('270,00');
     expect(text).toContain('Lerntherapie');
+    // AC-RECH-09: Rechnungsdatum from the form lands in the PDF.
+    expect(text).toContain('02.05.2026');
+    // Kindesname + Aktenzeichen as Titelzeile above the table.
+    expect(text).toContain('Anna Musterfrau');
+    expect(text).toContain('K-2026-001');
+    // AC-RECH-10: one row per Behandlung, date + Taetigkeit-Label.
+    expect(text).toContain('01.04.2026 · Lerntherapie');
+    expect(text).toContain('15.04.2026 · Lerntherapie');
+    expect(text).toContain('29.04.2026 · Lerntherapie');
+    // AC-RECH-08: USt-Befreiungshinweis kommt jetzt aus der Vorlage.
     expect(text).toContain('§ 4 Nr. 14 UStG umsatzsteuerfrei');
   });
 
@@ -120,6 +131,7 @@ test.describe('UC-3.2 Monatsrechnung erzeugen', () => {
     const formPage = new RechnungCreatePage(page);
     await formPage.goto();
     await formPage.setMonat(2026, 4);
+    await formPage.setRechnungsdatum('2026-05-02');
     await formPage.chooseKind(kindId);
     await formPage.chooseAuftraggeber(auftraggeberId);
     await formPage.submitAndWait();

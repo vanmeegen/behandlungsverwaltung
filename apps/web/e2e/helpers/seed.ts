@@ -238,7 +238,12 @@ export async function createMonatsrechnungApi(input: {
   month: number;
   kindId: string;
   auftraggeberId: string;
+  rechnungsdatum?: string;
 }): Promise<SeededRechnung> {
+  const payload = {
+    ...input,
+    rechnungsdatum: input.rechnungsdatum ?? new Date().toISOString().slice(0, 10),
+  };
   const data = await gql<{ createMonatsrechnung: SeededRechnung }>(
     /* GraphQL */ `
       mutation Seed($input: CreateMonatsrechnungInput!) {
@@ -255,7 +260,7 @@ export async function createMonatsrechnungApi(input: {
         }
       }
     `,
-    { input },
+    { input: payload },
   );
   return data.createMonatsrechnung;
 }
