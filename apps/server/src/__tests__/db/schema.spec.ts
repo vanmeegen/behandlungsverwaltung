@@ -184,6 +184,7 @@ describe('db/schema — rechnungen (PRD §4)', () => {
         'kind_id',
         'monat',
         'nummer',
+        'rechnungsdatum',
         'stundensatz_cents_snapshot',
       ].sort(),
     );

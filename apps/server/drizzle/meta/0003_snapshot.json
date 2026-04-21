@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "8b20a3cb-3d5e-42ca-939a-2d0fb80a6528",
-  "prevId": "5007a63d-1067-455f-a6e7-aed370c7534c",
+  "id": "9a7d2e4c-f678-4c60-89cb-62c592f48955",
+  "prevId": "8b20a3cb-3d5e-42ca-939a-2d0fb80a6528",
   "tables": {
     "auftraggeber": {
       "name": "auftraggeber",
@@ -412,6 +412,13 @@
         },
         "gesamt_cents": {
           "name": "gesamt_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rechnungsdatum": {
+          "name": "rechnungsdatum",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,

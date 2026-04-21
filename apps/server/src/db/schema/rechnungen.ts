@@ -17,6 +17,9 @@ export const rechnungen = sqliteTable(
       .references(() => auftraggeber.id),
     stundensatzCentsSnapshot: integer('stundensatz_cents_snapshot').notNull(),
     gesamtCents: integer('gesamt_cents').notNull(),
+    rechnungsdatum: integer('rechnungsdatum', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
     dateiname: text('dateiname').notNull(),
     downloadedAt: integer('downloaded_at', { mode: 'timestamp' }),
     createdAt: integer('created_at', { mode: 'timestamp' })
