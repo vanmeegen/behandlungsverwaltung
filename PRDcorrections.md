@@ -30,8 +30,9 @@ Allgemein:
 Bitte klären ob es E2E Szenarien für Bearbeiten und Löschen von allen CRUD Entities gibt und dokumentiere die mappings in Kapitel 10
 als CRUD Entity E2E Mapping
 
-5.  bitte gesondert behandeln, erst mit User diskutieren, welche Möglichkeiten es gibt, PDFs als Vorlagen zu nutzen die einfach bearbeitbar sind und trotzdem flexibel gefüllt werden können.
-    Die Rechnung muss nur als PDF raus kommen, die Vorlage ist derzeit Word welches mit dem Ms PDF Drucker erzeugt wird;
-    die Vorlage wird derzeit für jedes Kind manuell einmal angepasst und dann pro Rechnungsmonat kopiert.
-    Alle PDF Vorlagen müssen Felder haben, und variable Bereiche mit Wiederholungen und Feldwiederholungen
-    z.B. für eine Rechnungszeile. bitte analysiere ob das einfach geht mit einer passenden Library
+5.  ✅ **erledigt (2026-04-21)** — Konzept in `pdftemplateconcept.md`,
+    Plan in `pdftemplateimplementation.md`, PRD §5 überarbeitet.
+    Ergebnis: AcroForm-basierte `briefvorlage.pdf` (PDF-XChange
+    Editor) + code-gezeichnete Tabellenzeilen mit `pdf-lib`.
+    Eine Vorlage-Technologie ohne zusätzliches Binary, pflegbar
+    ohne Programmierkenntnisse.

@@ -193,25 +193,6 @@ Der zugehörige Stundennachweis übernimmt dieselbe Rechnungsnummer
 
 ## 5. PDF-Vorlagen
 
-> **⚠️ Dieser Abschnitt wird separat überarbeitet.**
-> Offene Punkte zur Klärung vor der Umsetzung:
->
-> - Die Rechnung muss am Ende **nur als PDF** herauskommen; die
->   aktuelle Vorlage ist ein **Word-Dokument**, das pro Kind einmal
->   manuell angepasst und dann pro Rechnungsmonat kopiert wird
->   (PDF-Erzeugung bisher über den MS-PDF-Drucker).
-> - Ziel: **einfach bearbeitbare PDF-Vorlagen mit Platzhaltern
->   („Feldern")** und **variablen Bereichen mit Wiederholungen**
->   (z. B. pro Rechnungszeile — Feldwiederholungen innerhalb einer
->   Wiederholung).
-> - Offen: **welche Vorlagen-Technologie** (z. B. ausfüllbare
->   AcroForm-PDFs, HTML/Handlebars → PDF, DOCX-Template →
->   LibreOffice-Headless → PDF, etc.) und **welche Library** unter
->   Node/Bun dies unterstützt, ohne dass die Therapeutin eine
->   Programmierkenntnis braucht, um die Vorlage zu pflegen.
-> - Die folgende Beschreibung ist der **bisherige Stand aus v1** und
->   gilt als Platzhalter, bis die Vorlagen-Technik entschieden ist.
-
 Die Therapeutin hinterlegt eigene PDF-Vorlagen mit ihrem Briefkopf.
 
 - **Eine Vorlage pro Auftraggeber** (optional, falls gewünscht)
@@ -219,8 +200,43 @@ Die Therapeutin hinterlegt eigene PDF-Vorlagen mit ihrem Briefkopf.
 - Je **Vorlagen-Typ** getrennt: eine für **Rechnung**, eine für
   **Stundennachweis**
 
-Die App zeichnet Rechnungskopf, Adressblock und Tabelle in einen
-**festen Bereich unterhalb des Briefkopfs** der Vorlage.
+### Technologie — Rechnungsvorlage
+
+Die Rechnungsvorlage ist ein **PDF mit AcroForm-Feldern**
+(pdftemplateconcept.md / pdftemplateimplementation.md). Die
+Therapeutin pflegt die Vorlage in **PDF-XChange Editor** und
+platziert die benannten Textfelder dort, wo sie gerendert werden
+sollen. Die App füllt sie mit `pdf-lib` und ruft `form.flatten()`
+auf, sodass das erzeugte PDF in jedem Viewer gleich aussieht.
+
+**Feld-Inventar** (Groß-/Kleinschreibung exakt):
+
+| Feldname            | Typ              | Zweck                                                     |
+| ------------------- | ---------------- | --------------------------------------------------------- |
+| `empfaengerAdresse` | Text (multiline) | Anschriftsblock (3–4 Zeilen)                              |
+| `rechnungsnummer`   | Text             | `RE-YYYY-MM-NNNN`; darf in der Vorlage mehrfach vorkommen |
+| `rechnungsdatum`    | Text             | Ausstellungsdatum `DD.MM.YYYY`                            |
+| `leistungszeitraum` | Text             | z. B. `01.04.2026 – 30.04.2026`                           |
+| `einleitungstext`   | Text (multiline) | Satz mit der Therapieform aus `therapien.form`            |
+| `kindTitel`         | Text             | `Vorname Nachname · Aktenzeichen · im <Monat> <Jahr>`     |
+| `gesamtsumme`       | Text             | formatierter Gesamtbetrag, z. B. `189,78 €`               |
+| `unterschriftName`  | Text (optional)  | Kindesname im Unterschriftsblock                          |
+
+Fehlende optionale Felder werden still ignoriert, sodass die
+Therapeutin die Vorlage iterativ erweitern kann.
+
+**Tabellenbereich**: die App zeichnet pro Behandlung eine Zeile
+(Pos · Anzahl BE · Einheit · Datum + Taetigkeit-Label · Einzel €
+· Gesamt €) in die Tabellenzone der Vorlage. Koordinaten sind in
+`apps/server/src/pdf/layout.ts#LAYOUT.rechnung` hinterlegt — die
+Vorlage muss einen dazu passenden Tabellenrahmen gedruckt
+enthalten. Leere Zeilen bleiben leer. Phase 1 unterstützt so
+viele Behandlungen, wie in die Zone passen; darüber hinaus wird
+`TooManyBehandlungenError` ausgelöst (Paginierung in Phase 2).
+
+USt-Hinweis, Zahlungsziel, Dankestext und Unterschriftsbereich
+sind **statischer Bestandteil der Vorlage** — sie werden nicht
+vom Code gezeichnet.
 
 **Speicherort der Vorlagen:** Die PDF-Vorlagen werden **als Dateien** in
 einem Verzeichnis `templates/` **neben der Datenbankdatei** abgelegt
@@ -348,16 +364,19 @@ Testgrundlage (TDD).
   Vorlage, aber eine globale Rechnungs-Fallback-Vorlage existiert,
   Then wird die globale Vorlage verwendet.
 - **AC-RECH-08** `[unit]` Given gültige Rechnungsdaten, Then enthält
-  das PDF den USt-Befreiungshinweis und **keinen** USt-Ausweis.
+  das PDF den USt-Befreiungshinweis (aus der Vorlage, §5) und
+  **keinen** USt-Ausweis.
 - **AC-RECH-09** `[e2e]` Given eine Rechnung wird für Kind „Anna
   Musterfrau" erzeugt, Then liegt die Datei unter
   `~/.behandlungsverwaltung/bills/` mit Dateinamen im Format
   `RE-YYYY-MM-NNNN-<Vorname_Nachname>.pdf`
   (z. B. `RE-2026-04-0001-Anna_Musterfrau.pdf`).
 - **AC-RECH-10** `[unit]` Given eine Rechnungszeile, Then hat die
-  Zeile genau die Spalten **Bezeichnung · Menge · Einheit · Einzel
-  € · Gesamt €** in dieser Reihenfolge; **Bezeichnung** enthält die
-  Tätigkeit der Behandlung (§2.4), **Einheit** ist fest „BE".
+  Zeile genau die Spalten **Pos · Anzahl · Einheit · Bezeichnung ·
+  Einzel € · Gesamt €** in dieser Reihenfolge; **Bezeichnung**
+  enthält `<DD.MM.YYYY> · <Tätigkeit>` (mit Fallback auf die
+  Therapieform, wenn die Tätigkeit fehlt, §2.4); **Einheit** ist
+  fest „BE".
 - **AC-RECH-11** `[e2e]` Given eine Rechnung `RE-2026-04-0001`
   existiert, When die Therapeutin sie mit korrigierten Daten **neu
   erstellt** (Dialog „Ja"), Then wird die PDF mit den neuen Daten
@@ -367,6 +386,13 @@ Testgrundlage (TDD).
   herunterladen" auslöst, Then werden alle Rechnungen für A/April
   2026 zum Download bereitgestellt und in der Rechnungstabelle als
   „heruntergeladen am …" markiert.
+- **AC-RECH-13** `[unit]` Given die Therapeutin gibt beim Erzeugen
+  `rechnungsdatum=2026-04-15` ein, Then steht `15.04.2026` im
+  AcroForm-Feld `rechnungsdatum` der erzeugten PDF und in der
+  Spalte `rechnungsdatum` der Rechnungszeile.
+- **AC-RECH-14** `[unit]` Given eine Rechnung mit N Behandlungen im
+  Monat, Then enthält das PDF genau N Tabellenzeilen (eine pro
+  Behandlung), leere Pflichtzeilen werden **nicht** erzeugt.
 
 ### Stundennachweis
 
