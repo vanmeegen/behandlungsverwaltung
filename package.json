@@ -44,6 +44,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^15.2.11",
     "prettier": "^3.3.3",
+    "resedit": "^3.0.2",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.15.0"
   },

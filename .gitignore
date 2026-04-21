@@ -9,6 +9,7 @@ coverage/
 .env.local
 .vite/
 .turbo/
+.cache/
 
 # Bun / package manager
 bun.lockb.bak

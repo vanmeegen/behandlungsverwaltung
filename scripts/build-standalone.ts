@@ -12,8 +12,9 @@
  *   bun run build:standalone -- --targets=windows-x64,darwin-arm64
  */
 import { $ } from 'bun';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, access, copyFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { injectWindowsResources } from './inject-windows-resources';
 
 interface Target {
   id: string;
@@ -72,6 +73,46 @@ function parseTargets(): Target[] {
 const repoRoot = resolve(import.meta.dir, '..');
 const outDir = resolve(repoRoot, 'dist-standalone');
 const entry = resolve(repoRoot, 'apps/server/src/standalone.ts');
+const windowsIcon = resolve(repoRoot, 'apps/web/public/app-icon.ico');
+const cacheDir = resolve(repoRoot, '.cache/build-standalone');
+
+// Bun's --windows-icon only works when compiling on Windows. From
+// Linux/macOS we instead patch the icon into the stock bun.exe that's
+// used as the compile base, then let `bun build --compile` append our
+// JS payload on top via --compile-executable-path.
+async function prepareWindowsBunBase(version: string): Promise<string> {
+  const patchedPath = resolve(cacheDir, `bun-${version}-windows-x64-branded.exe`);
+  try {
+    await access(patchedPath);
+    return patchedPath;
+  } catch {
+    // fall through to download + patch
+  }
+
+  await mkdir(cacheDir, { recursive: true });
+  const pristinePath = resolve(cacheDir, `bun-${version}-windows-x64-pristine.exe`);
+  try {
+    await access(pristinePath);
+  } catch {
+    const url = `https://github.com/oven-sh/bun/releases/download/bun-v${version}/bun-windows-x64.zip`;
+    const zipPath = resolve(cacheDir, `bun-${version}-windows-x64.zip`);
+    console.log(`  ▶ Downloading ${url}`);
+    await $`curl -sL -o ${zipPath} ${url}`;
+    await $`unzip -o -q ${zipPath} -d ${cacheDir}`;
+    await copyFile(resolve(cacheDir, 'bun-windows-x64/bun.exe'), pristinePath);
+  }
+
+  console.log(`  ▶ Patching stock bun.exe with icon + version info`);
+  await copyFile(pristinePath, patchedPath);
+  await injectWindowsResources({
+    exePath: patchedPath,
+    icoPath: windowsIcon,
+    productName: 'Behandlungsverwaltung',
+    fileDescription: 'Behandlungsverwaltung – Standalone',
+    fileVersion: [0, 1, 0, 0],
+  });
+  return patchedPath;
+}
 
 async function run(): Promise<void> {
   const targets = parseTargets();
@@ -85,10 +126,17 @@ async function run(): Promise<void> {
 
   await mkdir(outDir, { recursive: true });
 
+  const bunVersion = Bun.version;
+
   for (const target of targets) {
     const outfile = resolve(outDir, target.outfile);
     console.log(`\n▶ Compiling for ${target.id} → ${outfile}`);
-    await $`bun build --compile --minify --target=${target.bunTarget} --outfile=${outfile} ${entry}`;
+    if (target.id === 'windows-x64' && process.platform !== 'win32') {
+      const base = await prepareWindowsBunBase(bunVersion);
+      await $`bun build --compile --minify --target=${target.bunTarget} --compile-executable-path=${base} --outfile=${outfile} ${entry}`;
+    } else {
+      await $`bun build --compile --minify --target=${target.bunTarget} --outfile=${outfile} ${entry}`;
+    }
   }
 
   console.log(`\n✓ Standalone builds written to ${outDir}`);
