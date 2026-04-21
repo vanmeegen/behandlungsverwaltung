@@ -23,7 +23,7 @@ test.describe('AC-SYS-01 first-run bootstrap', () => {
     // Loading the home page guarantees the webServer is ready — so bootstrap()
     // has already run by this point.
     await page.goto('/');
-    await expect(page.getByTestId('nav-home')).toBeVisible();
+    await expect(page.getByTestId('nav-schnellerfassung')).toBeVisible();
 
     expect(existsSync(E2E_HOME)).toBe(true);
     expect(statSync(TEMPLATES_DIR).isDirectory()).toBe(true);

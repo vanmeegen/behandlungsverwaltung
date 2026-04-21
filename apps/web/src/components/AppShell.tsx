@@ -24,11 +24,10 @@ interface NavEntry {
 }
 
 const NAV_ENTRIES: readonly NavEntry[] = [
-  { to: '/', label: 'Start', testId: 'nav-home', end: true },
+  { to: '/schnellerfassung', label: 'Schnellerfassung', testId: 'nav-schnellerfassung' },
   { to: '/kinder', label: 'Kinder', testId: 'nav-kinder' },
   { to: '/auftraggeber', label: 'Auftraggeber', testId: 'nav-auftraggeber' },
   { to: '/therapien', label: 'Therapien', testId: 'nav-therapien' },
-  { to: '/schnellerfassung', label: 'Schnellerfassung', testId: 'nav-schnellerfassung' },
   { to: '/vorlagen', label: 'Vorlagen', testId: 'nav-vorlagen' },
   { to: '/rechnungen/neu', label: 'Rechnung erstellen', testId: 'nav-rechnung-neu' },
   { to: '/rechnungen', label: 'Rechnungsübersicht', testId: 'nav-rechnungen', end: true },

@@ -1,6 +1,5 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
-import { Hello } from './components/Hello';
 import { rootStore } from './models/rootStore';
 import { AuftraggeberDetailPage } from './pages/AuftraggeberDetailPage';
 import { AuftraggeberFormPage } from './pages/AuftraggeberFormPage';
@@ -21,7 +20,7 @@ export function App(): JSX.Element {
   return (
     <Routes>
       <Route element={<AppShell uiStore={rootStore.uiStore} />}>
-        <Route path="/" element={<Hello model={rootStore.helloModel} />} />
+        <Route path="/" element={<Navigate to="/schnellerfassung" replace />} />
         <Route path="/kinder" element={<KindListPage store={rootStore.kindStore} />} />
         <Route path="/kinder/new" element={<KindFormPage store={rootStore.kindStore} />} />
         <Route path="/kinder/:id" element={<KindFormPage store={rootStore.kindStore} />} />
