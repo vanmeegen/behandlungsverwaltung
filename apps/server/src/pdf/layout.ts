@@ -12,11 +12,11 @@ export const LAYOUT = {
   tableRowFontSize: 10,
   titleFontSize: 14,
   smallFontSize: 9,
-  // column x-coordinates for the Rechnung table (left edge):
-  // Datum | Arbeitsthema | BE | Einzelpreis | Gesamt
-  colDatumX: 56,
-  colArbeitsthemaX: 120,
-  colBeX: 340,
-  colEinzelpreisX: 380,
+  // column x-coordinates for the Rechnung table (left edge) — PRD §3.2:
+  // Bezeichnung (= Tätigkeit) | Menge (= BE) | Einheit ("BE") | Einzel € | Gesamt €
+  colBezeichnungX: 56,
+  colMengeX: 300,
+  colEinheitX: 340,
+  colEinzelX: 380,
   colGesamtX: 470,
 };

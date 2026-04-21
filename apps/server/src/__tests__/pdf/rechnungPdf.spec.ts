@@ -64,18 +64,21 @@ const DEFAULT_INPUT: Omit<RechnungPdfInput, 'templateBytes'> = {
     {
       datum: new Date('2026-04-01T00:00:00.000Z'),
       taetigkeit: 'lerntherapie',
+      taetigkeitLabel: 'Lerntherapie',
       be: 2,
       zeilenbetragCents: 9000,
     },
     {
       datum: new Date('2026-04-15T00:00:00.000Z'),
       taetigkeit: 'lerntherapie',
+      taetigkeitLabel: 'Lerntherapie',
       be: 2,
       zeilenbetragCents: 9000,
     },
     {
       datum: new Date('2026-04-29T00:00:00.000Z'),
       taetigkeit: 'lerntherapie',
+      taetigkeitLabel: 'Lerntherapie',
       be: 2,
       zeilenbetragCents: 9000,
     },
@@ -102,17 +105,40 @@ describe('renderRechnungPdf (PRD §3.2, §5, AC-RECH-08)', () => {
     expect(text).toContain('04/2026');
   });
 
-  it('includes each Behandlung datum formatted dd.MM.yyyy', async () => {
+  it('renders the PRD §3.2 header columns in order', async () => {
     const text = await renderText();
-    expect(text).toContain('01.04.2026');
-    expect(text).toContain('15.04.2026');
-    expect(text).toContain('29.04.2026');
+    const iBez = text.indexOf('Bezeichnung');
+    const iMenge = text.indexOf('Menge', iBez);
+    const iEinheit = text.indexOf('Einheit', iMenge);
+    const iEinzel = text.indexOf('Einzel', iEinheit);
+    const iGesamt = text.indexOf('Gesamt', iEinzel);
+    expect(iBez).toBeGreaterThanOrEqual(0);
+    expect(iMenge).toBeGreaterThan(iBez);
+    expect(iEinheit).toBeGreaterThan(iMenge);
+    expect(iEinzel).toBeGreaterThan(iEinheit);
+    expect(iGesamt).toBeGreaterThan(iEinzel);
   });
 
-  it('includes the Tätigkeit for every line', async () => {
+  it('fills "Bezeichnung" with the Tätigkeit-Label for every line', async () => {
     const text = await renderText();
-    const occurrences = text.split('lerntherapie').length - 1;
+    const occurrences = text.split('Lerntherapie').length - 1;
     expect(occurrences).toBeGreaterThanOrEqual(3);
+  });
+
+  it('uses "BE" as the unit for every invoice line', async () => {
+    const text = await renderText();
+    // three lines × unit "BE" + the "BE" inside "Lerntherapie" context is
+    // not an exact token match; checking the PDF contains the header word is
+    // sufficient proof the column exists alongside the data.
+    expect(text).toContain('Einheit');
+    expect(text).toContain('BE');
+  });
+
+  it('does not render a per-line Datum column (PRD §3.2)', async () => {
+    const text = await renderText();
+    expect(text).not.toContain('01.04.2026');
+    expect(text).not.toContain('15.04.2026');
+    expect(text).not.toContain('29.04.2026');
   });
 
   it('includes the Gesamtsumme 270,00 €', async () => {

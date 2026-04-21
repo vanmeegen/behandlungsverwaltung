@@ -2,6 +2,8 @@ import {
   computeRechnungsLines,
   sanitizeKindesname,
   sumZeilenbetraege,
+  TAETIGKEIT_LABELS,
+  type TaetigkeitValue,
 } from '@behandlungsverwaltung/shared';
 import { and, eq } from 'drizzle-orm';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -116,6 +118,9 @@ export async function createMonatsrechnung(
     lines: behandlungenRows.map((b, i) => ({
       datum: b.datum,
       taetigkeit: b.taetigkeit,
+      taetigkeitLabel: b.taetigkeit
+        ? (TAETIGKEIT_LABELS[b.taetigkeit as TaetigkeitValue] ?? b.taetigkeit)
+        : null,
       be: b.be,
       zeilenbetragCents: lines[i]!.zeilenbetragCents,
     })),

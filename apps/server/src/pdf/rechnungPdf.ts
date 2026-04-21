@@ -5,6 +5,7 @@ import { LAYOUT } from './layout';
 export interface RechnungPdfLine {
   datum: Date;
   taetigkeit: string | null;
+  taetigkeitLabel: string | null;
   be: number;
   zeilenbetragCents: number;
 }
@@ -39,13 +40,6 @@ export interface RechnungPdfInput {
   stundensatzCents: number;
   lines: RechnungPdfLine[];
   gesamtCents: number;
-}
-
-function formatDateDDMMYYYY(d: Date): string {
-  const day = String(d.getUTCDate()).padStart(2, '0');
-  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const year = d.getUTCFullYear();
-  return `${day}.${month}.${year}`;
 }
 
 function formatEuroPlain(cents: number): string {
@@ -126,28 +120,33 @@ export async function renderRechnungPdf(input: RechnungPdfInput): Promise<Uint8A
     font: fontBold,
   });
 
-  // Tabellenkopf
+  // Tabellenkopf — PRD §3.2: Bezeichnung · Menge · Einheit · Einzel € · Gesamt €
   let y = LAYOUT.bodyTop;
-  page.drawText('Datum', {
-    x: LAYOUT.colDatumX,
+  page.drawText('Bezeichnung', {
+    x: LAYOUT.colBezeichnungX,
     y,
     size: LAYOUT.tableHeaderFontSize,
     font: fontBold,
   });
-  page.drawText('Arbeitsthema', {
-    x: LAYOUT.colArbeitsthemaX,
+  page.drawText('Menge', {
+    x: LAYOUT.colMengeX,
     y,
     size: LAYOUT.tableHeaderFontSize,
     font: fontBold,
   });
-  page.drawText('BE', { x: LAYOUT.colBeX, y, size: LAYOUT.tableHeaderFontSize, font: fontBold });
-  page.drawText('Einzelpreis', {
-    x: LAYOUT.colEinzelpreisX,
+  page.drawText('Einheit', {
+    x: LAYOUT.colEinheitX,
     y,
     size: LAYOUT.tableHeaderFontSize,
     font: fontBold,
   });
-  page.drawText('Gesamt', {
+  page.drawText('Einzel €', {
+    x: LAYOUT.colEinzelX,
+    y,
+    size: LAYOUT.tableHeaderFontSize,
+    font: fontBold,
+  });
+  page.drawText('Gesamt €', {
     x: LAYOUT.colGesamtX,
     y,
     size: LAYOUT.tableHeaderFontSize,
@@ -157,26 +156,27 @@ export async function renderRechnungPdf(input: RechnungPdfInput): Promise<Uint8A
   y -= LAYOUT.bodyLineHeight;
 
   for (const line of input.lines) {
-    page.drawText(formatDateDDMMYYYY(line.datum), {
-      x: LAYOUT.colDatumX,
-      y,
-      size: LAYOUT.tableRowFontSize,
-      font,
-    });
-    page.drawText((line.taetigkeit ?? '').slice(0, 30), {
-      x: LAYOUT.colArbeitsthemaX,
+    const bezeichnung = line.taetigkeitLabel ?? '';
+    page.drawText(bezeichnung.slice(0, 40), {
+      x: LAYOUT.colBezeichnungX,
       y,
       size: LAYOUT.tableRowFontSize,
       font,
     });
     page.drawText(String(line.be), {
-      x: LAYOUT.colBeX,
+      x: LAYOUT.colMengeX,
+      y,
+      size: LAYOUT.tableRowFontSize,
+      font,
+    });
+    page.drawText('BE', {
+      x: LAYOUT.colEinheitX,
       y,
       size: LAYOUT.tableRowFontSize,
       font,
     });
     page.drawText(formatEuroPlain(input.stundensatzCents), {
-      x: LAYOUT.colEinzelpreisX,
+      x: LAYOUT.colEinzelX,
       y,
       size: LAYOUT.tableRowFontSize,
       font,
@@ -193,7 +193,7 @@ export async function renderRechnungPdf(input: RechnungPdfInput): Promise<Uint8A
   // Gesamtsumme
   y -= LAYOUT.bodyLineHeight;
   page.drawText('Gesamtsumme', {
-    x: LAYOUT.colEinzelpreisX,
+    x: LAYOUT.colEinzelX,
     y,
     size: LAYOUT.tableHeaderFontSize,
     font: fontBold,
