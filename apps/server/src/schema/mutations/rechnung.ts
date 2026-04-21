@@ -40,7 +40,7 @@ builder.mutationField('createMonatsrechnung', (t) =>
     resolve: async (_parent, args, ctx) => {
       const { db } = ctx;
       const paths = resolvePaths(ctx);
-      const { year, month, kindId, auftraggeberId } = args.input;
+      const { year, month, kindId, auftraggeberId, rechnungsdatum } = args.input;
       if (!Number.isInteger(year) || year < 1000 || year > 9999) {
         throw new GraphQLError('Jahr ist ungültig', {
           extensions: { code: 'VALIDATION_ERROR' },
@@ -51,12 +51,24 @@ builder.mutationField('createMonatsrechnung', (t) =>
           extensions: { code: 'VALIDATION_ERROR' },
         });
       }
+      if (!/^\d{4}-\d{2}-\d{2}/.test(rechnungsdatum)) {
+        throw new GraphQLError('Rechnungsdatum muss ein ISO-Datum sein (YYYY-MM-DD)', {
+          extensions: { code: 'VALIDATION_ERROR' },
+        });
+      }
+      const parsedRechnungsdatum = new Date(rechnungsdatum);
+      if (Number.isNaN(parsedRechnungsdatum.getTime())) {
+        throw new GraphQLError('Rechnungsdatum ist kein gültiges Datum', {
+          extensions: { code: 'VALIDATION_ERROR' },
+        });
+      }
       try {
         return await createMonatsrechnung(db, paths, {
           year,
           month,
           kindId: Number(kindId),
           auftraggeberId: Number(auftraggeberId),
+          rechnungsdatum: parsedRechnungsdatum,
           force: args.input.force ?? false,
         });
       } catch (err) {

@@ -113,6 +113,7 @@ describe('createMonatsrechnung mutation (AC-RECH-01, AC-RECH-05)', () => {
       month: 4,
       kindId: String(kindId),
       auftraggeberId: String(agId),
+      rechnungsdatum: '2026-05-02',
     });
     expect(result.errors).toBeUndefined();
     const created = (result.data as { createMonatsrechnung: Record<string, unknown> })
@@ -128,12 +129,14 @@ describe('createMonatsrechnung mutation (AC-RECH-01, AC-RECH-05)', () => {
       month: 4,
       kindId: String(kindId),
       auftraggeberId: String(agId),
+      rechnungsdatum: '2026-05-02',
     });
     const dup = await runCreate(ctx, {
       year: 2026,
       month: 4,
       kindId: String(kindId),
       auftraggeberId: String(agId),
+      rechnungsdatum: '2026-05-02',
     });
     expect(dup.errors?.[0]?.extensions?.code).toBe('DUPLICATE_RECHNUNG');
     expect(dup.errors?.[0]?.message).toBe('Für diesen Monat wurde bereits eine Rechnung erzeugt.');
@@ -146,7 +149,19 @@ describe('createMonatsrechnung mutation (AC-RECH-01, AC-RECH-05)', () => {
       month: 3,
       kindId: String(kindId),
       auftraggeberId: String(agId),
+      rechnungsdatum: '2026-05-02',
     });
     expect(res.errors?.[0]?.extensions?.code).toBe('KEINE_BEHANDLUNGEN');
+  });
+
+  it('rejects an invalid rechnungsdatum with VALIDATION_ERROR', async () => {
+    const res = await runCreate(ctx, {
+      year: 2026,
+      month: 4,
+      kindId: String(kindId),
+      auftraggeberId: String(agId),
+      rechnungsdatum: 'nicht-ein-datum',
+    });
+    expect(res.errors?.[0]?.extensions?.code).toBe('VALIDATION_ERROR');
   });
 });

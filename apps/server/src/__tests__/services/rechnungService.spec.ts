@@ -112,6 +112,7 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
       month: 4,
       kindId,
       auftraggeberId,
+      rechnungsdatum: new Date('2026-05-02T00:00:00.000Z'),
     });
     expect(row.nummer).toBe('RE-2026-04-0001');
     expect(row.gesamtCents).toBe(27000);
@@ -138,6 +139,7 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
       month: 4,
       kindId,
       auftraggeberId,
+      rechnungsdatum: new Date('2026-05-02T00:00:00.000Z'),
     });
     await expect(
       createMonatsrechnung(ctx.db, ctx.paths, {
@@ -145,6 +147,7 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
         month: 4,
         kindId,
         auftraggeberId,
+        rechnungsdatum: new Date('2026-05-02T00:00:00.000Z'),
       }),
     ).rejects.toBeInstanceOf(RechnungExistiertError);
     const all = ctx.db.select().from(rechnungen).all();
@@ -157,6 +160,7 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
       month: 4,
       kindId,
       auftraggeberId,
+      rechnungsdatum: new Date('2026-05-02T00:00:00.000Z'),
     });
     // Simulate: the Therapeutin already marked this as downloaded.
     ctx.db
@@ -178,6 +182,7 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
       month: 4,
       kindId,
       auftraggeberId,
+      rechnungsdatum: new Date('2026-05-20T00:00:00.000Z'),
       force: true,
     });
 
@@ -185,6 +190,7 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
     expect(second.id).toBe(first.id);
     expect(second.gesamtCents).toBe(36000); // (4 + 2 + 2) BE * 4500 cents
     expect(second.downloadedAt).toBeNull();
+    expect(second.rechnungsdatum.toISOString()).toBe('2026-05-20T00:00:00.000Z');
 
     const all = ctx.db.select().from(rechnungen).all();
     expect(all).toHaveLength(1);

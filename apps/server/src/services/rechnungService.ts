@@ -39,6 +39,13 @@ export interface CreateRechnungInput {
   kindId: number;
   auftraggeberId: number;
   /**
+   * Ausstellungsdatum der Rechnung. Wird vom Nutzer beim Erzeugen
+   * gesetzt (Default heute) und separat von `createdAt` gespeichert,
+   * damit die Rechnung auch später noch mit einem anderen Datum
+   * neu erzeugt werden kann.
+   */
+  rechnungsdatum: Date;
+  /**
    * Wenn true, überschreibt eine bereits existierende Rechnung (gleicher
    * Monat/Kind/Auftraggeber) unter Beibehaltung der Rechnungsnummer (§4).
    * Die Datei wird neu erzeugt, `downloadedAt` wird zurückgesetzt.
@@ -152,6 +159,7 @@ export async function createMonatsrechnung(
       .set({
         stundensatzCentsSnapshot: ag.stundensatzCents,
         gesamtCents,
+        rechnungsdatum: input.rechnungsdatum,
         dateiname,
         downloadedAt: null,
       })
@@ -172,6 +180,7 @@ export async function createMonatsrechnung(
           auftraggeberId: input.auftraggeberId,
           stundensatzCentsSnapshot: ag.stundensatzCents,
           gesamtCents,
+          rechnungsdatum: input.rechnungsdatum,
           dateiname,
         })
         .returning()

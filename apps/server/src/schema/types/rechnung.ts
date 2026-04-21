@@ -18,6 +18,7 @@ export const RechnungRef = builder.objectRef<Rechnung>('Rechnung').implement({
       nullable: true,
       resolve: (r) => (r.downloadedAt ? r.downloadedAt.toISOString() : null),
     }),
+    rechnungsdatum: t.string({ resolve: (r) => r.rechnungsdatum.toISOString() }),
     createdAt: t.string({ resolve: (r) => r.createdAt.toISOString() }),
   }),
 });
