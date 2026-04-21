@@ -1,16 +1,15 @@
 import {
+  TAETIGKEIT_VALUES,
   therapieSchema,
   THERAPIE_FORM_VALUES,
+  type TaetigkeitValue,
   type TherapieFormValue,
 } from '@behandlungsverwaltung/shared';
 import { makeAutoObservable, runInAction } from 'mobx';
 import type { GraphQLFetcher } from '../api/graphqlClient';
 
 export type TherapieFieldErrors = Partial<
-  Record<
-    'kindId' | 'auftraggeberId' | 'form' | 'kommentar' | 'bewilligteBe' | 'arbeitsthema',
-    string
-  >
+  Record<'kindId' | 'auftraggeberId' | 'form' | 'kommentar' | 'bewilligteBe' | 'taetigkeit', string>
 >;
 
 export interface Therapie {
@@ -20,7 +19,7 @@ export interface Therapie {
   form: TherapieFormValue;
   kommentar: string | null;
   bewilligteBe: number;
-  arbeitsthema: string | null;
+  taetigkeit: TaetigkeitValue | null;
 }
 
 export interface TherapieFormInput {
@@ -29,7 +28,7 @@ export interface TherapieFormInput {
   form: TherapieFormValue;
   kommentar: string | null;
   bewilligteBe: number;
-  arbeitsthema: string | null;
+  taetigkeit: TaetigkeitValue | null;
 }
 
 const THERAPIE_COLUMNS = /* GraphQL */ `
@@ -39,7 +38,7 @@ const THERAPIE_COLUMNS = /* GraphQL */ `
   form
   kommentar
   bewilligteBe
-  arbeitsthema
+  taetigkeit
 `;
 
 const THERAPIEN_QUERY = /* GraphQL */ `
@@ -89,7 +88,7 @@ export class TherapieDraft {
   form: TherapieFormValue = 'lerntherapie';
   kommentar = '';
   bewilligteBe = 0;
-  arbeitsthema = '';
+  taetigkeit: TaetigkeitValue | '' = '';
   errors: TherapieFieldErrors = {};
 
   constructor() {
@@ -111,8 +110,8 @@ export class TherapieDraft {
   setBewilligteBe(v: number): void {
     this.bewilligteBe = v;
   }
-  setArbeitsthema(v: string): void {
-    this.arbeitsthema = v;
+  setTaetigkeit(v: TaetigkeitValue | ''): void {
+    this.taetigkeit = v;
   }
 
   loadFrom(t: Therapie): void {
@@ -122,7 +121,7 @@ export class TherapieDraft {
     this.form = t.form;
     this.kommentar = t.kommentar ?? '';
     this.bewilligteBe = t.bewilligteBe;
-    this.arbeitsthema = t.arbeitsthema ?? '';
+    this.taetigkeit = t.taetigkeit ?? '';
     this.errors = {};
   }
 
@@ -133,7 +132,7 @@ export class TherapieDraft {
     this.form = 'lerntherapie';
     this.kommentar = '';
     this.bewilligteBe = 0;
-    this.arbeitsthema = '';
+    this.taetigkeit = '';
     this.errors = {};
   }
 
@@ -144,7 +143,7 @@ export class TherapieDraft {
       form: this.form,
       kommentar: this.kommentar,
       bewilligteBe: this.bewilligteBe,
-      arbeitsthema: this.arbeitsthema,
+      taetigkeit: this.taetigkeit === '' ? null : this.taetigkeit,
     });
     if (!parsed.success) {
       const next: TherapieFieldErrors = {};
@@ -164,7 +163,7 @@ export class TherapieDraft {
       form: parsed.data.form,
       kommentar: parsed.data.kommentar,
       bewilligteBe: parsed.data.bewilligteBe,
-      arbeitsthema: parsed.data.arbeitsthema,
+      taetigkeit: parsed.data.taetigkeit,
     };
   }
 }
@@ -277,5 +276,5 @@ export class TherapieStore {
   }
 }
 
-export { THERAPIE_FORM_VALUES };
-export type { TherapieFormValue };
+export { TAETIGKEIT_VALUES, THERAPIE_FORM_VALUES };
+export type { TaetigkeitValue, TherapieFormValue };

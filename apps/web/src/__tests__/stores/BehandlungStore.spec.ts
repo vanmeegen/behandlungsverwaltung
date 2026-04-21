@@ -29,44 +29,44 @@ describe('BehandlungStore.draftBehandlung', () => {
     expect(store.draftBehandlung.be).toBe(2);
   });
 
-  it('setTherapie(id, default) pre-fills arbeitsthema when untouched (AC-BEH-03)', () => {
-    store.draftBehandlung.setTherapie('7', 'Mathe-Grundlagen');
+  it('setTherapie(id, default) pre-fills taetigkeit when untouched (AC-BEH-03)', () => {
+    store.draftBehandlung.setTherapie('7', 'lerntherapie');
     expect(store.draftBehandlung.therapieId).toBe('7');
-    expect(store.draftBehandlung.arbeitsthema).toBe('Mathe-Grundlagen');
+    expect(store.draftBehandlung.taetigkeit).toBe('lerntherapie');
   });
 
-  it('setArbeitsthema marks the field as touched and setTherapie stops overwriting', () => {
-    store.draftBehandlung.setTherapie('7', 'Mathe-Grundlagen');
-    store.draftBehandlung.setArbeitsthema('Bruchrechnung');
-    store.draftBehandlung.setTherapie('8', 'Konzentration');
+  it('setTaetigkeit marks the field as touched and setTherapie stops overwriting', () => {
+    store.draftBehandlung.setTherapie('7', 'lerntherapie');
+    store.draftBehandlung.setTaetigkeit('dyskalkulie');
+    store.draftBehandlung.setTherapie('8', 'foerderplan');
     expect(store.draftBehandlung.therapieId).toBe('8');
-    expect(store.draftBehandlung.arbeitsthema).toBe('Bruchrechnung');
+    expect(store.draftBehandlung.taetigkeit).toBe('dyskalkulie');
   });
 
-  it('setKindId resets therapieId and arbeitsthema (and untouches)', () => {
-    store.draftBehandlung.setTherapie('7', 'Mathe-Grundlagen');
-    store.draftBehandlung.setArbeitsthema('Bruchrechnung');
+  it('setKindId resets therapieId and taetigkeit (and untouches)', () => {
+    store.draftBehandlung.setTherapie('7', 'lerntherapie');
+    store.draftBehandlung.setTaetigkeit('dyskalkulie');
     store.draftBehandlung.setKindId('42');
     expect(store.draftBehandlung.kindId).toBe('42');
     expect(store.draftBehandlung.therapieId).toBe('');
-    expect(store.draftBehandlung.arbeitsthema).toBe('');
+    expect(store.draftBehandlung.taetigkeit).toBe('');
   });
 });
 
 describe('BehandlungStore.saveDraft', () => {
-  it('dispatches createBehandlung with the draft input (arbeitsthema from Vorbelegung)', async () => {
+  it('dispatches createBehandlung with the draft input (taetigkeit from Vorbelegung)', async () => {
     const fetcher = vi.fn().mockResolvedValue({
       createBehandlung: {
         id: '1',
         therapieId: '7',
         datum: '2026-04-20T00:00:00.000Z',
         be: 2,
-        arbeitsthema: 'Mathe-Grundlagen',
+        taetigkeit: 'lerntherapie',
       },
     });
     const store = new BehandlungStore(fetcher as unknown as GraphQLFetcher);
     store.draftBehandlung.setKindId('1');
-    store.draftBehandlung.setTherapie('7', 'Mathe-Grundlagen');
+    store.draftBehandlung.setTherapie('7', 'lerntherapie');
     store.draftBehandlung.setDatum('2026-04-20');
     store.draftBehandlung.setBe(2);
 
@@ -79,7 +79,7 @@ describe('BehandlungStore.saveDraft', () => {
         therapieId: '7',
         datum: '2026-04-20',
         be: 2,
-        arbeitsthema: 'Mathe-Grundlagen',
+        taetigkeit: 'lerntherapie',
       },
     });
   });
@@ -94,14 +94,14 @@ describe('BehandlungStore.saveDraft', () => {
     expect(store.draftBehandlung.errors.therapieId).toBeDefined();
   });
 
-  it('sends null arbeitsthema when the draft is empty', async () => {
+  it('sends null taetigkeit when the draft is empty', async () => {
     const fetcher = vi.fn().mockResolvedValue({
       createBehandlung: {
         id: '1',
         therapieId: '7',
         datum: '2026-04-20T00:00:00.000Z',
         be: 1,
-        arbeitsthema: null,
+        taetigkeit: null,
       },
     });
     const store = new BehandlungStore(fetcher as unknown as GraphQLFetcher);
@@ -114,7 +114,7 @@ describe('BehandlungStore.saveDraft', () => {
         therapieId: '7',
         datum: '2026-04-20',
         be: 1,
-        arbeitsthema: null,
+        taetigkeit: null,
       },
     });
   });
@@ -129,7 +129,7 @@ describe('BehandlungStore.loadByTherapie', () => {
           therapieId: '7',
           datum: '2026-04-20T00:00:00.000Z',
           be: 2,
-          arbeitsthema: 'X',
+          taetigkeit: 'X',
         },
       ],
     });

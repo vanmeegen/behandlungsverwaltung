@@ -13,7 +13,7 @@ const CREATE_THERAPIE = /* GraphQL */ `
       form
       kommentar
       bewilligteBe
-      arbeitsthema
+      taetigkeit
     }
   }
 `;
@@ -76,7 +76,7 @@ describe('createTherapie mutation (PRD §2.3, AC-TH-01)', () => {
       form: 'lerntherapie',
       kommentar: null,
       bewilligteBe: 60,
-      arbeitsthema: 'Mathe-Grundlagen',
+      taetigkeit: 'lerntherapie',
       ...override,
     };
   }
@@ -92,7 +92,7 @@ describe('createTherapie mutation (PRD §2.3, AC-TH-01)', () => {
     expect(row.form).toBe('lerntherapie');
     expect(row.kommentar).toBeNull();
     expect(row.bewilligteBe).toBe(60);
-    expect(row.arbeitsthema).toBe('Mathe-Grundlagen');
+    expect(row.taetigkeit).toBe('lerntherapie');
   });
 
   it('rejects form=sonstiges without kommentar with "Kommentar ist Pflicht bei Sonstiges" (AC-TH-01)', async () => {
@@ -124,18 +124,16 @@ describe('createTherapie mutation (PRD §2.3, AC-TH-01)', () => {
     expect(result.errors).toBeDefined();
   });
 
-  it('persists null arbeitsthema when absent', async () => {
-    const result = await run(validInput({ arbeitsthema: null }));
+  it('persists null taetigkeit when absent', async () => {
+    const result = await run(validInput({ taetigkeit: null }));
     expect(result.errors).toBeUndefined();
     const row = ctx.db.select().from(therapien).all()[0];
-    expect(row?.arbeitsthema).toBeNull();
+    expect(row?.taetigkeit).toBeNull();
   });
 
-  it('trims whitespace-only arbeitsthema to null', async () => {
-    const result = await run(validInput({ arbeitsthema: '   ' }));
-    expect(result.errors).toBeUndefined();
-    const row = ctx.db.select().from(therapien).all()[0];
-    expect(row?.arbeitsthema).toBeNull();
+  it('rejects a non-enum taetigkeit string (GraphQL enum validation)', async () => {
+    const result = await run(validInput({ taetigkeit: 'Mathe-Grundlagen' }));
+    expect(result.errors).toBeDefined();
   });
 
   it('errors when kindId points at non-existent Kind (FK)', async () => {

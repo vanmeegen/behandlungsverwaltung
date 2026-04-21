@@ -118,7 +118,7 @@ describe('db/schema — therapien (PRD §2.3)', () => {
   it('has the expected columns', () => {
     expect(columnNames(therapien)).toEqual(
       [
-        'arbeitsthema',
+        'taetigkeit',
         'auftraggeber_id',
         'bewilligte_be',
         'created_at',
@@ -141,17 +141,17 @@ describe('db/schema — therapien (PRD §2.3)', () => {
     });
   });
 
-  it('kommentar and arbeitsthema are nullable', () => {
+  it('kommentar and taetigkeit are nullable', () => {
     const cfg = getTableConfig(therapien);
     expect(cfg.columns.find((c) => c.name === 'kommentar')?.notNull).toBe(false);
-    expect(cfg.columns.find((c) => c.name === 'arbeitsthema')?.notNull).toBe(false);
+    expect(cfg.columns.find((c) => c.name === 'taetigkeit')?.notNull).toBe(false);
   });
 });
 
 describe('db/schema — behandlungen (PRD §2.4)', () => {
   it('has the expected columns', () => {
     expect(columnNames(behandlungen)).toEqual(
-      ['arbeitsthema', 'be', 'created_at', 'datum', 'id', 'therapie_id', 'updated_at'].sort(),
+      ['taetigkeit', 'be', 'created_at', 'datum', 'id', 'therapie_id', 'updated_at'].sort(),
     );
   });
 
@@ -164,8 +164,8 @@ describe('db/schema — behandlungen (PRD §2.4)', () => {
     });
   });
 
-  it('arbeitsthema is nullable (resolver substitutes Therapie default or null)', () => {
-    const col = getTableConfig(behandlungen).columns.find((c) => c.name === 'arbeitsthema');
+  it('taetigkeit is nullable (resolver substitutes Therapie default or null)', () => {
+    const col = getTableConfig(behandlungen).columns.find((c) => c.name === 'taetigkeit');
     expect(col?.notNull).toBe(false);
   });
 });
@@ -228,7 +228,7 @@ describe('db/schema — rechnung_behandlungen (snapshot lines)', () => {
         'behandlung_id',
         'id',
         'rechnung_id',
-        'snapshot_arbeitsthema',
+        'snapshot_taetigkeit',
         'snapshot_be',
         'snapshot_date',
         'snapshot_zeilenbetrag_cents',

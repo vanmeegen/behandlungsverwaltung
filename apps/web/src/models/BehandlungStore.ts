@@ -1,9 +1,9 @@
-import { behandlungSchema } from '@behandlungsverwaltung/shared';
+import { behandlungSchema, type TaetigkeitValue } from '@behandlungsverwaltung/shared';
 import { makeAutoObservable, runInAction } from 'mobx';
 import type { GraphQLFetcher } from '../api/graphqlClient';
 
 export type BehandlungFieldErrors = Partial<
-  Record<'therapieId' | 'datum' | 'be' | 'arbeitsthema', string>
+  Record<'therapieId' | 'datum' | 'be' | 'taetigkeit', string>
 >;
 
 export interface Behandlung {
@@ -11,14 +11,14 @@ export interface Behandlung {
   therapieId: string;
   datum: string;
   be: number;
-  arbeitsthema: string | null;
+  taetigkeit: TaetigkeitValue | null;
 }
 
 export interface BehandlungFormInput {
   therapieId: string;
   datum: string;
   be: number;
-  arbeitsthema: string | null;
+  taetigkeit: TaetigkeitValue | null;
 }
 
 function todayIso(): string {
@@ -34,7 +34,7 @@ const BEHANDLUNG_COLUMNS = /* GraphQL */ `
   therapieId
   datum
   be
-  arbeitsthema
+  taetigkeit
 `;
 
 const CREATE_BEHANDLUNG = /* GraphQL */ `
@@ -58,8 +58,8 @@ export class BehandlungDraft {
   therapieId = '';
   datum: string = todayIso();
   be = 1;
-  arbeitsthema = '';
-  arbeitsthemaTouched = false;
+  taetigkeit: TaetigkeitValue | '' = '';
+  taetigkeitTouched = false;
   errors: BehandlungFieldErrors = {};
 
   constructor() {
@@ -69,20 +69,20 @@ export class BehandlungDraft {
   setKindId(v: string): void {
     this.kindId = v;
     this.therapieId = '';
-    this.arbeitsthema = '';
-    this.arbeitsthemaTouched = false;
+    this.taetigkeit = '';
+    this.taetigkeitTouched = false;
   }
 
-  setTherapie(id: string, defaultArbeitsthema: string | null): void {
+  setTherapie(id: string, defaultTaetigkeit: TaetigkeitValue | null): void {
     this.therapieId = id;
-    if (!this.arbeitsthemaTouched) {
-      this.arbeitsthema = defaultArbeitsthema ?? '';
+    if (!this.taetigkeitTouched) {
+      this.taetigkeit = defaultTaetigkeit ?? '';
     }
   }
 
-  setArbeitsthema(v: string): void {
-    this.arbeitsthema = v;
-    this.arbeitsthemaTouched = true;
+  setTaetigkeit(v: TaetigkeitValue | ''): void {
+    this.taetigkeit = v;
+    this.taetigkeitTouched = true;
   }
 
   setDatum(v: string): void {
@@ -106,8 +106,8 @@ export class BehandlungDraft {
     this.therapieId = '';
     this.datum = todayIso();
     this.be = 1;
-    this.arbeitsthema = '';
-    this.arbeitsthemaTouched = false;
+    this.taetigkeit = '';
+    this.taetigkeitTouched = false;
     this.errors = {};
   }
 
@@ -116,7 +116,7 @@ export class BehandlungDraft {
       therapieId: this.therapieId,
       datum: this.datum,
       be: this.be,
-      arbeitsthema: this.arbeitsthema,
+      taetigkeit: this.taetigkeit === '' ? null : this.taetigkeit,
     });
     if (!parsed.success) {
       const next: BehandlungFieldErrors = {};
@@ -134,7 +134,7 @@ export class BehandlungDraft {
       therapieId: parsed.data.therapieId,
       datum: parsed.data.datum,
       be: parsed.data.be,
-      arbeitsthema: parsed.data.arbeitsthema,
+      taetigkeit: parsed.data.taetigkeit,
     };
   }
 }

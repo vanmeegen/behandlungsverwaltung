@@ -13,7 +13,7 @@ export interface TherapieFormFields {
   form: TherapieFormValue;
   bewilligteBe: number;
   kommentar?: string;
-  arbeitsthema?: string;
+  taetigkeit?: string;
 }
 
 export class TherapieFormPage {
@@ -23,7 +23,7 @@ export class TherapieFormPage {
   readonly formSelect: Locator;
   readonly kommentar: Locator;
   readonly bewilligteBe: Locator;
-  readonly arbeitsthema: Locator;
+  readonly taetigkeit: Locator;
   readonly submit: Locator;
 
   constructor(page: Page) {
@@ -33,7 +33,7 @@ export class TherapieFormPage {
     this.formSelect = page.getByTestId('therapie-form-form');
     this.kommentar = page.getByTestId('therapie-form-kommentar');
     this.bewilligteBe = page.getByTestId('therapie-form-bewilligteBe');
-    this.arbeitsthema = page.getByTestId('therapie-form-arbeitsthema');
+    this.taetigkeit = page.getByTestId('therapie-form-taetigkeit');
     this.submit = page.getByTestId('therapie-form-submit');
   }
 
@@ -50,8 +50,8 @@ export class TherapieFormPage {
     await this.auftraggeberSelect.selectOption(fields.auftraggeberId);
     await this.formSelect.selectOption(fields.form);
     await this.bewilligteBe.fill(String(fields.bewilligteBe));
-    if (fields.arbeitsthema !== undefined) {
-      await this.arbeitsthema.fill(fields.arbeitsthema);
+    if (fields.taetigkeit !== undefined) {
+      await this.taetigkeit.fill(fields.taetigkeit);
     }
     if (fields.form === 'sonstiges' && fields.kommentar !== undefined) {
       await this.kommentar.fill(fields.kommentar);

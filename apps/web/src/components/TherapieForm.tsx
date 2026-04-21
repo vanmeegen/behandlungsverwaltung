@@ -1,7 +1,13 @@
-import { THERAPIE_FORM_LABELS } from '@behandlungsverwaltung/shared';
+import {
+  TAETIGKEIT_LABELS,
+  TAETIGKEIT_VALUES,
+  THERAPIE_FORM_LABELS,
+  type TaetigkeitValue,
+} from '@behandlungsverwaltung/shared';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { observer } from 'mobx-react-lite';
@@ -159,12 +165,22 @@ export const TherapieForm = observer(
           />
 
           <TextField
-            label="Arbeitsthema (optional)"
-            value={draft.arbeitsthema}
-            onChange={(e): void => draft.setArbeitsthema(e.target.value)}
-            inputProps={{ 'data-testselector': 'therapie-form-arbeitsthema' }}
-            {...errorProps(draft.errors, 'arbeitsthema')}
-          />
+            select
+            label="Tätigkeit (optional)"
+            value={draft.taetigkeit}
+            onChange={(e): void =>
+              draft.setTaetigkeit(e.target.value === '' ? '' : (e.target.value as TaetigkeitValue))
+            }
+            inputProps={{ 'data-testselector': 'therapie-form-taetigkeit' }}
+            {...errorProps(draft.errors, 'taetigkeit')}
+          >
+            <MenuItem value="">— keine —</MenuItem>
+            {TAETIGKEIT_VALUES.map((value) => (
+              <MenuItem key={value} value={value}>
+                {TAETIGKEIT_LABELS[value]}
+              </MenuItem>
+            ))}
+          </TextField>
 
           <Button type="submit" data-testselector="therapie-form-submit">
             Speichern

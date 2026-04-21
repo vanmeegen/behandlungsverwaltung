@@ -1,6 +1,12 @@
+import {
+  TAETIGKEIT_LABELS,
+  TAETIGKEIT_VALUES,
+  type TaetigkeitValue,
+} from '@behandlungsverwaltung/shared';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -47,7 +53,7 @@ export const SchnellerfassungPage = observer(
 
     const onTherapieChange = (id: string): void => {
       const t = therapieStore.items.find((tx) => tx.id === id);
-      draft.setTherapie(id, t?.arbeitsthema ?? null);
+      draft.setTherapie(id, t?.taetigkeit ?? null);
     };
 
     const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
@@ -147,11 +153,31 @@ export const SchnellerfassungPage = observer(
             />
 
             <TextField
-              label="Arbeitsthema"
-              value={draft.arbeitsthema}
-              onChange={(e): void => draft.setArbeitsthema(e.target.value)}
-              inputProps={{ 'data-testselector': 'schnellerfassung-arbeitsthema' }}
-            />
+              select
+              label="Tätigkeit"
+              value={draft.taetigkeit}
+              onChange={(e): void =>
+                draft.setTaetigkeit(
+                  e.target.value === '' ? '' : (e.target.value as TaetigkeitValue),
+                )
+              }
+              inputProps={{ 'data-testselector': 'schnellerfassung-taetigkeit' }}
+              error={Boolean(draft.errors.taetigkeit)}
+              helperText={
+                draft.errors.taetigkeit ? (
+                  <span role="alert" data-testselector="schnellerfassung-taetigkeit-error">
+                    {draft.errors.taetigkeit}
+                  </span>
+                ) : null
+              }
+            >
+              <MenuItem value="">— bitte wählen —</MenuItem>
+              {TAETIGKEIT_VALUES.map((value) => (
+                <MenuItem key={value} value={value}>
+                  {TAETIGKEIT_LABELS[value]}
+                </MenuItem>
+              ))}
+            </TextField>
 
             <Button type="submit" data-testselector="schnellerfassung-submit">
               Speichern

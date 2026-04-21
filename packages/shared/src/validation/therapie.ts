@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TAETIGKEIT_VALUES } from './taetigkeit';
 
 export const THERAPIE_FORM_VALUES = [
   'dyskalkulie',
@@ -16,13 +17,19 @@ const idSchema = z
   .union([z.string().min(1), z.number().int().positive()], { error: 'ID ist Pflicht' })
   .transform((v) => String(v));
 
-const arbeitsthemaSchema = z
+// Tätigkeit ist optional auf Therapie-Ebene: sie dient nur als Vorbelegung
+// für daraus erfasste Behandlungen (§2.3/§2.4). Nicht-Enum-Werte aus
+// Freitext-Altbeständen werden auf null abgebildet.
+const taetigkeitNullableSchema = z
   .string()
   .nullish()
   .transform((v) => {
     if (v === null || v === undefined) return null;
     const trimmed = v.trim();
-    return trimmed.length === 0 ? null : trimmed;
+    if (trimmed.length === 0) return null;
+    return (TAETIGKEIT_VALUES as readonly string[]).includes(trimmed)
+      ? (trimmed as (typeof TAETIGKEIT_VALUES)[number])
+      : null;
   });
 
 const kommentarSchema = z
@@ -46,7 +53,7 @@ export const therapieSchema = z
       .number({ error: 'Bewilligte Behandlungseinheiten müssen > 0 sein' })
       .int('Bewilligte Behandlungseinheiten müssen > 0 sein')
       .positive('Bewilligte Behandlungseinheiten müssen > 0 sein'),
-    arbeitsthema: arbeitsthemaSchema,
+    taetigkeit: taetigkeitNullableSchema,
   })
   .superRefine((data, ctx) => {
     if (data.form === 'sonstiges' && !data.kommentar) {

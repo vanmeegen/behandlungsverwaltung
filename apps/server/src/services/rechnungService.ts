@@ -115,7 +115,7 @@ export async function createMonatsrechnung(
     stundensatzCents: ag.stundensatzCents,
     lines: behandlungenRows.map((b, i) => ({
       datum: b.datum,
-      arbeitsthema: b.arbeitsthema,
+      taetigkeit: b.taetigkeit,
       be: b.be,
       zeilenbetragCents: lines[i]!.zeilenbetragCents,
     })),
@@ -158,7 +158,7 @@ export async function createMonatsrechnung(
         behandlungId: b.id,
         snapshotDate: b.datum,
         snapshotBe: b.be,
-        snapshotArbeitsthema: b.arbeitsthema,
+        snapshotTaetigkeit: b.taetigkeit,
         snapshotZeilenbetragCents: lines[i]!.zeilenbetragCents,
       })
       .run();

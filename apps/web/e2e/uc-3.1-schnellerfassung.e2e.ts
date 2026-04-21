@@ -39,7 +39,7 @@ async function seedScenario(): Promise<{
     form: 'lerntherapie',
     kommentar: null,
     bewilligteBe: 60,
-    arbeitsthema: 'Mathe-Grundlagen',
+    taetigkeit: 'lerntherapie',
   });
   return { kindId: kind.id, therapieId: therapie.id };
 }
@@ -58,7 +58,7 @@ test.describe('UC-3.1 Schnellerfassung', () => {
     await resetDb();
   });
 
-  test('Szenario Vorbelegung: 2 BE für heute mit Therapie-Arbeitsthema (AC-BEH-01, AC-BEH-03)', async ({
+  test('Szenario Vorbelegung: 2 BE für heute mit Therapie-Tätigkeit (AC-BEH-01, AC-BEH-03)', async ({
     page,
   }) => {
     const { kindId, therapieId } = await seedScenario();
@@ -67,7 +67,7 @@ test.describe('UC-3.1 Schnellerfassung', () => {
     await formPage.goto();
     await formPage.chooseKind(kindId);
     await formPage.chooseTherapie(therapieId);
-    await expect(formPage.arbeitsthema).toHaveValue('Mathe-Grundlagen');
+    await expect(formPage.taetigkeit).toHaveValue('lerntherapie');
 
     await expect(formPage.beValue).toHaveText('1');
     await formPage.tapPlus(1);
@@ -83,10 +83,10 @@ test.describe('UC-3.1 Schnellerfassung', () => {
     expect(b.therapieId).toBe(therapieId);
     expect(b.datum.slice(0, 10)).toBe(today());
     expect(b.be).toBe(2);
-    expect(b.arbeitsthema).toBe('Mathe-Grundlagen');
+    expect(b.taetigkeit).toBe('lerntherapie');
   });
 
-  test('Szenario Override: Arbeitsthema überschreiben speichert den überschriebenen Wert', async ({
+  test('Szenario Override: Tätigkeit überschreiben speichert den überschriebenen Wert', async ({
     page,
   }) => {
     const { kindId, therapieId } = await seedScenario();
@@ -95,12 +95,12 @@ test.describe('UC-3.1 Schnellerfassung', () => {
     await formPage.goto();
     await formPage.chooseKind(kindId);
     await formPage.chooseTherapie(therapieId);
-    await formPage.arbeitsthema.fill('Bruchrechnung');
+    await formPage.taetigkeit.fill('dyskalkulie');
     await formPage.submitAndWait();
 
     const rows = await readBehandlungenByTherapie(therapieId);
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.arbeitsthema).toBe('Bruchrechnung');
+    expect(rows[0]!.taetigkeit).toBe('dyskalkulie');
     expect(rows[0]!.be).toBe(1);
   });
 });

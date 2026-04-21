@@ -11,7 +11,7 @@ const UPDATE_THERAPIE = /* GraphQL */ `
       form
       kommentar
       bewilligteBe
-      arbeitsthema
+      taetigkeit
     }
   }
 `;
@@ -61,7 +61,7 @@ describe('updateTherapie mutation (PRD §2.3)', () => {
         form: 'lerntherapie',
         kommentar: null,
         bewilligteBe: 60,
-        arbeitsthema: 'Mathe-Grundlagen',
+        taetigkeit: 'lerntherapie',
       })
       .returning()
       .all();
@@ -84,19 +84,19 @@ describe('updateTherapie mutation (PRD §2.3)', () => {
     });
   }
 
-  it('updates bewilligteBe and arbeitsthema', async () => {
+  it('updates bewilligteBe and taetigkeit', async () => {
     const result = await runUpdate(therapieId, {
       kindId: String(kindId),
       auftraggeberId: String(auftraggeberId),
       form: 'lerntherapie',
       kommentar: null,
       bewilligteBe: 80,
-      arbeitsthema: 'Bruchrechnung',
+      taetigkeit: 'dyskalkulie',
     });
     expect(result.errors).toBeUndefined();
     const row = ctx.db.select().from(therapien).all()[0];
     expect(row?.bewilligteBe).toBe(80);
-    expect(row?.arbeitsthema).toBe('Bruchrechnung');
+    expect(row?.taetigkeit).toBe('dyskalkulie');
   });
 
   it('returns NOT_FOUND for unknown id', async () => {

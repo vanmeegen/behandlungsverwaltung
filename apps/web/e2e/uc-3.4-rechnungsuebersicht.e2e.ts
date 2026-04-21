@@ -34,7 +34,7 @@ async function seedAnnaMonth(
   month: number,
 ): Promise<string> {
   for (const datum of dates) {
-    await seedBehandlung({ therapieId, datum, be: 2, arbeitsthema: 'Mathe-Grundlagen' });
+    await seedBehandlung({ therapieId, datum, be: 2, taetigkeit: 'lerntherapie' });
   }
   const rechnung = await createMonatsrechnungApi({ year, month, kindId, auftraggeberId });
   return rechnung.nummer;
@@ -81,7 +81,7 @@ test.describe('UC-3.4 Rechnungsübersicht', () => {
       form: 'lerntherapie',
       kommentar: null,
       bewilligteBe: 60,
-      arbeitsthema: 'Mathe-Grundlagen',
+      taetigkeit: 'lerntherapie',
     });
     // Anna April (3×2 BE → 270,00 €).
     const annaApril = await seedAnnaMonth(
@@ -111,13 +111,13 @@ test.describe('UC-3.4 Rechnungsübersicht', () => {
       form: 'lerntherapie',
       kommentar: null,
       bewilligteBe: 60,
-      arbeitsthema: 'Mathe-Grundlagen',
+      taetigkeit: 'lerntherapie',
     });
     await seedBehandlung({
       therapieId: benTherapie.id,
       datum: '2026-04-10',
       be: 2,
-      arbeitsthema: 'Mathe-Grundlagen',
+      taetigkeit: 'lerntherapie',
     });
     const benApril = await createMonatsrechnungApi({
       year: 2026,

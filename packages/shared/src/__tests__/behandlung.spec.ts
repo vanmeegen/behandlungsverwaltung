@@ -5,7 +5,7 @@ const base = {
   therapieId: '1',
   datum: '2026-04-15',
   be: 2,
-  arbeitsthema: 'Mathe-Grundlagen',
+  taetigkeit: 'lerntherapie',
 };
 
 describe('behandlungSchema (PRD §2.4, AC-BEH-02)', () => {
@@ -39,15 +39,15 @@ describe('behandlungSchema (PRD §2.4, AC-BEH-02)', () => {
     if (!result.success) expect(result.error.issues[0]?.message).toBe('Datum ist Pflicht');
   });
 
-  it('trims whitespace-only arbeitsthema to null', () => {
-    const result = behandlungSchema.safeParse({ ...base, arbeitsthema: '   ' });
+  it('trims whitespace-only taetigkeit to null', () => {
+    const result = behandlungSchema.safeParse({ ...base, taetigkeit: '   ' });
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.arbeitsthema).toBeNull();
+    if (result.success) expect(result.data.taetigkeit).toBeNull();
   });
 
-  it('accepts null arbeitsthema', () => {
-    const result = behandlungSchema.safeParse({ ...base, arbeitsthema: null });
+  it('accepts null taetigkeit', () => {
+    const result = behandlungSchema.safeParse({ ...base, taetigkeit: null });
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.arbeitsthema).toBeNull();
+    if (result.success) expect(result.data.taetigkeit).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import { builder } from '../builder';
-import { TherapieFormEnum } from './enums';
+import { TaetigkeitEnum, TherapieFormEnum } from './enums';
 
 export const TherapieInputRef = builder.inputType('TherapieInput', {
   fields: (t) => ({
@@ -8,6 +8,6 @@ export const TherapieInputRef = builder.inputType('TherapieInput', {
     form: t.field({ type: TherapieFormEnum, required: true }),
     kommentar: t.string({ required: false }),
     bewilligteBe: t.int({ required: true }),
-    arbeitsthema: t.string({ required: false }),
+    taetigkeit: t.field({ type: TaetigkeitEnum, required: false }),
   }),
 });

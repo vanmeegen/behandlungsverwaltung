@@ -56,14 +56,14 @@ async function seedHappyPath(): Promise<{
     form: 'lerntherapie',
     kommentar: null,
     bewilligteBe: 60,
-    arbeitsthema: 'Mathe-Grundlagen',
+    taetigkeit: 'lerntherapie',
   });
   for (const datum of ['2026-04-01', '2026-04-15', '2026-04-29']) {
     await seedBehandlung({
       therapieId: therapie.id,
       datum,
       be: 2,
-      arbeitsthema: 'Mathe-Grundlagen',
+      taetigkeit: 'lerntherapie',
     });
   }
   const fixtureBase64 = readFileSync(FIXTURE_PATH).toString('base64');

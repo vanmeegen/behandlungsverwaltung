@@ -113,9 +113,19 @@ export async function seedAuftraggeber(
 export type SeededTherapieForm =
   | 'dyskalkulie'
   | 'lerntherapie'
+  | 'lrs_therapie'
+  | 'resilienztraining'
   | 'heilpaedagogik'
   | 'elternberatung'
   | 'sonstiges';
+
+export type SeededTaetigkeit =
+  | SeededTherapieForm
+  | 'elterngespraech'
+  | 'lehrergespraech'
+  | 'bericht'
+  | 'foerderplan'
+  | 'teamberatung';
 
 export interface SeededTherapie {
   id: string;
@@ -124,7 +134,7 @@ export interface SeededTherapie {
   form: SeededTherapieForm;
   kommentar: string | null;
   bewilligteBe: number;
-  arbeitsthema: string | null;
+  taetigkeit: SeededTaetigkeit | null;
 }
 
 const THERAPIE_COLUMNS = /* GraphQL */ `
@@ -134,7 +144,7 @@ const THERAPIE_COLUMNS = /* GraphQL */ `
   form
   kommentar
   bewilligteBe
-  arbeitsthema
+  taetigkeit
 `;
 
 export async function readTherapien(): Promise<SeededTherapie[]> {
@@ -157,7 +167,7 @@ export interface SeededBehandlung {
   therapieId: string;
   datum: string;
   be: number;
-  arbeitsthema: string | null;
+  taetigkeit: SeededTaetigkeit | null;
 }
 
 const BEHANDLUNG_COLUMNS = /* GraphQL */ `
@@ -165,7 +175,7 @@ const BEHANDLUNG_COLUMNS = /* GraphQL */ `
   therapieId
   datum
   be
-  arbeitsthema
+  taetigkeit
 `;
 
 export async function readBehandlungenByTherapie(therapieId: string): Promise<SeededBehandlung[]> {
@@ -180,7 +190,7 @@ export async function seedBehandlung(input: {
   therapieId: string;
   datum: string;
   be: number;
-  arbeitsthema?: string;
+  taetigkeit?: SeededTaetigkeit;
 }): Promise<SeededBehandlung> {
   const data = await gql<{ createBehandlung: SeededBehandlung }>(
     /* GraphQL */ `mutation Seed($input: BehandlungInput!) { createBehandlung(input: $input) { ${BEHANDLUNG_COLUMNS} } }`,

@@ -34,7 +34,7 @@ export const therapien = sqliteTable('therapien', {
   form: text('form', { enum: THERAPIE_FORM }).notNull(),
   kommentar: text('kommentar'),
   bewilligteBe: integer('bewilligte_be').notNull(),
-  arbeitsthema: text('arbeitsthema'),
+  taetigkeit: text('taetigkeit', { enum: TAETIGKEIT }),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .$defaultFn(() => new Date()),

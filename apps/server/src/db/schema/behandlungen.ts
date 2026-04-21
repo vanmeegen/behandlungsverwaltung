@@ -1,5 +1,5 @@
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { therapien } from './therapien';
+import { TAETIGKEIT, therapien } from './therapien';
 
 export const behandlungen = sqliteTable('behandlungen', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -8,7 +8,7 @@ export const behandlungen = sqliteTable('behandlungen', {
     .references(() => therapien.id),
   datum: integer('datum', { mode: 'timestamp' }).notNull(),
   be: integer('be').notNull(),
-  arbeitsthema: text('arbeitsthema'),
+  taetigkeit: text('taetigkeit', { enum: TAETIGKEIT }),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .$defaultFn(() => new Date()),

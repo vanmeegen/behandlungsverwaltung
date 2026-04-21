@@ -1,6 +1,6 @@
 import type { Therapie } from '../../db/schema';
 import { builder } from '../builder';
-import { TherapieFormEnum } from './enums';
+import { TaetigkeitEnum, TherapieFormEnum } from './enums';
 
 export const TherapieRef = builder.objectRef<Therapie>('Therapie').implement({
   fields: (t) => ({
@@ -10,7 +10,11 @@ export const TherapieRef = builder.objectRef<Therapie>('Therapie').implement({
     form: t.field({ type: TherapieFormEnum, resolve: (r) => r.form }),
     kommentar: t.exposeString('kommentar', { nullable: true }),
     bewilligteBe: t.exposeInt('bewilligteBe'),
-    arbeitsthema: t.exposeString('arbeitsthema', { nullable: true }),
+    taetigkeit: t.field({
+      type: TaetigkeitEnum,
+      nullable: true,
+      resolve: (r) => r.taetigkeit,
+    }),
     createdAt: t.string({ resolve: (r) => r.createdAt.toISOString() }),
     updatedAt: t.string({ resolve: (r) => r.updatedAt.toISOString() }),
   }),

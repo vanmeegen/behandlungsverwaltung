@@ -1,4 +1,4 @@
-import { THERAPIE_FORM_LABELS } from '@behandlungsverwaltung/shared';
+import { TAETIGKEIT_LABELS, THERAPIE_FORM_LABELS } from '@behandlungsverwaltung/shared';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import List from '@mui/material/List';
@@ -49,11 +49,11 @@ export const TherapieList = observer(
                   </span>
                   {' · '}
                   <span data-testselector={`therapie-row-be-${t.id}`}>{t.bewilligteBe} BE</span>
-                  {t.arbeitsthema && (
+                  {t.taetigkeit && (
                     <>
                       {' · '}
-                      <span data-testselector={`therapie-row-arbeitsthema-${t.id}`}>
-                        {t.arbeitsthema}
+                      <span data-testselector={`therapie-row-taetigkeit-${t.id}`}>
+                        {TAETIGKEIT_LABELS[t.taetigkeit]}
                       </span>
                     </>
                   )}

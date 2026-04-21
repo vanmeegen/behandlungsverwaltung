@@ -13,7 +13,7 @@ interface RowValues {
   form: TherapieInputType['form'];
   kommentar: string | null;
   bewilligteBe: number;
-  arbeitsthema: string | null;
+  taetigkeit: TherapieInputType['taetigkeit'];
 }
 
 function toRowValues(parsed: TherapieInputType): RowValues {
@@ -23,7 +23,7 @@ function toRowValues(parsed: TherapieInputType): RowValues {
     form: parsed.form,
     kommentar: parsed.kommentar,
     bewilligteBe: parsed.bewilligteBe,
-    arbeitsthema: parsed.arbeitsthema,
+    taetigkeit: parsed.taetigkeit,
   };
 }
 

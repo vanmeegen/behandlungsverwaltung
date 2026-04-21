@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TAETIGKEIT_VALUES } from './taetigkeit';
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -13,13 +14,19 @@ const idSchema = z
   .union([z.string().min(1), z.number().int().positive()], { error: 'Therapie-ID ist Pflicht' })
   .transform((v) => String(v));
 
-const arbeitsthemaSchema = z
+// Tätigkeit im Behandlungs-Input ist optional: fehlt sie, übernimmt der
+// Resolver die Tätigkeit der zugehörigen Therapie (§2.4). Freitext-Altwerte
+// werden auf null normalisiert.
+const taetigkeitInputSchema = z
   .string()
   .nullish()
   .transform((v) => {
     if (v === null || v === undefined) return null;
     const trimmed = v.trim();
-    return trimmed.length === 0 ? null : trimmed;
+    if (trimmed.length === 0) return null;
+    return (TAETIGKEIT_VALUES as readonly string[]).includes(trimmed)
+      ? (trimmed as (typeof TAETIGKEIT_VALUES)[number])
+      : null;
   });
 
 export const behandlungSchema = z.object({
@@ -29,7 +36,7 @@ export const behandlungSchema = z.object({
     .min(1, 'Datum ist Pflicht')
     .refine(isValidIsoDate, { error: 'Datum ist ungültig' }),
   be: z.number({ error: 'BE muss ≥ 1 sein' }).int('BE muss ≥ 1 sein').min(1, 'BE muss ≥ 1 sein'),
-  arbeitsthema: arbeitsthemaSchema,
+  taetigkeit: taetigkeitInputSchema,
 });
 
 export type BehandlungInputType = z.infer<typeof behandlungSchema>;

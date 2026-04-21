@@ -11,7 +11,7 @@ const CREATE_BEHANDLUNG = /* GraphQL */ `
       therapieId
       datum
       be
-      arbeitsthema
+      taetigkeit
     }
   }
 `;
@@ -58,7 +58,7 @@ function seed(ctx: TestDb): Seeded {
       auftraggeberId: a!.id,
       form: 'lerntherapie',
       bewilligteBe: 60,
-      arbeitsthema: 'Mathe-Grundlagen',
+      taetigkeit: 'lerntherapie',
     })
     .returning()
     .all();
@@ -69,7 +69,7 @@ function seed(ctx: TestDb): Seeded {
       auftraggeberId: a!.id,
       form: 'heilpaedagogik',
       bewilligteBe: 40,
-      arbeitsthema: null,
+      taetigkeit: null,
     })
     .returning()
     .all();
@@ -123,7 +123,7 @@ describe('createBehandlung mutation (PRD §2.4, AC-BEH-02, AC-BEH-03)', () => {
     expect(result.errors?.[0]?.message).toBe('Datum ist ungültig');
   });
 
-  it('snapshots arbeitsthema from Therapie when input is absent (AC-BEH-03)', async () => {
+  it('snapshots taetigkeit from Therapie when input is absent (AC-BEH-03)', async () => {
     const result = await run({
       therapieId: String(seeded.therapieWithThemaId),
       datum: '2026-04-15',
@@ -132,35 +132,34 @@ describe('createBehandlung mutation (PRD §2.4, AC-BEH-02, AC-BEH-03)', () => {
     expect(result.errors).toBeUndefined();
     const rows = ctx.db.select().from(behandlungen).all();
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.arbeitsthema).toBe('Mathe-Grundlagen');
+    expect(rows[0]?.taetigkeit).toBe('lerntherapie');
     expect(rows[0]?.be).toBe(2);
   });
 
-  it('uses override when arbeitsthema is explicitly provided (AC-BEH-03)', async () => {
+  it('uses override when taetigkeit is explicitly provided (AC-BEH-03)', async () => {
     const result = await run({
       therapieId: String(seeded.therapieWithThemaId),
       datum: '2026-04-15',
       be: 2,
-      arbeitsthema: 'Bruchrechnung',
+      taetigkeit: 'dyskalkulie',
     });
     expect(result.errors).toBeUndefined();
     const rows = ctx.db.select().from(behandlungen).all();
-    expect(rows[0]?.arbeitsthema).toBe('Bruchrechnung');
+    expect(rows[0]?.taetigkeit).toBe('dyskalkulie');
   });
 
-  it('whitespace-only override is treated as "use Therapie default"', async () => {
+  it('missing taetigkeit falls back to the Therapie-Tätigkeit (AC-BEH-03)', async () => {
     const result = await run({
       therapieId: String(seeded.therapieWithThemaId),
       datum: '2026-04-15',
       be: 2,
-      arbeitsthema: '   ',
     });
     expect(result.errors).toBeUndefined();
     const rows = ctx.db.select().from(behandlungen).all();
-    expect(rows[0]?.arbeitsthema).toBe('Mathe-Grundlagen');
+    expect(rows[0]?.taetigkeit).toBe('lerntherapie');
   });
 
-  it('leaves arbeitsthema null when neither input nor Therapie has one', async () => {
+  it('leaves taetigkeit null when neither input nor Therapie has one', async () => {
     const result = await run({
       therapieId: String(seeded.therapieOhneThemaId),
       datum: '2026-04-15',
@@ -168,7 +167,7 @@ describe('createBehandlung mutation (PRD §2.4, AC-BEH-02, AC-BEH-03)', () => {
     });
     expect(result.errors).toBeUndefined();
     const rows = ctx.db.select().from(behandlungen).all();
-    expect(rows[0]?.arbeitsthema).toBeNull();
+    expect(rows[0]?.taetigkeit).toBeNull();
   });
 
   it('persists every column for a valid create', async () => {
@@ -176,14 +175,14 @@ describe('createBehandlung mutation (PRD §2.4, AC-BEH-02, AC-BEH-03)', () => {
       therapieId: String(seeded.therapieWithThemaId),
       datum: '2026-04-15',
       be: 3,
-      arbeitsthema: 'Geometrie',
+      taetigkeit: 'foerderplan',
     });
     expect(result.errors).toBeUndefined();
     const rows = ctx.db.select().from(behandlungen).all();
     expect(rows[0]?.therapieId).toBe(seeded.therapieWithThemaId);
     expect(rows[0]?.datum.toISOString().slice(0, 10)).toBe('2026-04-15');
     expect(rows[0]?.be).toBe(3);
-    expect(rows[0]?.arbeitsthema).toBe('Geometrie');
+    expect(rows[0]?.taetigkeit).toBe('foerderplan');
   });
 
   it('errors when therapieId points at non-existent Therapie', async () => {

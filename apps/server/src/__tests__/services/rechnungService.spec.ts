@@ -65,7 +65,7 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
         auftraggeberId,
         form: 'lerntherapie',
         bewilligteBe: 60,
-        arbeitsthema: 'Mathe-Grundlagen',
+        taetigkeit: 'lerntherapie',
       })
       .returning()
       .all();
@@ -77,19 +77,19 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
           therapieId,
           datum: new Date('2026-04-01T00:00:00.000Z'),
           be: 2,
-          arbeitsthema: 'Mathe-Grundlagen',
+          taetigkeit: 'lerntherapie',
         },
         {
           therapieId,
           datum: new Date('2026-04-15T00:00:00.000Z'),
           be: 2,
-          arbeitsthema: 'Mathe-Grundlagen',
+          taetigkeit: 'lerntherapie',
         },
         {
           therapieId,
           datum: new Date('2026-04-29T00:00:00.000Z'),
           be: 2,
-          arbeitsthema: 'Mathe-Grundlagen',
+          taetigkeit: 'lerntherapie',
         },
       ])
       .run();
@@ -126,7 +126,7 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
     expect(snapshots).toHaveLength(3);
     for (const s of snapshots) {
       expect(s.snapshotBe).toBe(2);
-      expect(s.snapshotArbeitsthema).toBe('Mathe-Grundlagen');
+      expect(s.snapshotTaetigkeit).toBe('lerntherapie');
       expect(s.snapshotZeilenbetragCents).toBe(9000);
     }
   });

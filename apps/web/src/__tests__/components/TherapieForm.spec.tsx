@@ -57,7 +57,7 @@ describe('<TherapieForm /> — inputs', () => {
       'therapie-form-auftraggeberId',
       'therapie-form-form',
       'therapie-form-bewilligteBe',
-      'therapie-form-arbeitsthema',
+      'therapie-form-taetigkeit',
     ]) {
       expect(screen.getByTestId(id)).toBeInTheDocument();
     }
@@ -92,7 +92,7 @@ describe('<TherapieForm /> — presentation-model binding', () => {
     expect(tStore.draftTherapie.bewilligteBe).toBe(42);
   });
 
-  it('reflects draftTherapie.setArbeitsthema in the rendered input', () => {
+  it('reflects draftTherapie.setTaetigkeit in the rendered input', () => {
     const kStore = new KindStore(vi.fn() as unknown as GraphQLFetcher);
     const aStore = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
     const tStore = new TherapieStore(vi.fn() as unknown as GraphQLFetcher);
@@ -100,9 +100,9 @@ describe('<TherapieForm /> — presentation-model binding', () => {
     aStore.items = [jugendamt];
     renderForm(tStore, kStore, aStore);
     act(() => {
-      tStore.draftTherapie.setArbeitsthema('Bruchrechnung');
+      tStore.draftTherapie.setTaetigkeit('dyskalkulie');
     });
-    expect(screen.getByTestId('therapie-form-arbeitsthema')).toHaveValue('Bruchrechnung');
+    expect(screen.getByTestId('therapie-form-taetigkeit')).toHaveValue('dyskalkulie');
   });
 });
 
@@ -133,7 +133,7 @@ describe('<TherapieForm /> — validation', () => {
     );
   });
 
-  it('submits with null kommentar and null arbeitsthema when left empty', async () => {
+  it('submits with null kommentar and null taetigkeit when left empty', async () => {
     const fetcher = vi.fn().mockResolvedValue({
       createTherapie: {
         id: '1',
@@ -142,7 +142,7 @@ describe('<TherapieForm /> — validation', () => {
         form: 'lerntherapie',
         kommentar: null,
         bewilligteBe: 60,
-        arbeitsthema: null,
+        taetigkeit: null,
       },
     });
     const kStore = new KindStore(vi.fn() as unknown as GraphQLFetcher);
@@ -167,7 +167,7 @@ describe('<TherapieForm /> — validation', () => {
         form: 'lerntherapie',
         kommentar: null,
         bewilligteBe: 60,
-        arbeitsthema: null,
+        taetigkeit: null,
       },
     });
   });

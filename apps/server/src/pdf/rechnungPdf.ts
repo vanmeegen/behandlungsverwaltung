@@ -4,7 +4,7 @@ import { LAYOUT } from './layout';
 
 export interface RechnungPdfLine {
   datum: Date;
-  arbeitsthema: string | null;
+  taetigkeit: string | null;
   be: number;
   zeilenbetragCents: number;
 }
@@ -163,7 +163,7 @@ export async function renderRechnungPdf(input: RechnungPdfInput): Promise<Uint8A
       size: LAYOUT.tableRowFontSize,
       font,
     });
-    page.drawText((line.arbeitsthema ?? '').slice(0, 30), {
+    page.drawText((line.taetigkeit ?? '').slice(0, 30), {
       x: LAYOUT.colArbeitsthemaX,
       y,
       size: LAYOUT.tableRowFontSize,

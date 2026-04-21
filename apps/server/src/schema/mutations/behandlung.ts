@@ -27,7 +27,8 @@ builder.mutationField('createBehandlung', (t) =>
           extensions: { code: 'NOT_FOUND' },
         });
       }
-      const effectiveArbeitsthema = parsed.arbeitsthema ?? therapie.arbeitsthema ?? null;
+      // PRD §2.4: Tätigkeit aus Input; Fallback = Tätigkeit der Therapie.
+      const effectiveTaetigkeit = parsed.taetigkeit ?? therapie.taetigkeit ?? null;
       const datum = new Date(`${parsed.datum}T00:00:00.000Z`);
       const [row] = db
         .insert(behandlungen)
@@ -35,7 +36,7 @@ builder.mutationField('createBehandlung', (t) =>
           therapieId,
           datum,
           be: parsed.be,
-          arbeitsthema: effectiveArbeitsthema,
+          taetigkeit: effectiveTaetigkeit,
         })
         .returning()
         .all();

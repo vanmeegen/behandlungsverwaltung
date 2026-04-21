@@ -15,6 +15,13 @@
       "when": 1776748744131,
       "tag": "0001_panoramic_chimera",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1776755000000,
+      "tag": "0002_rename_arbeitsthema_to_taetigkeit",
+      "breakpoints": true
     }
   ]
 }

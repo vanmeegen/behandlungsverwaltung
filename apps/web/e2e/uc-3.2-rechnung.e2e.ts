@@ -54,14 +54,14 @@ async function seedHappyPath(): Promise<{
     form: 'lerntherapie',
     kommentar: null,
     bewilligteBe: 60,
-    arbeitsthema: 'Mathe-Grundlagen',
+    taetigkeit: 'lerntherapie',
   });
   for (const datum of ['2026-04-01', '2026-04-15', '2026-04-29']) {
     await seedBehandlung({
       therapieId: therapie.id,
       datum,
       be: 2,
-      arbeitsthema: 'Mathe-Grundlagen',
+      taetigkeit: 'lerntherapie',
     });
   }
   const fixtureBase64 = readFileSync(FIXTURE_PATH).toString('base64');
@@ -110,7 +110,7 @@ test.describe('UC-3.2 Monatsrechnung erzeugen', () => {
     const { text } = (await parser.getText()) as { text: string };
     expect(text).toContain('RE-2026-04-0001');
     expect(text).toContain('270,00');
-    expect(text).toContain('Mathe-Grundlagen');
+    expect(text).toContain('lerntherapie');
     expect(text).toContain('§ 4 Nr. 14 UStG umsatzsteuerfrei');
   });
 

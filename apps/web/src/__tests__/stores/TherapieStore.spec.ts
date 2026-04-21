@@ -9,7 +9,7 @@ const lerntherapie: Therapie = {
   form: 'lerntherapie',
   kommentar: null,
   bewilligteBe: 60,
-  arbeitsthema: 'Mathe-Grundlagen',
+  taetigkeit: 'lerntherapie',
 };
 
 describe('TherapieStore.load', () => {
@@ -32,13 +32,13 @@ describe('TherapieStore.draftTherapie', () => {
     store.draftTherapie.setForm('lerntherapie');
     store.draftTherapie.setKommentar('irrelevant');
     store.draftTherapie.setBewilligteBe(60);
-    store.draftTherapie.setArbeitsthema('Mathe-Grundlagen');
+    store.draftTherapie.setTaetigkeit('lerntherapie');
     expect(store.draftTherapie.kindId).toBe('10');
     expect(store.draftTherapie.auftraggeberId).toBe('20');
     expect(store.draftTherapie.form).toBe('lerntherapie');
     expect(store.draftTherapie.kommentar).toBe('irrelevant');
     expect(store.draftTherapie.bewilligteBe).toBe(60);
-    expect(store.draftTherapie.arbeitsthema).toBe('Mathe-Grundlagen');
+    expect(store.draftTherapie.taetigkeit).toBe('lerntherapie');
   });
 });
 
@@ -53,7 +53,7 @@ describe('TherapieStore.saveDraft', () => {
     store.draftTherapie.setAuftraggeberId('20');
     store.draftTherapie.setForm('lerntherapie');
     store.draftTherapie.setBewilligteBe(60);
-    store.draftTherapie.setArbeitsthema('Mathe-Grundlagen');
+    store.draftTherapie.setTaetigkeit('lerntherapie');
   });
 
   it('dispatches createTherapie with full input on a valid Lerntherapie', async () => {
@@ -69,7 +69,7 @@ describe('TherapieStore.saveDraft', () => {
         form: 'lerntherapie',
         kommentar: null,
         bewilligteBe: 60,
-        arbeitsthema: 'Mathe-Grundlagen',
+        taetigkeit: 'lerntherapie',
       },
     });
     expect(store.items).toContainEqual(lerntherapie);

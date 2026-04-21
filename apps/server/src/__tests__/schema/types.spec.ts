@@ -26,8 +26,8 @@ const EXPECTED_OBJECT_TYPES: Record<string, string[]> = {
     'stadt',
     'stundensatzCents',
   ],
-  Therapie: ['id', 'kindId', 'auftraggeberId', 'form', 'kommentar', 'bewilligteBe', 'arbeitsthema'],
-  Behandlung: ['id', 'therapieId', 'datum', 'be', 'arbeitsthema'],
+  Therapie: ['id', 'kindId', 'auftraggeberId', 'form', 'kommentar', 'bewilligteBe', 'taetigkeit'],
+  Behandlung: ['id', 'therapieId', 'datum', 'be', 'taetigkeit'],
   Rechnung: [
     'id',
     'nummer',

@@ -92,7 +92,7 @@ describe('createMonatsrechnung mutation (AC-RECH-01, AC-RECH-05)', () => {
           therapieId: t!.id,
           datum: new Date('2026-04-15T00:00:00.000Z'),
           be: 2,
-          arbeitsthema: 'Mathe',
+          taetigkeit: 'lerntherapie',
         },
       ])
       .run();

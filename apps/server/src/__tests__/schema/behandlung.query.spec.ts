@@ -10,7 +10,7 @@ const BY_THERAPIE_QUERY = /* GraphQL */ `
       id
       datum
       be
-      arbeitsthema
+      taetigkeit
     }
   }
 `;

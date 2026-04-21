@@ -59,7 +59,7 @@ test.describe('UC-3.7 Therapie erfassen', () => {
       auftraggeberId: ag.id,
       form: 'lerntherapie',
       bewilligteBe: 60,
-      arbeitsthema: 'Mathe-Grundlagen',
+      taetigkeit: 'lerntherapie',
     });
     await formPage.submitAndWait();
 
@@ -74,7 +74,7 @@ test.describe('UC-3.7 Therapie erfassen', () => {
     expect(t.form).toBe('lerntherapie');
     expect(t.kommentar).toBeNull();
     expect(t.bewilligteBe).toBe(60);
-    expect(t.arbeitsthema).toBe('Mathe-Grundlagen');
+    expect(t.taetigkeit).toBe('lerntherapie');
 
     // Dual-parent visibility: appears on both Kind detail and Auftraggeber detail pages
     await page.goto(`/kinder/${kind.id}/detail`);
@@ -100,7 +100,7 @@ test.describe('UC-3.7 Therapie erfassen', () => {
       form: 'sonstiges',
       bewilligteBe: 30,
       kommentar: 'Individuell abgestimmte Förderung',
-      arbeitsthema: 'Konzentration',
+      taetigkeit: 'Konzentration',
     });
     await formPage.submitAndWait();
 
@@ -112,7 +112,7 @@ test.describe('UC-3.7 Therapie erfassen', () => {
     expect(t.form).toBe('sonstiges');
     expect(t.kommentar).toBe('Individuell abgestimmte Förderung');
     expect(t.bewilligteBe).toBe(30);
-    expect(t.arbeitsthema).toBe('Konzentration');
+    expect(t.taetigkeit).toBe('Konzentration');
   });
 
   test('Szenario 2: Sonstiges ohne Kommentar wird abgelehnt (AC-TH-01)', async ({ page }) => {

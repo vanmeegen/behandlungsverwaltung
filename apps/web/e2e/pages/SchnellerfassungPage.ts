@@ -8,7 +8,7 @@ export class SchnellerfassungPage {
   readonly bePlus: Locator;
   readonly beMinus: Locator;
   readonly datum: Locator;
-  readonly arbeitsthema: Locator;
+  readonly taetigkeit: Locator;
   readonly submit: Locator;
 
   constructor(page: Page) {
@@ -19,7 +19,7 @@ export class SchnellerfassungPage {
     this.bePlus = page.getByTestId('schnellerfassung-be-plus');
     this.beMinus = page.getByTestId('schnellerfassung-be-minus');
     this.datum = page.getByTestId('schnellerfassung-datum');
-    this.arbeitsthema = page.getByTestId('schnellerfassung-arbeitsthema');
+    this.taetigkeit = page.getByTestId('schnellerfassung-taetigkeit');
     this.submit = page.getByTestId('schnellerfassung-submit');
   }
 

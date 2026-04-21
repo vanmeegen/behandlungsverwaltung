@@ -1,10 +1,11 @@
 import { builder } from '../builder';
+import { TaetigkeitEnum } from './enums';
 
 export const BehandlungInputRef = builder.inputType('BehandlungInput', {
   fields: (t) => ({
     therapieId: t.id({ required: true }),
     datum: t.string({ required: true }),
     be: t.int({ required: true }),
-    arbeitsthema: t.string({ required: false }),
+    taetigkeit: t.field({ type: TaetigkeitEnum, required: false }),
   }),
 });

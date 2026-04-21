@@ -7,7 +7,7 @@ const baseValid = {
   form: 'lerntherapie' as const,
   kommentar: null,
   bewilligteBe: 60,
-  arbeitsthema: null,
+  taetigkeit: null,
 };
 
 describe('therapieSchema (PRD §2.3, AC-TH-01)', () => {
@@ -77,22 +77,33 @@ describe('therapieSchema (PRD §2.3, AC-TH-01)', () => {
     expect(result.success).toBe(false);
   });
 
-  it('trims whitespace-only arbeitsthema to null', () => {
-    const result = therapieSchema.safeParse({ ...baseValid, arbeitsthema: '   ' });
+  it('trims whitespace-only taetigkeit to null', () => {
+    const result = therapieSchema.safeParse({ ...baseValid, taetigkeit: '   ' });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.arbeitsthema).toBeNull();
+      expect(result.data.taetigkeit).toBeNull();
     }
   });
 
-  it('keeps non-empty arbeitsthema and trims outer whitespace', () => {
+  it('keeps a valid enum taetigkeit and trims outer whitespace', () => {
     const result = therapieSchema.safeParse({
       ...baseValid,
-      arbeitsthema: '  Mathe-Grundlagen  ',
+      taetigkeit: '  lerntherapie  ',
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.arbeitsthema).toBe('Mathe-Grundlagen');
+      expect(result.data.taetigkeit).toBe('lerntherapie');
+    }
+  });
+
+  it('normalises a non-enum taetigkeit string to null', () => {
+    const result = therapieSchema.safeParse({
+      ...baseValid,
+      taetigkeit: 'Mathe-Grundlagen',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.taetigkeit).toBeNull();
     }
   });
 

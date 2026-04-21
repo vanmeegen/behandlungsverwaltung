@@ -40,7 +40,7 @@ const lern: Therapie = {
   form: 'lerntherapie',
   kommentar: null,
   bewilligteBe: 60,
-  arbeitsthema: 'Mathe-Grundlagen',
+  taetigkeit: 'lerntherapie',
 };
 
 const lernOhneThema: Therapie = {
@@ -50,7 +50,7 @@ const lernOhneThema: Therapie = {
   form: 'heilpaedagogik',
   kommentar: null,
   bewilligteBe: 40,
-  arbeitsthema: null,
+  taetigkeit: null,
 };
 
 function makeStores(): {
@@ -90,7 +90,7 @@ function renderPage(): {
 }
 
 describe('<SchnellerfassungPage /> — inputs', () => {
-  it('renders Kind / Therapie / BE stepper / Datum / Arbeitsthema', () => {
+  it('renders Kind / Therapie / BE stepper / Datum / Tätigkeit', () => {
     renderPage();
     for (const id of [
       'schnellerfassung-kindId',
@@ -99,7 +99,7 @@ describe('<SchnellerfassungPage /> — inputs', () => {
       'schnellerfassung-be-plus',
       'schnellerfassung-be',
       'schnellerfassung-datum',
-      'schnellerfassung-arbeitsthema',
+      'schnellerfassung-taetigkeit',
       'schnellerfassung-submit',
     ]) {
       expect(screen.getByTestId(id)).toBeInTheDocument();
@@ -120,8 +120,8 @@ describe('<SchnellerfassungPage /> — Kind → Therapie cascade', () => {
   });
 });
 
-describe('<SchnellerfassungPage /> — Arbeitsthema Vorbelegung (AC-BEH-03)', () => {
-  it('pre-fills arbeitsthema with Therapie.arbeitsthema on selection', () => {
+describe('<SchnellerfassungPage /> — Tätigkeit Vorbelegung (AC-BEH-03)', () => {
+  it('pre-fills taetigkeit with Therapie.taetigkeit on selection', () => {
     const { behandlungStore } = renderPage();
     act(() => {
       behandlungStore.draftBehandlung.setKindId('10');
@@ -129,10 +129,10 @@ describe('<SchnellerfassungPage /> — Arbeitsthema Vorbelegung (AC-BEH-03)', ()
     fireEvent.change(screen.getByTestId('schnellerfassung-therapieId'), {
       target: { value: '7' },
     });
-    expect(screen.getByTestId('schnellerfassung-arbeitsthema')).toHaveValue('Mathe-Grundlagen');
+    expect(screen.getByTestId('schnellerfassung-taetigkeit')).toHaveValue('lerntherapie');
   });
 
-  it('keeps the user-typed arbeitsthema when the Therapie changes after manual edit', () => {
+  it('keeps the user-typed taetigkeit when the Therapie changes after manual edit', () => {
     const { behandlungStore } = renderPage();
     act(() => {
       behandlungStore.draftBehandlung.setKindId('10');
@@ -140,13 +140,13 @@ describe('<SchnellerfassungPage /> — Arbeitsthema Vorbelegung (AC-BEH-03)', ()
     fireEvent.change(screen.getByTestId('schnellerfassung-therapieId'), {
       target: { value: '7' },
     });
-    fireEvent.change(screen.getByTestId('schnellerfassung-arbeitsthema'), {
-      target: { value: 'Bruchrechnung' },
+    fireEvent.change(screen.getByTestId('schnellerfassung-taetigkeit'), {
+      target: { value: 'dyskalkulie' },
     });
     fireEvent.change(screen.getByTestId('schnellerfassung-therapieId'), {
       target: { value: '8' },
     });
-    expect(screen.getByTestId('schnellerfassung-arbeitsthema')).toHaveValue('Bruchrechnung');
+    expect(screen.getByTestId('schnellerfassung-taetigkeit')).toHaveValue('dyskalkulie');
   });
 });
 
@@ -174,7 +174,7 @@ describe('<SchnellerfassungPage /> — submit', () => {
         therapieId: '7',
         datum: '2026-04-20T00:00:00.000Z',
         be: 2,
-        arbeitsthema: 'Mathe-Grundlagen',
+        taetigkeit: 'lerntherapie',
       },
     });
     const kindStore = new KindStore(vi.fn() as unknown as GraphQLFetcher);
@@ -212,7 +212,7 @@ describe('<SchnellerfassungPage /> — submit', () => {
         therapieId: '7',
         datum: '2026-04-20',
         be: 2,
-        arbeitsthema: 'Mathe-Grundlagen',
+        taetigkeit: 'lerntherapie',
       },
     });
   });

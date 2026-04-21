@@ -63,19 +63,19 @@ const DEFAULT_INPUT: Omit<RechnungPdfInput, 'templateBytes'> = {
   lines: [
     {
       datum: new Date('2026-04-01T00:00:00.000Z'),
-      arbeitsthema: 'Mathe-Grundlagen',
+      taetigkeit: 'lerntherapie',
       be: 2,
       zeilenbetragCents: 9000,
     },
     {
       datum: new Date('2026-04-15T00:00:00.000Z'),
-      arbeitsthema: 'Mathe-Grundlagen',
+      taetigkeit: 'lerntherapie',
       be: 2,
       zeilenbetragCents: 9000,
     },
     {
       datum: new Date('2026-04-29T00:00:00.000Z'),
-      arbeitsthema: 'Mathe-Grundlagen',
+      taetigkeit: 'lerntherapie',
       be: 2,
       zeilenbetragCents: 9000,
     },
@@ -109,9 +109,9 @@ describe('renderRechnungPdf (PRD §3.2, §5, AC-RECH-08)', () => {
     expect(text).toContain('29.04.2026');
   });
 
-  it('includes the Arbeitsthema for every line', async () => {
+  it('includes the Tätigkeit for every line', async () => {
     const text = await renderText();
-    const occurrences = text.split('Mathe-Grundlagen').length - 1;
+    const occurrences = text.split('lerntherapie').length - 1;
     expect(occurrences).toBeGreaterThanOrEqual(3);
   });
 
