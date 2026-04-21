@@ -1,49 +1,54 @@
 import { describe, expect, it } from 'bun:test';
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { PDFDocument } from 'pdf-lib';
 import { PDFParse } from 'pdf-parse';
-import { renderRechnungPdf, type RechnungPdfInput } from '../../pdf/rechnungPdf';
+import {
+  renderRechnungPdf,
+  TooManyBehandlungenError,
+  type RechnungPdfInput,
+} from '../../pdf/rechnungPdf';
 
-async function parsePdfText(bytes: Uint8Array): Promise<{ text: string; numpages: number }> {
+async function parsePdfText(bytes: Uint8Array): Promise<string> {
   const parser = new PDFParse({ data: bytes });
-  const textResult = (await parser.getText()) as { text: string; pages?: unknown[] };
-  const info = (await parser.getInfo()) as unknown as { numPages?: number };
-  const numpages =
-    typeof info.numPages === 'number'
-      ? info.numPages
-      : Array.isArray(textResult.pages)
-        ? textResult.pages.length
-        : 0;
-  return { text: textResult.text, numpages };
+  const textResult = (await parser.getText()) as { text: string };
+  return textResult.text;
 }
 
-const __dirname_ = dirname(fileURLToPath(import.meta.url));
-const FIXTURE = resolve(__dirname_, '../../../../web/e2e/fixtures/template-rechnung.pdf');
-
-// The fixture is a minimal handcrafted PDF that pdf-lib can still load
-// (valid header/trailer). If the real fixture ever fails to parse, swap in
-// a proper blank A4 PDF here.
-function makeTemplateBytes(): Uint8Array {
-  // Standard A4 blank page produced by pdf-lib itself at spec runtime.
-  // This keeps the test independent of the on-disk fixture's quirks.
-  return new Uint8Array();
-}
-
-async function makeBlankA4Template(): Promise<Uint8Array> {
-  const { PDFDocument } = await import('pdf-lib');
+/**
+ * Erzeugt eine minimale A4-Vorlage mit AcroForm-Feldern, wie sie die
+ * briefvorlage.pdf in der Produktion hat. Reproduzierbar, damit der
+ * Test nicht von einer on-disk-Fixture abhängt.
+ */
+async function makeAcroFormTemplate(): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
-  doc.addPage([595.28, 841.89]);
+  const page = doc.addPage([595.28, 841.89]);
+  const form = doc.getForm();
+
+  const fields: Array<[string, number, number, number, number]> = [
+    ['empfaengerAdresse', 50, 700, 250, 60],
+    ['rechnungsnummer', 350, 750, 200, 20],
+    ['rechnungsdatum', 350, 720, 200, 20],
+    ['leistungszeitraum', 350, 690, 200, 20],
+    ['einleitungstext', 50, 620, 500, 40],
+    ['kindTitel', 50, 570, 500, 20],
+    ['gesamtsumme', 450, 150, 100, 20],
+    ['unterschriftName', 50, 80, 200, 20],
+  ];
+  for (const [name, x, y, w, h] of fields) {
+    const tf = form.createTextField(name);
+    tf.addToPage(page, { x, y, width: w, height: h });
+  }
   return doc.save();
 }
 
-const DEFAULT_INPUT: Omit<RechnungPdfInput, 'templateBytes'> = {
+const BASE_INPUT: Omit<RechnungPdfInput, 'templateBytes'> = {
   nummer: 'RE-2026-04-0001',
+  rechnungsdatum: new Date(Date.UTC(2026, 4, 2)),
   year: 2026,
   month: 4,
   kind: {
     vorname: 'Anna',
     nachname: 'Musterfrau',
+    aktenzeichen: 'K-2026-001',
     strasse: 'Hauptstr.',
     hausnummer: '12',
     plz: '50667',
@@ -59,24 +64,25 @@ const DEFAULT_INPUT: Omit<RechnungPdfInput, 'templateBytes'> = {
     plz: '51103',
     stadt: 'Köln',
   },
+  therapieForm: 'lerntherapie',
   stundensatzCents: 4500,
   lines: [
     {
-      datum: new Date('2026-04-01T00:00:00.000Z'),
+      datum: new Date(Date.UTC(2026, 3, 1)),
       taetigkeit: 'lerntherapie',
       taetigkeitLabel: 'Lerntherapie',
       be: 2,
       zeilenbetragCents: 9000,
     },
     {
-      datum: new Date('2026-04-15T00:00:00.000Z'),
+      datum: new Date(Date.UTC(2026, 3, 15)),
       taetigkeit: 'lerntherapie',
       taetigkeitLabel: 'Lerntherapie',
       be: 2,
       zeilenbetragCents: 9000,
     },
     {
-      datum: new Date('2026-04-29T00:00:00.000Z'),
+      datum: new Date(Date.UTC(2026, 3, 29)),
       taetigkeit: 'lerntherapie',
       taetigkeitLabel: 'Lerntherapie',
       be: 2,
@@ -86,94 +92,112 @@ const DEFAULT_INPUT: Omit<RechnungPdfInput, 'templateBytes'> = {
   gesamtCents: 27000,
 };
 
-async function renderText(): Promise<string> {
-  const templateBytes = await makeBlankA4Template();
-  void makeTemplateBytes; // silence linter for the scaffolding helper
-  const bytes = await renderRechnungPdf({ ...DEFAULT_INPUT, templateBytes });
-  const { text } = await parsePdfText(bytes);
-  return text;
+async function renderAndExtract(
+  override: Partial<RechnungPdfInput> = {},
+): Promise<{ bytes: Uint8Array; text: string }> {
+  const templateBytes = await makeAcroFormTemplate();
+  const bytes = await renderRechnungPdf({ ...BASE_INPUT, ...override, templateBytes });
+  const text = await parsePdfText(bytes);
+  return { bytes, text };
 }
 
-describe('renderRechnungPdf (PRD §3.2, §5, AC-RECH-08)', () => {
-  it('includes the Rechnungsnummer', async () => {
-    const text = await renderText();
+describe('renderRechnungPdf (AcroForm pipeline)', () => {
+  it('writes the Rechnungsnummer into the acro-form field', async () => {
+    const { text } = await renderAndExtract();
     expect(text).toContain('RE-2026-04-0001');
   });
 
-  it('includes the Abrechnungsmonat (04/2026)', async () => {
-    const text = await renderText();
-    expect(text).toContain('04/2026');
+  it('writes the Rechnungsdatum formatted as DD.MM.YYYY (AC-RECH-09)', async () => {
+    const { text } = await renderAndExtract({
+      rechnungsdatum: new Date(Date.UTC(2026, 4, 15)),
+    });
+    expect(text).toContain('15.05.2026');
   });
 
-  it('renders the PRD §3.2 header columns in order', async () => {
-    const text = await renderText();
-    const iBez = text.indexOf('Bezeichnung');
-    const iMenge = text.indexOf('Menge', iBez);
-    const iEinheit = text.indexOf('Einheit', iMenge);
-    const iEinzel = text.indexOf('Einzel', iEinheit);
-    const iGesamt = text.indexOf('Gesamt', iEinzel);
-    expect(iBez).toBeGreaterThanOrEqual(0);
-    expect(iMenge).toBeGreaterThan(iBez);
-    expect(iEinheit).toBeGreaterThan(iMenge);
-    expect(iEinzel).toBeGreaterThan(iEinheit);
-    expect(iGesamt).toBeGreaterThan(iEinzel);
+  it('writes the Leistungszeitraum 01.04.2026 – 30.04.2026', async () => {
+    const { text } = await renderAndExtract();
+    expect(text).toContain('01.04.2026 – 30.04.2026');
   });
 
-  it('fills "Bezeichnung" with the Tätigkeit-Label for every line', async () => {
-    const text = await renderText();
-    const occurrences = text.split('Lerntherapie').length - 1;
-    expect(occurrences).toBeGreaterThanOrEqual(3);
+  it('writes the Kindesname + Aktenzeichen titel above the table', async () => {
+    const { text } = await renderAndExtract();
+    expect(text).toContain('Anna Musterfrau');
+    expect(text).toContain('K-2026-001');
+    expect(text).toContain('April 2026');
   });
 
-  it('uses "BE" as the unit for every invoice line', async () => {
-    const text = await renderText();
-    // three lines × unit "BE" + the "BE" inside "Lerntherapie" context is
-    // not an exact token match; checking the PDF contains the header word is
-    // sufficient proof the column exists alongside the data.
-    expect(text).toContain('Einheit');
-    expect(text).toContain('BE');
+  it('builds the Einleitungstext with the therapy form label', async () => {
+    const { text } = await renderAndExtract();
+    // AcroForm multiline may wrap the text in pdf-parse output; check
+    // presence of salient substrings instead of the full sentence.
+    expect(text).toContain('Mein Honorar');
+    expect(text).toContain('Teilmaßnahme');
+    expect(text).toContain('Lerntherapie');
+    expect(text).toContain('April 2026');
   });
 
-  it('does not render a per-line Datum column (PRD §3.2)', async () => {
-    const text = await renderText();
-    expect(text).not.toContain('01.04.2026');
-    expect(text).not.toContain('15.04.2026');
-    expect(text).not.toContain('29.04.2026');
+  it('renders one table row per Behandlung with date and Taetigkeit label (AC-RECH-10)', async () => {
+    const { text } = await renderAndExtract();
+    expect(text).toContain('01.04.2026 · Lerntherapie');
+    expect(text).toContain('15.04.2026 · Lerntherapie');
+    expect(text).toContain('29.04.2026 · Lerntherapie');
   });
 
-  it('includes the Gesamtsumme 270,00 €', async () => {
-    const text = await renderText();
+  it('falls back to the therapy form label when taetigkeit is null', async () => {
+    const { text } = await renderAndExtract({
+      lines: [
+        {
+          datum: new Date(Date.UTC(2026, 3, 1)),
+          taetigkeit: null,
+          taetigkeitLabel: null,
+          be: 2,
+          zeilenbetragCents: 9000,
+        },
+      ],
+      gesamtCents: 9000,
+    });
+    expect(text).toContain('01.04.2026 · Lerntherapie');
+  });
+
+  it('writes the Gesamtsumme into the acro-form field', async () => {
+    const { text } = await renderAndExtract();
     expect(text).toContain('270,00');
   });
 
-  it('includes the § 4 UStG exemption hint (AC-RECH-08)', async () => {
-    const text = await renderText();
-    expect(text).toContain('§ 4 Nr. 14 UStG umsatzsteuerfrei');
+  it('flattens the form after rendering — the result has no fillable fields', async () => {
+    // Render fresh bytes (don't reuse the buffer that pdf-parse touched
+    // earlier — it consumes the underlying Uint8Array in some paths).
+    const templateBytes = await makeAcroFormTemplate();
+    const bytes = await renderRechnungPdf({ ...BASE_INPUT, templateBytes });
+    const reopened = await PDFDocument.load(new Uint8Array(bytes));
+    expect(reopened.getForm().getFields()).toHaveLength(0);
   });
 
-  it('mentions no USt-Ausweis keywords except the exemption sentence', async () => {
-    const text = await renderText();
-    expect(text).not.toMatch(/19\s*%/);
-    expect(text).not.toContain('MwSt');
-    // "USt" appears only once, inside the exemption sentence.
-    const ustCount = text.split('USt').length - 1;
-    expect(ustCount).toBe(1);
+  it('throws TooManyBehandlungenError when rows exceed the table zone', async () => {
+    const many = Array.from({ length: 50 }, (_, i) => ({
+      datum: new Date(Date.UTC(2026, 3, (i % 28) + 1)),
+      taetigkeit: 'lerntherapie',
+      taetigkeitLabel: 'Lerntherapie',
+      be: 1,
+      zeilenbetragCents: 4500,
+    }));
+    const templateBytes = await makeAcroFormTemplate();
+    await expect(
+      renderRechnungPdf({ ...BASE_INPUT, lines: many, gesamtCents: 50 * 4500, templateBytes }),
+    ).rejects.toBeInstanceOf(TooManyBehandlungenError);
   });
 
-  it('renders on template with the expected page count (page 0 is preserved)', async () => {
-    const templateBytes = await makeBlankA4Template();
-    const bytes = await renderRechnungPdf({ ...DEFAULT_INPUT, templateBytes });
-    const parsed = await parsePdfText(bytes);
-    expect(parsed.numpages).toBe(1);
-  });
-
-  it('loads an on-disk pdf template (e2e/fixtures/template-rechnung.pdf) as well', async () => {
-    // Sanity: if this ever regresses we know the fixture file broke.
-    const templateBytes = readFileSync(FIXTURE);
-    const bytes = await renderRechnungPdf({
-      ...DEFAULT_INPUT,
-      templateBytes: new Uint8Array(templateBytes),
-    });
-    expect(bytes.byteLength).toBeGreaterThan(100);
+  it('tolerates a template that does not declare every optional field', async () => {
+    // Create a minimal template with only the mandatory fields.
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([595.28, 841.89]);
+    const form = doc.getForm();
+    const tf = form.createTextField('rechnungsnummer');
+    tf.addToPage(page, { x: 100, y: 700, width: 200, height: 20 });
+    const templateBytes = await doc.save();
+    const bytes = await renderRechnungPdf({ ...BASE_INPUT, templateBytes });
+    const text = await parsePdfText(bytes);
+    expect(text).toContain('RE-2026-04-0001');
+    expect(text).toContain('Lerntherapie');
   });
 });

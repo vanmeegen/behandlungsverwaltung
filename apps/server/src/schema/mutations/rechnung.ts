@@ -1,8 +1,13 @@
 import { inArray } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
 import { rechnungen } from '../../db/schema';
+import { TooManyBehandlungenError } from '../../pdf/rechnungPdf';
 import { KeineBehandlungenError } from '../../services/rechnungAggregation';
-import { createMonatsrechnung, RechnungExistiertError } from '../../services/rechnungService';
+import {
+  createMonatsrechnung,
+  KeineTherapieError,
+  RechnungExistiertError,
+} from '../../services/rechnungService';
 import { TemplateFileMissingError, TemplateNotFoundError } from '../../services/templateResolver';
 import { builder, resolvePaths } from '../builder';
 import { RechnungRef } from '../types/rechnung';
@@ -90,6 +95,16 @@ builder.mutationField('createMonatsrechnung', (t) =>
         if (err instanceof TemplateFileMissingError) {
           throw new GraphQLError('Vorlagen-Datei fehlt auf der Festplatte.', {
             extensions: { code: 'TEMPLATE_FILE_MISSING' },
+          });
+        }
+        if (err instanceof KeineTherapieError) {
+          throw new GraphQLError(err.message, {
+            extensions: { code: 'KEINE_THERAPIE' },
+          });
+        }
+        if (err instanceof TooManyBehandlungenError) {
+          throw new GraphQLError(err.message, {
+            extensions: { code: 'TOO_MANY_BEHANDLUNGEN' },
           });
         }
         throw err;

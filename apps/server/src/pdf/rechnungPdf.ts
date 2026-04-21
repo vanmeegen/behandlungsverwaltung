@@ -1,6 +1,15 @@
-import { formatEuro } from '@behandlungsverwaltung/shared';
-import { PDFDocument, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib';
-import { LAYOUT } from './layout';
+import {
+  formatDateDe,
+  formatEuro,
+  formatLeistungszeitraum,
+  monatName as monatNameDe,
+  THERAPIE_FORM_LABELS,
+  type TherapieFormValue,
+} from '@behandlungsverwaltung/shared';
+import { PDFDocument, StandardFonts, type PDFForm } from 'pdf-lib';
+import { LAYOUT, MAX_ROWS_PER_PAGE } from './layout';
+
+const RECHNUNG_LAYOUT = LAYOUT.rechnung;
 
 export interface RechnungPdfLine {
   datum: Date;
@@ -13,6 +22,7 @@ export interface RechnungPdfLine {
 export interface KindForPdf {
   vorname: string;
   nachname: string;
+  aktenzeichen: string;
   strasse: string;
   hausnummer: string;
   plz: string;
@@ -33,21 +43,33 @@ export interface AuftraggeberForPdf {
 export interface RechnungPdfInput {
   templateBytes: Uint8Array;
   nummer: string;
+  rechnungsdatum: Date;
   year: number;
   month: number;
   kind: KindForPdf;
   auftraggeber: AuftraggeberForPdf;
+  therapieForm: TherapieFormValue;
   stundensatzCents: number;
   lines: RechnungPdfLine[];
   gesamtCents: number;
 }
 
+export class TooManyBehandlungenError extends Error {
+  constructor(count: number, max: number) {
+    super(
+      `Zu viele Behandlungen (${count}) — maximal ${max} pro Seite in Phase 1. Paginierung ist noch nicht implementiert.`,
+    );
+    this.name = 'TooManyBehandlungenError';
+  }
+}
+
+// Intl.NumberFormat inserts a NBSP (U+00A0) between amount and €;
+// replace it with a normal space so PDF viewers render consistently.
 function formatEuroPlain(cents: number): string {
-  // Use the shared formatter, but strip the NBSP that Intl inserts before €.
   return formatEuro(cents).replace(/\u00A0/g, ' ');
 }
 
-function auftraggeberLines(ag: AuftraggeberForPdf): string[] {
+function auftraggeberAdresse(ag: AuftraggeberForPdf): string {
   const lines: string[] = [];
   if (ag.typ === 'firma') {
     if (ag.firmenname) lines.push(ag.firmenname);
@@ -57,26 +79,39 @@ function auftraggeberLines(ag: AuftraggeberForPdf): string[] {
   }
   lines.push(`${ag.strasse} ${ag.hausnummer}`);
   lines.push(`${ag.plz} ${ag.stadt}`);
-  return lines;
+  return lines.join('\n');
 }
 
-function drawLines(
-  page: PDFPage,
-  font: PDFFont,
-  size: number,
-  lines: string[],
-  x: number,
-  yTop: number,
-): void {
-  const lh = size + 4;
-  let y = yTop;
-  for (const line of lines) {
-    page.drawText(line, { x, y, size, font });
-    y -= lh;
+function setField(form: PDFForm, name: string, value: string, multiline = false): void {
+  // Vorlage ist autor-kontrolliert — fehlt ein Feld, soll die App still
+  // überspringen, damit die Therapeutin auch ohne jedes Optionalfeld
+  // (z. B. unterschriftName) eine Rechnung erzeugen kann.
+  const field = form.getFieldMaybe(name);
+  if (!field) return;
+  try {
+    const textField = form.getTextField(name);
+    if (multiline) textField.enableMultiline();
+    textField.setText(value);
+  } catch {
+    // Falsch konfiguriertes Feld (z. B. Checkbox statt Textfeld) — ignorieren.
   }
 }
 
+function einleitungstext(input: RechnungPdfInput, monat: string): string {
+  const therapieLabel = THERAPIE_FORM_LABELS[input.therapieForm];
+  return `Mein Honorar für die Teilmaßnahme ${therapieLabel} betrug im Monat ${monat} ${input.year}:`;
+}
+
+function kindTitel(input: RechnungPdfInput, monat: string): string {
+  const { vorname, nachname, aktenzeichen } = input.kind;
+  return `${vorname} ${nachname} · ${aktenzeichen} · im ${monat} ${input.year}`;
+}
+
 export async function renderRechnungPdf(input: RechnungPdfInput): Promise<Uint8Array> {
+  if (input.lines.length > MAX_ROWS_PER_PAGE) {
+    throw new TooManyBehandlungenError(input.lines.length, MAX_ROWS_PER_PAGE);
+  }
+
   const doc = await PDFDocument.load(input.templateBytes);
   const pages = doc.getPages();
   if (pages.length === 0) {
@@ -84,135 +119,52 @@ export async function renderRechnungPdf(input: RechnungPdfInput): Promise<Uint8A
   }
   const page = pages[0]!;
   const font = await doc.embedFont(StandardFonts.Helvetica);
-  const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const monat = monatNameDe(input.month);
 
-  // Anschrift (Auftraggeber)
-  drawLines(
-    page,
-    font,
-    11,
-    auftraggeberLines(input.auftraggeber),
-    LAYOUT.marginLeft,
-    LAYOUT.anschriftTop,
-  );
+  // AcroForm-Felder der Vorlage füllen.
+  const form = doc.getForm();
+  setField(form, 'empfaengerAdresse', auftraggeberAdresse(input.auftraggeber), true);
+  setField(form, 'rechnungsnummer', input.nummer);
+  setField(form, 'rechnungsdatum', formatDateDe(input.rechnungsdatum));
+  setField(form, 'leistungszeitraum', formatLeistungszeitraum(input.year, input.month));
+  setField(form, 'einleitungstext', einleitungstext(input, monat), true);
+  setField(form, 'kindTitel', kindTitel(input, monat));
+  setField(form, 'gesamtsumme', formatEuroPlain(input.gesamtCents));
+  setField(form, 'unterschriftName', `${input.kind.vorname} ${input.kind.nachname}`);
 
-  // Rechnungs-Metadaten rechts oben
-  const rightX = 400;
-  drawLines(
-    page,
-    font,
-    11,
-    [
-      `Rechnungsnummer: ${input.nummer}`,
-      `Abrechnungsmonat: ${String(input.month).padStart(2, '0')}/${input.year}`,
-      `Patient: ${input.kind.vorname} ${input.kind.nachname}`,
-    ],
-    rightX,
-    LAYOUT.anschriftTop,
-  );
-
-  // Überschrift
-  const titleY = LAYOUT.bodyTop + 40;
-  page.drawText(`Rechnung ${input.nummer}`, {
-    x: LAYOUT.marginLeft,
-    y: titleY,
-    size: LAYOUT.titleFontSize,
-    font: fontBold,
-  });
-
-  // Tabellenkopf — PRD §3.2: Bezeichnung · Menge · Einheit · Einzel € · Gesamt €
-  let y = LAYOUT.bodyTop;
-  page.drawText('Bezeichnung', {
-    x: LAYOUT.colBezeichnungX,
-    y,
-    size: LAYOUT.tableHeaderFontSize,
-    font: fontBold,
-  });
-  page.drawText('Menge', {
-    x: LAYOUT.colMengeX,
-    y,
-    size: LAYOUT.tableHeaderFontSize,
-    font: fontBold,
-  });
-  page.drawText('Einheit', {
-    x: LAYOUT.colEinheitX,
-    y,
-    size: LAYOUT.tableHeaderFontSize,
-    font: fontBold,
-  });
-  page.drawText('Einzel €', {
-    x: LAYOUT.colEinzelX,
-    y,
-    size: LAYOUT.tableHeaderFontSize,
-    font: fontBold,
-  });
-  page.drawText('Gesamt €', {
-    x: LAYOUT.colGesamtX,
-    y,
-    size: LAYOUT.tableHeaderFontSize,
-    font: fontBold,
-  });
-
-  y -= LAYOUT.bodyLineHeight;
-
-  for (const line of input.lines) {
-    const bezeichnung = line.taetigkeitLabel ?? '';
-    page.drawText(bezeichnung.slice(0, 40), {
-      x: LAYOUT.colBezeichnungX,
+  // Tabellenzeilen pro Behandlung zeichnen.
+  let y = RECHNUNG_LAYOUT.tableTopY;
+  const { posX, mengeX, einheitX, bezeichnungX, einzelX, gesamtX } = RECHNUNG_LAYOUT.columns;
+  for (let i = 0; i < input.lines.length; i++) {
+    const line = input.lines[i]!;
+    const bezeichnung = line.taetigkeitLabel ?? THERAPIE_FORM_LABELS[input.therapieForm];
+    page.drawText(String(i + 1), { x: posX, y, size: RECHNUNG_LAYOUT.fontSize, font });
+    page.drawText(String(line.be), { x: mengeX, y, size: RECHNUNG_LAYOUT.fontSize, font });
+    page.drawText('BE', { x: einheitX, y, size: RECHNUNG_LAYOUT.fontSize, font });
+    page.drawText(`${formatDateDe(line.datum)} · ${bezeichnung}`, {
+      x: bezeichnungX,
       y,
-      size: LAYOUT.tableRowFontSize,
-      font,
-    });
-    page.drawText(String(line.be), {
-      x: LAYOUT.colMengeX,
-      y,
-      size: LAYOUT.tableRowFontSize,
-      font,
-    });
-    page.drawText('BE', {
-      x: LAYOUT.colEinheitX,
-      y,
-      size: LAYOUT.tableRowFontSize,
+      size: RECHNUNG_LAYOUT.fontSize,
       font,
     });
     page.drawText(formatEuroPlain(input.stundensatzCents), {
-      x: LAYOUT.colEinzelX,
+      x: einzelX,
       y,
-      size: LAYOUT.tableRowFontSize,
+      size: RECHNUNG_LAYOUT.fontSize,
       font,
     });
     page.drawText(formatEuroPlain(line.zeilenbetragCents), {
-      x: LAYOUT.colGesamtX,
+      x: gesamtX,
       y,
-      size: LAYOUT.tableRowFontSize,
+      size: RECHNUNG_LAYOUT.fontSize,
       font,
     });
-    y -= LAYOUT.bodyLineHeight;
+    y -= RECHNUNG_LAYOUT.rowHeight;
   }
 
-  // Gesamtsumme
-  y -= LAYOUT.bodyLineHeight;
-  page.drawText('Gesamtsumme', {
-    x: LAYOUT.colEinzelX,
-    y,
-    size: LAYOUT.tableHeaderFontSize,
-    font: fontBold,
-  });
-  page.drawText(formatEuroPlain(input.gesamtCents), {
-    x: LAYOUT.colGesamtX,
-    y,
-    size: LAYOUT.tableHeaderFontSize,
-    font: fontBold,
-  });
-
-  // USt-Hinweis (AC-RECH-08)
-  y -= LAYOUT.bodyLineHeight * 3;
-  page.drawText('Gemäß § 4 Nr. 14 UStG umsatzsteuerfrei', {
-    x: LAYOUT.marginLeft,
-    y,
-    size: LAYOUT.smallFontSize,
-    font,
-  });
+  // Felder in statischen Inhalt überführen — ergibt ein abgeschlossenes
+  // Belegdokument, das in jedem PDF-Viewer gleich aussieht.
+  form.flatten();
 
   return doc.save();
 }

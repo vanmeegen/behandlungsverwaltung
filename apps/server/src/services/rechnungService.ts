@@ -4,6 +4,7 @@ import {
   sumZeilenbetraege,
   TAETIGKEIT_LABELS,
   type TaetigkeitValue,
+  type TherapieFormValue,
 } from '@behandlungsverwaltung/shared';
 import { and, eq } from 'drizzle-orm';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -30,6 +31,15 @@ export class RechnungExistiertError extends Error {
       `Für Jahr ${year}, Monat ${month}, Kind ${kindId}, Auftraggeber ${auftraggeberId} existiert bereits eine Rechnung`,
     );
     this.name = 'RechnungExistiertError';
+  }
+}
+
+export class KeineTherapieError extends Error {
+  constructor(kindId: number, auftraggeberId: number) {
+    super(
+      `Für Kind ${kindId} beim Auftraggeber ${auftraggeberId} ist keine Therapie angelegt — bitte zuerst eine Therapie erfassen.`,
+    );
+    this.name = 'KeineTherapieError';
   }
 }
 
@@ -90,6 +100,21 @@ export async function createMonatsrechnung(
     .all();
   if (!ag) throw new Error(`Auftraggeber ${input.auftraggeberId} nicht gefunden`);
 
+  // Therapieform für den Einleitungstext des PDFs. Pro (Kind, Auftraggeber)
+  // existiert genau eine Therapie (PRD §2.3); fehlt sie, ist die Rechnung
+  // nicht sinnvoll erzeugbar.
+  const [therapie] = db
+    .select()
+    .from(therapienTbl)
+    .where(
+      and(
+        eq(therapienTbl.kindId, input.kindId),
+        eq(therapienTbl.auftraggeberId, input.auftraggeberId),
+      ),
+    )
+    .all();
+  if (!therapie) throw new KeineTherapieError(input.kindId, input.auftraggeberId);
+
   const behandlungenRows = collectBehandlungen(db, input);
 
   const lines = computeRechnungsLines(
@@ -110,11 +135,13 @@ export async function createMonatsrechnung(
   const pdfInput: RechnungPdfInput = {
     templateBytes,
     nummer,
+    rechnungsdatum: input.rechnungsdatum,
     year: input.year,
     month: input.month,
     kind: {
       vorname: kind.vorname,
       nachname: kind.nachname,
+      aktenzeichen: kind.aktenzeichen,
       strasse: kind.strasse,
       hausnummer: kind.hausnummer,
       plz: kind.plz,
@@ -130,6 +157,7 @@ export async function createMonatsrechnung(
       plz: ag.plz,
       stadt: ag.stadt,
     },
+    therapieForm: therapie.form as TherapieFormValue,
     stundensatzCents: ag.stundensatzCents,
     lines: behandlungenRows.map((b, i) => ({
       datum: b.datum,
