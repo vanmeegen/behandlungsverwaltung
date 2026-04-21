@@ -7,11 +7,12 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
+import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
-import { useEffect, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BeStepper } from '../components/BeStepper';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
@@ -56,13 +57,24 @@ export const SchnellerfassungPage = observer(
       draft.setTherapie(id, t?.taetigkeit ?? null);
     };
 
+    const [successOpen, setSuccessOpen] = useState(false);
+
     const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
       event.preventDefault();
       const saved = await behandlungStore.saveDraft();
       if (saved) {
-        draft.reset();
-        navigate('/');
+        // PRD §3.1: Maske bereit für die nächste Behandlung derselben
+        // Therapie. Kind/Therapie bleiben, Datum/BE zurückgesetzt,
+        // Tätigkeit erneut aus der Therapie vorbelegt.
+        const therapie = therapieStore.items.find((t) => t.id === draft.therapieId);
+        draft.resetForNextEntry(therapie?.taetigkeit ?? null);
+        setSuccessOpen(true);
       }
+    };
+
+    const onFinish = (): void => {
+      draft.reset();
+      navigate('/');
     };
 
     return (
@@ -179,9 +191,19 @@ export const SchnellerfassungPage = observer(
               ))}
             </TextField>
 
-            <Button type="submit" data-testselector="schnellerfassung-submit">
-              Speichern
-            </Button>
+            <Stack direction="row" spacing={1}>
+              <Button type="submit" data-testselector="schnellerfassung-submit">
+                Speichern
+              </Button>
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={onFinish}
+                data-testselector="schnellerfassung-finish"
+              >
+                Fertig
+              </Button>
+            </Stack>
 
             {behandlungStore.error && (
               <Alert
@@ -194,6 +216,15 @@ export const SchnellerfassungPage = observer(
             )}
           </Stack>
         </Box>
+
+        <Snackbar
+          open={successOpen}
+          autoHideDuration={2500}
+          onClose={(): void => setSuccessOpen(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          message="Behandlung gespeichert"
+          data-testselector="schnellerfassung-success"
+        />
       </Box>
     );
   },

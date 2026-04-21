@@ -111,6 +111,19 @@ export class BehandlungDraft {
     this.errors = {};
   }
 
+  // PRD §3.1: nach dem Speichern bleibt die Maske bereit für die
+  // schnelle Erfassung der nächsten Behandlung desselben Kinds/derselben
+  // Therapie. Kind/Therapie bleiben gesetzt, Datum und BE werden auf die
+  // Defaults zurückgesetzt, die Tätigkeit wird erneut aus der Therapie
+  // vorbelegt (durch den Caller via setTherapie aktualisiert).
+  resetForNextEntry(defaultTaetigkeit: TaetigkeitValue | null): void {
+    this.datum = todayIso();
+    this.be = 1;
+    this.taetigkeit = defaultTaetigkeit ?? '';
+    this.taetigkeitTouched = false;
+    this.errors = {};
+  }
+
   validate(): BehandlungFormInput | null {
     const parsed = behandlungSchema.safeParse({
       therapieId: this.therapieId,
