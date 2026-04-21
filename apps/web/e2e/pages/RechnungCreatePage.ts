@@ -18,7 +18,7 @@ export class RechnungCreatePage {
     this.submit = page.getByTestId('rechnung-create-submit');
     this.successToast = page.getByTestId('rechnung-create-success');
     this.duplicateDialog = page.getByTestId('duplicate-confirm');
-    this.duplicateDismiss = page.getByTestId('duplicate-confirm-dismiss');
+    this.duplicateDismiss = page.getByTestId('duplicate-confirm-cancel');
   }
 
   async goto(): Promise<void> {

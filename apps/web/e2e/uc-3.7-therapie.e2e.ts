@@ -100,7 +100,7 @@ test.describe('UC-3.7 Therapie erfassen', () => {
       form: 'sonstiges',
       bewilligteBe: 30,
       kommentar: 'Individuell abgestimmte Förderung',
-      taetigkeit: 'Konzentration',
+      taetigkeit: 'elterngespraech',
     });
     await formPage.submitAndWait();
 
@@ -112,7 +112,7 @@ test.describe('UC-3.7 Therapie erfassen', () => {
     expect(t.form).toBe('sonstiges');
     expect(t.kommentar).toBe('Individuell abgestimmte Förderung');
     expect(t.bewilligteBe).toBe(30);
-    expect(t.taetigkeit).toBe('Konzentration');
+    expect(t.taetigkeit).toBe('elterngespraech');
   });
 
   test('Szenario 2: Sonstiges ohne Kommentar wird abgelehnt (AC-TH-01)', async ({ page }) => {

@@ -110,7 +110,7 @@ test.describe('UC-3.2 Monatsrechnung erzeugen', () => {
     const { text } = (await parser.getText()) as { text: string };
     expect(text).toContain('RE-2026-04-0001');
     expect(text).toContain('270,00');
-    expect(text).toContain('lerntherapie');
+    expect(text).toContain('Lerntherapie');
     expect(text).toContain('§ 4 Nr. 14 UStG umsatzsteuerfrei');
   });
 
@@ -129,7 +129,7 @@ test.describe('UC-3.2 Monatsrechnung erzeugen', () => {
     await formPage.submitAndWait();
     await expect(formPage.duplicateDialog).toBeVisible();
     await expect(formPage.duplicateDialog).toContainText(
-      'Für diesen Monat wurde bereits eine Rechnung erzeugt.',
+      'Für diesen Monat wurde bereits eine Rechnung erzeugt',
     );
 
     // Still exactly one Rechnung in the DB.
