@@ -69,6 +69,15 @@ export const RechnungCreatePage = observer(
             />
 
             <TextField
+              label="Rechnungsdatum"
+              type="date"
+              value={draft.rechnungsdatum}
+              onChange={(e): void => draft.setRechnungsdatum(e.target.value)}
+              inputProps={{ 'data-testselector': 'rechnung-create-rechnungsdatum' }}
+              InputLabelProps={{ shrink: true }}
+            />
+
+            <TextField
               select
               label="Kind"
               value={draft.kindId}

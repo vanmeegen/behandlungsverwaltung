@@ -15,6 +15,7 @@ describe('RechnungStore.create', () => {
         stundensatzCentsSnapshot: 4500,
         gesamtCents: 27000,
         dateiname: 'RE-2026-04-0001-Anna_Musterfrau.pdf',
+        rechnungsdatum: '2026-05-02T00:00:00.000Z',
       },
     });
     const store = new RechnungStore(fetcher as unknown as GraphQLFetcher);
@@ -23,6 +24,7 @@ describe('RechnungStore.create', () => {
       month: 4,
       kindId: '10',
       auftraggeberId: '20',
+      rechnungsdatum: '2026-05-02',
     });
     expect(result?.nummer).toBe('RE-2026-04-0001');
     expect(store.lastCreated?.nummer).toBe('RE-2026-04-0001');
@@ -36,7 +38,13 @@ describe('RechnungStore.create', () => {
         new Error('Für diesen Monat wurde bereits eine Rechnung erzeugt.'),
       ) as unknown as GraphQLFetcher;
     const store = new RechnungStore(fetcher);
-    const r = await store.create({ year: 2026, month: 4, kindId: '10', auftraggeberId: '20' });
+    const r = await store.create({
+      year: 2026,
+      month: 4,
+      kindId: '10',
+      auftraggeberId: '20',
+      rechnungsdatum: '2026-05-02',
+    });
     expect(r).toBeNull();
     expect(store.error?.code).toBe('DUPLICATE_RECHNUNG');
     expect(store.error?.message).toBe('Für diesen Monat wurde bereits eine Rechnung erzeugt.');
@@ -49,7 +57,13 @@ describe('RechnungStore.create', () => {
         new Error('Für den gewählten Monat liegen keine Behandlungen vor.'),
       ) as unknown as GraphQLFetcher;
     const store = new RechnungStore(fetcher);
-    await store.create({ year: 2026, month: 4, kindId: '10', auftraggeberId: '20' });
+    await store.create({
+      year: 2026,
+      month: 4,
+      kindId: '10',
+      auftraggeberId: '20',
+      rechnungsdatum: '2026-05-02',
+    });
     expect(store.error?.code).toBe('KEINE_BEHANDLUNGEN');
   });
 
@@ -59,5 +73,21 @@ describe('RechnungStore.create', () => {
     const r = await store.saveDraft();
     expect(r).toBeNull();
     expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('draft defaults rechnungsdatum to today ISO', async () => {
+    const fetcher = vi.fn();
+    const store = new RechnungStore(fetcher as unknown as GraphQLFetcher);
+    expect(store.draftRechnung.rechnungsdatum).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('draft is invalid when rechnungsdatum is cleared', async () => {
+    const fetcher = vi.fn();
+    const store = new RechnungStore(fetcher as unknown as GraphQLFetcher);
+    store.draftRechnung.setKindId('10');
+    store.draftRechnung.setAuftraggeberId('20');
+    expect(store.draftRechnung.valid()).toBe(true);
+    store.draftRechnung.setRechnungsdatum('');
+    expect(store.draftRechnung.valid()).toBe(false);
   });
 });

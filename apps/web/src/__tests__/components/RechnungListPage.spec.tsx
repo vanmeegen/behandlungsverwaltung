@@ -55,6 +55,7 @@ const r1: Rechnung = {
   gesamtCents: 27000,
   dateiname: 'RE-2026-04-0001-Anna_Musterfrau.pdf',
   downloadedAt: null,
+  rechnungsdatum: '2026-05-02T00:00:00.000Z',
 };
 
 const r2: Rechnung = {
@@ -68,6 +69,7 @@ const r2: Rechnung = {
   gesamtCents: 9000,
   dateiname: 'RE-2026-04-0002-Ben_Beispiel.pdf',
   downloadedAt: null,
+  rechnungsdatum: '2026-05-02T00:00:00.000Z',
 };
 
 // Intl may insert NBSP between amount and €.
