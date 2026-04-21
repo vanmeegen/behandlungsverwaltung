@@ -1,15 +1,12 @@
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
 import { useEffect, type ChangeEvent, type FormEvent } from 'react';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
 import type { KindStore } from '../models/KindStore';
 import type { RechnungStore } from '../models/RechnungStore';
@@ -126,26 +123,19 @@ export const RechnungCreatePage = observer(
           </Alert>
         )}
 
-        <Dialog
+        <ConfirmDialog
           open={duplicate}
-          onClose={(): void => rechnungStore.dismissError()}
-          PaperProps={{
-            role: 'alertdialog',
-            'data-testselector': 'duplicate-confirm',
+          title="Rechnung neu erzeugen?"
+          message="Für diesen Monat wurde bereits eine Rechnung erzeugt — neu erzeugen?"
+          confirmLabel="Ja"
+          cancelLabel="Abbrechen"
+          testSelector="duplicate-confirm"
+          onCancel={(): void => rechnungStore.dismissError()}
+          onConfirm={async (): Promise<void> => {
+            rechnungStore.dismissError();
+            await rechnungStore.saveDraft({ force: true });
           }}
-        >
-          <DialogContent>
-            <DialogContentText>{rechnungStore.error?.message}</DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              data-testselector="duplicate-confirm-dismiss"
-              onClick={(): void => rechnungStore.dismissError()}
-            >
-              OK
-            </Button>
-          </DialogActions>
-        </Dialog>
+        />
 
         {rechnungStore.error?.code === 'KEINE_BEHANDLUNGEN' && (
           <Alert

@@ -25,6 +25,7 @@ export interface CreateMonatsrechnungInput {
   month: number;
   kindId: string;
   auftraggeberId: string;
+  force?: boolean;
 }
 
 const RECHNUNG_COLUMNS = /* GraphQL */ `
@@ -232,13 +233,14 @@ export class RechnungStore {
     this.error = null;
   }
 
-  async saveDraft(): Promise<Rechnung | null> {
+  async saveDraft(options: { force?: boolean } = {}): Promise<Rechnung | null> {
     if (!this.draftRechnung.valid()) return null;
     return this.create({
       year: this.draftRechnung.year,
       month: this.draftRechnung.month,
       kindId: this.draftRechnung.kindId,
       auftraggeberId: this.draftRechnung.auftraggeberId,
+      force: options.force ?? false,
     });
   }
 }

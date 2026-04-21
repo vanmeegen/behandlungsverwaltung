@@ -38,6 +38,12 @@ export interface CreateRechnungInput {
   month: number;
   kindId: number;
   auftraggeberId: number;
+  /**
+   * Wenn true, überschreibt eine bereits existierende Rechnung (gleicher
+   * Monat/Kind/Auftraggeber) unter Beibehaltung der Rechnungsnummer (§4).
+   * Die Datei wird neu erzeugt, `downloadedAt` wird zurückgesetzt.
+   */
+  force?: boolean;
 }
 
 function isUniqueViolation(err: unknown): boolean {
@@ -63,7 +69,8 @@ export async function createMonatsrechnung(
       ),
     )
     .all();
-  if (existing.length > 0) {
+  const existingRow = existing[0] ?? null;
+  if (existingRow && !input.force) {
     throw new RechnungExistiertError(input.year, input.month, input.kindId, input.auftraggeberId);
   }
 
@@ -84,7 +91,9 @@ export async function createMonatsrechnung(
   );
   const gesamtCents = sumZeilenbetraege(lines);
 
-  const nummer = allocateNummer(db, input.year, input.month);
+  // PRD §4: Bei force=true behalten wir die bestehende Nummer; sonst wird
+  // neu allokiert.
+  const nummer = existingRow ? existingRow.nummer : allocateNummer(db, input.year, input.month);
   const dateiname = `${nummer}-${sanitizeKindesname(kind.vorname, kind.nachname)}.pdf`;
 
   // Resolve template (per-Auftraggeber → global fallback).
@@ -130,31 +139,60 @@ export async function createMonatsrechnung(
   writeFileSync(join(paths.billsDir, dateiname), pdfBytes);
 
   let inserted: Rechnung;
-  try {
+  if (existingRow) {
+    // PRD §3.2 Korrektur: bestehende Rechnung mit korrigierten Daten
+    // überschreiben. Snapshots werden vorher gelöscht und neu gesetzt.
+    // downloadedAt wird zurückgesetzt (neu erzeugte Version wurde noch
+    // nicht versendet).
+    db.delete(rechnungBehandlungen)
+      .where(eq(rechnungBehandlungen.rechnungId, existingRow.id))
+      .run();
     const [row] = db
-      .insert(rechnungen)
-      .values({
-        nummer,
-        jahr: input.year,
-        monat: input.month,
-        kindId: input.kindId,
-        auftraggeberId: input.auftraggeberId,
+      .update(rechnungen)
+      .set({
         stundensatzCentsSnapshot: ag.stundensatzCents,
         gesamtCents,
         dateiname,
+        downloadedAt: null,
       })
+      .where(eq(rechnungen.id, existingRow.id))
       .returning()
       .all();
-    if (!row) throw new Error('Unerwartete Datenbank-Antwort beim Anlegen der Rechnung');
+    if (!row) throw new Error('Unerwartete Datenbank-Antwort beim Aktualisieren der Rechnung');
     inserted = row;
-  } catch (err) {
-    if (isUniqueViolation(err)) {
-      throw new RechnungExistiertError(input.year, input.month, input.kindId, input.auftraggeberId);
+  } else {
+    try {
+      const [row] = db
+        .insert(rechnungen)
+        .values({
+          nummer,
+          jahr: input.year,
+          monat: input.month,
+          kindId: input.kindId,
+          auftraggeberId: input.auftraggeberId,
+          stundensatzCentsSnapshot: ag.stundensatzCents,
+          gesamtCents,
+          dateiname,
+        })
+        .returning()
+        .all();
+      if (!row) throw new Error('Unerwartete Datenbank-Antwort beim Anlegen der Rechnung');
+      inserted = row;
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new RechnungExistiertError(
+          input.year,
+          input.month,
+          input.kindId,
+          input.auftraggeberId,
+        );
+      }
+      throw err;
     }
-    throw err;
   }
 
-  // Per-line snapshots.
+  // Per-line snapshots (frisch für alle Rechnungen — bei force=true nach
+  // vorherigem Löschen).
   for (let i = 0; i < behandlungenRows.length; i++) {
     const b = behandlungenRows[i]!;
     db.insert(rechnungBehandlungen)

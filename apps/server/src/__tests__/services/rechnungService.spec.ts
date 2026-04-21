@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { eq } from 'drizzle-orm';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PDFDocument } from 'pdf-lib';
@@ -148,5 +149,47 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
     ).rejects.toBeInstanceOf(RechnungExistiertError);
     const all = ctx.db.select().from(rechnungen).all();
     expect(all).toHaveLength(1);
+  });
+
+  it('force=true keeps the nummer, overwrites the PDF, resets downloadedAt (PRD §3.2, §4)', async () => {
+    const first = await createMonatsrechnung(ctx.db, ctx.paths, {
+      year: 2026,
+      month: 4,
+      kindId,
+      auftraggeberId,
+    });
+    // Simulate: the Therapeutin already marked this as downloaded.
+    ctx.db
+      .update(rechnungen)
+      .set({ downloadedAt: new Date('2026-04-10T00:00:00.000Z') })
+      .where(eq(rechnungen.id, first.id))
+      .run();
+
+    // Correct one behandlung (BE bump) and re-run with force.
+    const behandlungRows = ctx.db.select().from(behandlungen).all();
+    ctx.db
+      .update(behandlungen)
+      .set({ be: 4 })
+      .where(eq(behandlungen.id, behandlungRows[0]!.id))
+      .run();
+
+    const second = await createMonatsrechnung(ctx.db, ctx.paths, {
+      year: 2026,
+      month: 4,
+      kindId,
+      auftraggeberId,
+      force: true,
+    });
+
+    expect(second.nummer).toBe(first.nummer);
+    expect(second.id).toBe(first.id);
+    expect(second.gesamtCents).toBe(36000); // (4 + 2 + 2) BE * 4500 cents
+    expect(second.downloadedAt).toBeNull();
+
+    const all = ctx.db.select().from(rechnungen).all();
+    expect(all).toHaveLength(1);
+
+    const snapshots = ctx.db.select().from(rechnungBehandlungen).all();
+    expect(snapshots).toHaveLength(3);
   });
 });

@@ -32,6 +32,7 @@ builder.mutationField('createMonatsrechnung', (t) =>
           month,
           kindId: Number(kindId),
           auftraggeberId: Number(auftraggeberId),
+          force: args.input.force ?? false,
         });
       } catch (err) {
         if (err instanceof RechnungExistiertError) {
