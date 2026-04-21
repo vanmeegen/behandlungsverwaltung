@@ -155,10 +155,19 @@ export class BehandlungDraft {
 export class BehandlungStore {
   byTherapie: Record<string, Behandlung[]> = {};
   error: string | null = null;
+  successOpen = false;
   draftBehandlung = new BehandlungDraft();
 
   constructor(private readonly fetcher: GraphQLFetcher) {
     makeAutoObservable(this, {}, { autoBind: true });
+  }
+
+  showSuccess(): void {
+    this.successOpen = true;
+  }
+
+  dismissSuccess(): void {
+    this.successOpen = false;
   }
 
   async loadByTherapie(therapieId: string): Promise<Behandlung[]> {

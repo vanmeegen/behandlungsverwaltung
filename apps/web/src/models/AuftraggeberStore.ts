@@ -229,10 +229,26 @@ export class AuftraggeberStore {
   items: Auftraggeber[] = [];
   loading = false;
   error: string | null = null;
+  pendingDeleteId: string | null = null;
   draftAuftraggeber = new AuftraggeberDraft();
 
   constructor(private readonly fetcher: GraphQLFetcher) {
     makeAutoObservable(this, {}, { autoBind: true });
+  }
+
+  requestDelete(id: string): void {
+    this.pendingDeleteId = id;
+  }
+
+  cancelDelete(): void {
+    this.pendingDeleteId = null;
+  }
+
+  async confirmDelete(): Promise<boolean> {
+    const id = this.pendingDeleteId;
+    if (!id) return false;
+    this.pendingDeleteId = null;
+    return this.remove(id);
   }
 
   async load(): Promise<void> {

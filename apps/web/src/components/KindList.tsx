@@ -8,7 +8,6 @@ import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
-import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import type { KindStore } from '../models/KindStore';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -18,14 +17,6 @@ interface KindListProps {
 }
 
 export const KindList = observer(({ store }: KindListProps) => {
-  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
-
-  async function confirmDelete(): Promise<void> {
-    if (!pendingDelete) return;
-    await store.remove(pendingDelete);
-    setPendingDelete(null);
-  }
-
   return (
     <Box data-testselector="kind-list">
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
@@ -67,7 +58,7 @@ export const KindList = observer(({ store }: KindListProps) => {
                     size="small"
                     variant="outlined"
                     color="error"
-                    onClick={(): void => setPendingDelete(kind.id)}
+                    onClick={(): void => store.requestDelete(kind.id)}
                     data-testselector={`kind-row-delete-${kind.id}`}
                   >
                     Löschen
@@ -98,12 +89,12 @@ export const KindList = observer(({ store }: KindListProps) => {
       )}
 
       <ConfirmDialog
-        open={pendingDelete !== null}
+        open={store.pendingDeleteId !== null}
         title="Kind wirklich löschen?"
         message="Kind wirklich löschen?"
         testSelector="kind-delete-confirm"
-        onConfirm={confirmDelete}
-        onCancel={(): void => setPendingDelete(null)}
+        onConfirm={store.confirmDelete}
+        onCancel={store.cancelDelete}
       />
     </Box>
   );

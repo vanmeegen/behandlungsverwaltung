@@ -120,6 +120,40 @@ export class RechnungDraft {
   }
 }
 
+export class RechnungDownloadDraft {
+  auftraggeberId = '';
+  year: number;
+  month: number;
+  downloaded = false;
+  error: string | null = null;
+
+  constructor() {
+    const { year, month } = todayMonth();
+    this.year = year;
+    this.month = month;
+    makeAutoObservable(this, {}, { autoBind: true });
+  }
+
+  setAuftraggeberId(id: string): void {
+    this.auftraggeberId = id;
+    this.downloaded = false;
+  }
+
+  setYearMonth(year: number, month: number): void {
+    this.year = year;
+    this.month = month;
+    this.downloaded = false;
+  }
+
+  setDownloaded(v: boolean): void {
+    this.downloaded = v;
+  }
+
+  setError(message: string | null): void {
+    this.error = message;
+  }
+}
+
 export class RechnungFilter {
   year: number | null = null;
   month: number | null = null;
@@ -195,6 +229,7 @@ export class RechnungStore {
   lastCreated: Rechnung | null = null;
   error: { code: RechnungErrorCode; message: string } | null = null;
   draftRechnung = new RechnungDraft();
+  draftRechnungDownload = new RechnungDownloadDraft();
   filter = new RechnungFilter();
 
   constructor(private readonly fetcher: GraphQLFetcher) {

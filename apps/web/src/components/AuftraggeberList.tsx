@@ -8,7 +8,6 @@ import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
-import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import type { Auftraggeber, AuftraggeberStore } from '../models/AuftraggeberStore';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -31,14 +30,6 @@ function displayName(ag: Auftraggeber): JSX.Element {
 }
 
 export const AuftraggeberList = observer(({ store }: AuftraggeberListProps) => {
-  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
-
-  async function confirmDelete(): Promise<void> {
-    if (!pendingDelete) return;
-    await store.remove(pendingDelete);
-    setPendingDelete(null);
-  }
-
   return (
     <Box data-testselector="auftraggeber-list">
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
@@ -89,7 +80,7 @@ export const AuftraggeberList = observer(({ store }: AuftraggeberListProps) => {
                     size="small"
                     variant="outlined"
                     color="error"
-                    onClick={(): void => setPendingDelete(ag.id)}
+                    onClick={(): void => store.requestDelete(ag.id)}
                     data-testselector={`auftraggeber-row-delete-${ag.id}`}
                   >
                     Löschen
@@ -110,12 +101,12 @@ export const AuftraggeberList = observer(({ store }: AuftraggeberListProps) => {
       )}
 
       <ConfirmDialog
-        open={pendingDelete !== null}
+        open={store.pendingDeleteId !== null}
         title="Auftraggeber wirklich löschen?"
         message="Auftraggeber wirklich löschen?"
         testSelector="auftraggeber-delete-confirm"
-        onConfirm={confirmDelete}
-        onCancel={(): void => setPendingDelete(null)}
+        onConfirm={store.confirmDelete}
+        onCancel={store.cancelDelete}
       />
     </Box>
   );

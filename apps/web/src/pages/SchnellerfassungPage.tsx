@@ -12,7 +12,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BeStepper } from '../components/BeStepper';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
@@ -57,8 +57,6 @@ export const SchnellerfassungPage = observer(
       draft.setTherapie(id, t?.taetigkeit ?? null);
     };
 
-    const [successOpen, setSuccessOpen] = useState(false);
-
     const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
       event.preventDefault();
       const saved = await behandlungStore.saveDraft();
@@ -68,7 +66,7 @@ export const SchnellerfassungPage = observer(
         // Tätigkeit erneut aus der Therapie vorbelegt.
         const therapie = therapieStore.items.find((t) => t.id === draft.therapieId);
         draft.resetForNextEntry(therapie?.taetigkeit ?? null);
-        setSuccessOpen(true);
+        behandlungStore.showSuccess();
       }
     };
 
@@ -218,9 +216,9 @@ export const SchnellerfassungPage = observer(
         </Box>
 
         <Snackbar
-          open={successOpen}
+          open={behandlungStore.successOpen}
           autoHideDuration={2500}
-          onClose={(): void => setSuccessOpen(false)}
+          onClose={behandlungStore.dismissSuccess}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           message="Behandlung gespeichert"
           data-testselector="schnellerfassung-success"

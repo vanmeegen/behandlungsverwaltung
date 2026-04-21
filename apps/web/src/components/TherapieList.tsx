@@ -8,7 +8,6 @@ import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
-import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import type { Therapie, TherapieStore } from '../models/TherapieStore';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -21,14 +20,6 @@ interface TherapieListProps {
 
 export const TherapieList = observer(
   ({ items, emptyText = 'Noch keine Therapien erfasst.', store }: TherapieListProps) => {
-    const [pendingDelete, setPendingDelete] = useState<string | null>(null);
-
-    async function confirmDelete(): Promise<void> {
-      if (!pendingDelete || !store) return;
-      await store.remove(pendingDelete);
-      setPendingDelete(null);
-    }
-
     if (items.length === 0) {
       return (
         <Typography data-testselector="therapie-list-empty" color="text.secondary">
@@ -69,7 +60,7 @@ export const TherapieList = observer(
                       size="small"
                       variant="outlined"
                       color="error"
-                      onClick={(): void => setPendingDelete(t.id)}
+                      onClick={(): void => store.requestDelete(t.id)}
                       data-testselector={`therapie-row-delete-${t.id}`}
                     >
                       Löschen
@@ -101,14 +92,16 @@ export const TherapieList = observer(
           ))}
         </List>
 
-        <ConfirmDialog
-          open={pendingDelete !== null}
-          title="Therapie wirklich löschen?"
-          message="Therapie wirklich löschen?"
-          testSelector="therapie-delete-confirm"
-          onConfirm={confirmDelete}
-          onCancel={(): void => setPendingDelete(null)}
-        />
+        {store && (
+          <ConfirmDialog
+            open={store.pendingDeleteId !== null}
+            title="Therapie wirklich löschen?"
+            message="Therapie wirklich löschen?"
+            testSelector="therapie-delete-confirm"
+            onConfirm={store.confirmDelete}
+            onCancel={store.cancelDelete}
+          />
+        )}
       </>
     );
   },

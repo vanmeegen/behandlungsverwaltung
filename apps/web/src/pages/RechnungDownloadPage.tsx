@@ -12,7 +12,7 @@ import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useEffect, type ChangeEvent } from 'react';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
 import type { Rechnung, RechnungStore } from '../models/RechnungStore';
 
@@ -21,19 +21,10 @@ interface RechnungDownloadPageProps {
   auftraggeberStore: AuftraggeberStore;
 }
 
-function todayMonth(): { year: number; month: number } {
-  const now = new Date();
-  return { year: now.getFullYear(), month: now.getMonth() + 1 };
-}
-
 export const RechnungDownloadPage = observer(
   ({ rechnungStore, auftraggeberStore }: RechnungDownloadPageProps) => {
-    const defaults = useMemo(() => todayMonth(), []);
-    const [auftraggeberId, setAuftraggeberId] = useState('');
-    const [year, setYear] = useState<number>(defaults.year);
-    const [month, setMonth] = useState<number>(defaults.month);
-    const [downloaded, setDownloaded] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const draft = rechnungStore.draftRechnungDownload;
+    const { auftraggeberId, year, month, downloaded, error } = draft;
 
     useEffect(() => {
       void auftraggeberStore.load();
@@ -46,7 +37,7 @@ export const RechnungDownloadPage = observer(
         year,
         month,
       });
-    }, [auftraggeberStore, rechnungStore, auftraggeberId, year, month]);
+    }, [rechnungStore, auftraggeberId, year, month]);
 
     const rows: Rechnung[] = rechnungStore.items.filter(
       (r) => r.auftraggeberId === auftraggeberId && r.jahr === year && r.monat === month,
@@ -58,19 +49,16 @@ export const RechnungDownloadPage = observer(
       const raw = e.target.value;
       if (!/^\d{4}-\d{2}$/.test(raw)) return;
       const [y, m] = raw.split('-') as [string, string];
-      setYear(Number.parseInt(y, 10));
-      setMonth(Number.parseInt(m, 10));
-      setDownloaded(false);
+      draft.setYearMonth(Number.parseInt(y, 10), Number.parseInt(m, 10));
     }
 
     function onAuftraggeberChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void {
-      setAuftraggeberId(e.target.value);
-      setDownloaded(false);
+      draft.setAuftraggeberId(e.target.value);
     }
 
     async function onDownload(): Promise<void> {
       if (!auftraggeberId || rows.length === 0) return;
-      setError(null);
+      draft.setError(null);
       const bundleUrl = `/bills/bundle?auftraggeberId=${encodeURIComponent(
         auftraggeberId,
       )}&jahr=${year}&monat=${month}`;
@@ -91,9 +79,9 @@ export const RechnungDownloadPage = observer(
         URL.revokeObjectURL(downloadUrl);
 
         await rechnungStore.markDownloaded(rows.map((r) => r.id));
-        setDownloaded(true);
+        draft.setDownloaded(true);
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        draft.setError(err instanceof Error ? err.message : String(err));
       }
     }
 
