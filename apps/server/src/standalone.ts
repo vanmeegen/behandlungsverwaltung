@@ -47,7 +47,14 @@ const server = Bun.serve({
       return new Response(Bun.file(embedded));
     }
 
-    // SPA fallback for unknown paths
+    // Asset paths and anything that looks like a file (has an extension
+    // other than .html) must 404 — serving index.html here would mislead
+    // the browser into parsing HTML as JS/CSS/etc.
+    if (url.pathname.startsWith('/assets/') || /\.[a-z0-9]+$/i.test(url.pathname)) {
+      return new Response('Not found', { status: 404 });
+    }
+
+    // SPA fallback for client-side routes (/patients/123, etc.)
     const indexPath = staticFiles.get('/index.html');
     if (indexPath) {
       return new Response(Bun.file(indexPath), {
@@ -67,25 +74,28 @@ openInBrowser(url);
 
 function openInBrowser(target: string): void {
   const platform = process.platform;
-  let cmd: string;
-  let args: string[];
-  if (platform === 'win32') {
-    cmd = 'cmd';
-    args = ['/c', 'start', '""', target];
-  } else if (platform === 'darwin') {
-    cmd = 'open';
-    args = [target];
-  } else {
-    cmd = 'xdg-open';
-    args = [target];
-  }
+  const fallback = (): void => {
+    console.log(`Browser nicht automatisch geöffnet. Bitte ${target} manuell öffnen.`);
+  };
   try {
-    const child = spawn(cmd, args, { detached: true, stdio: 'ignore' });
-    child.on('error', () => {
-      console.log(`Browser nicht automatisch geöffnet. Bitte ${target} manuell öffnen.`);
-    });
+    if (platform === 'win32') {
+      // `cmd /c start "" <url>` is the canonical way, but Node's default
+      // argument escaping turns the empty-title `""` into `""""`, which
+      // breaks `start`. windowsVerbatimArguments disables that rewriting.
+      const child = spawn('cmd.exe', ['/c', 'start', '""', target], {
+        detached: true,
+        stdio: 'ignore',
+        windowsVerbatimArguments: true,
+      });
+      child.on('error', fallback);
+      child.unref();
+      return;
+    }
+    const cmd = platform === 'darwin' ? 'open' : 'xdg-open';
+    const child = spawn(cmd, [target], { detached: true, stdio: 'ignore' });
+    child.on('error', fallback);
     child.unref();
   } catch {
-    console.log(`Browser nicht automatisch geöffnet. Bitte ${target} manuell öffnen.`);
+    fallback();
   }
 }
