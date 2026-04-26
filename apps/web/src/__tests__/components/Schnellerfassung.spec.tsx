@@ -124,6 +124,18 @@ describe('<SchnellerfassungPage /> — Kind → Therapie cascade', () => {
     expect(values).toContain('7');
     expect(values).toContain('8');
   });
+
+  it('shows the localized Therapieform label, not the raw enum id (Bug 2)', () => {
+    const { behandlungStore } = renderPage();
+    act(() => {
+      behandlungStore.draftBehandlung.setKindId('10');
+    });
+    const options = screen.getByTestId('schnellerfassung-therapieId').querySelectorAll('option');
+    const lernOption = Array.from(options).find((o) => o.value === '7');
+    expect(lernOption).toBeDefined();
+    expect(lernOption!.textContent).toContain('Lern-Therapie');
+    expect(lernOption!.textContent).not.toContain('lerntherapie');
+  });
 });
 
 describe('<SchnellerfassungPage /> — Tätigkeit Vorbelegung (AC-BEH-03)', () => {

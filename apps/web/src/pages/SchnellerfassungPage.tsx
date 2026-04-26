@@ -1,7 +1,9 @@
 import {
   TAETIGKEIT_LABELS,
   TAETIGKEIT_VALUES,
+  THERAPIE_FORM_LABELS,
   type TaetigkeitValue,
+  type TherapieFormValue,
 } from '@behandlungsverwaltung/shared';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -142,7 +144,8 @@ export const SchnellerfassungPage = observer(
               <option value="">– bitte wählen –</option>
               {therapienForKind.map((t) => {
                 const ag = auftraggeberStore.items.find((a) => a.id === t.auftraggeberId);
-                const label = `${t.form}${ag ? ` · ${auftraggeberLabel(ag)}` : ''}`;
+                const formLabel = THERAPIE_FORM_LABELS[t.form as TherapieFormValue] ?? t.form;
+                const label = `${formLabel}${ag ? ` · ${auftraggeberLabel(ag)}` : ''}`;
                 return (
                   <option key={t.id} value={t.id}>
                     {label}
