@@ -36,10 +36,10 @@ Code; ihre PRD-Inhalte werden hier nur referenziert.
 ✅ N  Direktlink „Rechnung öffnen"
 ✅ O  Vorlagen-Verwaltung — Listen-/Auto-Upload-UI
 ✅ P  Menü-Eintrag „Schnellerfassung" → „Behandlungen" (inkl. Route-Rename /schnellerfassung → /behandlungen)
-⬜ Q  Aufräumen / Querschnitt  ← NÄCHSTE PHASE
+✅ Q  Aufräumen / Querschnitt
 ```
 
-> **Stand 2026-04-26**: Phasen G–P committed, alle 154 Web-Tests grün.
+> **Stand 2026-04-26**: Phasen G–Q committed, alle 154 Web-Tests + 219 Server-Tests grün.
 > Route `/schnellerfassung` wurde in Phase P ebenfalls auf `/behandlungen` umbenannt
 > (inkl. Redirect in `App.tsx` und `navigate()`-Aufruf in `BehandlungEditPage.tsx`).
 
