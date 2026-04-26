@@ -334,7 +334,12 @@ export class RechnungStore {
       runInAction(() => {
         this.lastCreated = data.createMonatsrechnung;
         this.items = [data.createMonatsrechnung, ...this.items];
+        // Nach erfolgreicher Erstellung: lfdNummer-Touched zurücksetzen,
+        // damit der nachfolgende loadNextFreeLfdNummer den neuen max+1
+        // wieder einfüllt.
+        this.draftRechnung.lfdNummerTouched = false;
       });
+      void this.loadNextFreeLfdNummer(this.draftRechnung.year);
       return data.createMonatsrechnung;
     } catch (err) {
       runInAction(() => {

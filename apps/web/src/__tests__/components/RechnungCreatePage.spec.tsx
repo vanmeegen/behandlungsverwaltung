@@ -323,3 +323,49 @@ describe('<RechnungCreatePage /> Auftraggeber-Filter auf Therapien des Kindes (B
     expect(rechnungStore.draftRechnung.auftraggeberId).toBe('20');
   });
 });
+
+describe('<RechnungCreatePage /> auto-prefill der lfdNummer nach erfolgreicher Erstellung', () => {
+  it('refreshes lfdNummer to next free value after a successful create', async () => {
+    let nextLfdCalls = 0;
+    const fetcher = vi.fn().mockImplementation((query: string) => {
+      if (query.includes('nextFreeRechnungsLfdNummer')) {
+        nextLfdCalls += 1;
+        return Promise.resolve({ nextFreeRechnungsLfdNummer: nextLfdCalls });
+      }
+      return Promise.resolve({
+        createMonatsrechnung: {
+          id: '1',
+          nummer: 'RE-2026-04-0005',
+          jahr: 2026,
+          monat: 4,
+          kindId: '10',
+          auftraggeberId: '20',
+          stundensatzCentsSnapshot: 4500,
+          gesamtCents: 27000,
+          dateiname: 'RE-2026-04-0005-Anna_Musterfrau.pdf',
+          downloadedAt: null,
+          rechnungsdatum: '2026-05-02',
+        },
+      });
+    });
+    const { rechnungStore } = renderPage(fetcher as unknown as GraphQLFetcher, 2026, 4);
+    const input = screen.getByTestId('rechnung-create-lfd') as HTMLInputElement;
+    await waitFor(() => expect(input.value).toBe('1'));
+
+    // User wählt manuell lfdNummer = 5
+    fireEvent.change(input, { target: { value: '5' } });
+    expect(rechnungStore.draftRechnung.lfdNummer).toBe(5);
+    expect(rechnungStore.draftRechnung.lfdNummerTouched).toBe(true);
+
+    rechnungStore.draftRechnung.setKindId('10');
+    rechnungStore.draftRechnung.setAuftraggeberId('20');
+    await rechnungStore.saveDraft();
+
+    // Server hat eine Rechnung mit Nummer 0005 erzeugt; nextFreeRechnungsLfdNummer
+    // wird neu geholt und gibt jetzt 2 zurück (zweiter Aufruf des mocks).
+    await waitFor(() => {
+      expect(rechnungStore.draftRechnung.lfdNummer).toBe(2);
+      expect(rechnungStore.draftRechnung.lfdNummerTouched).toBe(false);
+    });
+  });
+});
