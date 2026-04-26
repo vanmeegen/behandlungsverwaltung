@@ -170,6 +170,27 @@ describe('BehandlungStore.loadByTherapie', () => {
   });
 });
 
+describe('BehandlungStore.delete + dismissError', () => {
+  it('sets error when the server rejects (e.g. Behandlung in Rechnung referenziert)', async () => {
+    const fetcher = vi
+      .fn()
+      .mockRejectedValue(new Error('Behandlung 5 ist in einer Rechnung referenziert'));
+    const store = new BehandlungStore(fetcher as unknown as GraphQLFetcher);
+    const ok = await store.delete('5', '7');
+    expect(ok).toBe(false);
+    expect(store.error).toContain('Rechnung');
+  });
+
+  it('dismissError clears a previously set error', async () => {
+    const fetcher = vi.fn().mockRejectedValue(new Error('Behandlung referenziert'));
+    const store = new BehandlungStore(fetcher as unknown as GraphQLFetcher);
+    await store.delete('5', '7');
+    expect(store.error).not.toBeNull();
+    store.dismissError();
+    expect(store.error).toBeNull();
+  });
+});
+
 describe('BehandlungStore.loadTherapieGruppentherapieMap', () => {
   it('fetches the gruppentherapie value per Therapie id', async () => {
     const fetcher = vi.fn().mockResolvedValue({

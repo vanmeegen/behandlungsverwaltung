@@ -68,12 +68,30 @@ export const SchnellerfassungPage = observer(
       if (id) void behandlungStore.loadByTherapie(id);
     };
 
+    // Auto-Vorbelegung: bei genau einer Therapie zum gewählten Kind
+    // → automatisch wählen, damit der User nicht manuell selektieren muss.
+    useEffect(() => {
+      if (draft.kindId && !draft.therapieId && therapienForKind.length === 1) {
+        onTherapieChange(therapienForKind[0]!.id);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draft.kindId, therapienForKind.length]);
+
+    // Behandlungen aller Therapien des Kindes vorab laden, damit die Liste
+    // schon nach Kind-Auswahl gefüllt ist (auch ohne gewählte Therapie).
+    useEffect(() => {
+      for (const t of therapienForKind) {
+        void behandlungStore.loadByTherapie(t.id);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draft.kindId, therapienForKind.length]);
+
     const selectedTherapie = draft.therapieId
       ? therapieStore.items.find((t) => t.id === draft.therapieId)
       : null;
-    const behandlungenForTherapie = draft.therapieId
+    const behandlungenForView = draft.therapieId
       ? (behandlungStore.byTherapie[draft.therapieId] ?? [])
-      : [];
+      : therapienForKind.flatMap((t) => behandlungStore.byTherapie[t.id] ?? []);
 
     const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
       event.preventDefault();
@@ -275,6 +293,7 @@ export const SchnellerfassungPage = observer(
                 severity="error"
                 role="alert"
                 data-testselector="schnellerfassung-server-error"
+                onClose={behandlungStore.dismissError}
               >
                 {behandlungStore.error}
               </Alert>
@@ -282,13 +301,13 @@ export const SchnellerfassungPage = observer(
           </Stack>
         </Box>
 
-        {draft.therapieId && (
+        {draft.kindId && behandlungenForView.length > 0 && (
           <Box sx={{ mt: 3 }}>
             <BehandlungsListeInline
-              behandlungen={behandlungenForTherapie}
-              verfuegbareBe={selectedTherapie?.verfuegbareBe ?? 0}
-              onDelete={(id): void => {
-                void behandlungStore.delete(id, draft.therapieId);
+              behandlungen={behandlungenForView}
+              verfuegbareBe={draft.therapieId ? (selectedTherapie?.verfuegbareBe ?? 0) : null}
+              onDelete={(id, therapieId): void => {
+                void behandlungStore.delete(id, therapieId);
               }}
             />
           </Box>

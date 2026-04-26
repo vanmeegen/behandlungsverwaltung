@@ -244,6 +244,10 @@ export class BehandlungStore {
     this.successOpen = false;
   }
 
+  dismissError(): void {
+    this.error = null;
+  }
+
   async loadTherapieGruppentherapieMap(): Promise<Record<string, boolean>> {
     try {
       const data = await this.fetcher<{
