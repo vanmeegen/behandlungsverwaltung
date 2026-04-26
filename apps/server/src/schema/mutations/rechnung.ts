@@ -7,6 +7,7 @@ import {
   createMonatsrechnung,
   KeineTherapieError,
   RechnungExistiertError,
+  RechnungsnummerDuplicateError,
 } from '../../services/rechnungService';
 import { TemplateFileMissingError, TemplateNotFoundError } from '../../services/templateResolver';
 import { builder, resolvePaths } from '../builder';
@@ -67,6 +68,17 @@ builder.mutationField('createMonatsrechnung', (t) =>
           extensions: { code: 'VALIDATION_ERROR' },
         });
       }
+      // PRD §3.2 / AC-RECH-15: optional. Nur Werte 1..9999 sind erlaubt.
+      const rawLfd = args.input.lfdNummer;
+      let lfdNummer: number | undefined;
+      if (rawLfd !== null && rawLfd !== undefined) {
+        if (!Number.isInteger(rawLfd) || rawLfd < 1 || rawLfd > 9999) {
+          throw new GraphQLError('Laufende Nummer muss eine ganze Zahl zwischen 1 und 9999 sein.', {
+            extensions: { code: 'VALIDATION_ERROR' },
+          });
+        }
+        lfdNummer = rawLfd;
+      }
       try {
         return await createMonatsrechnung(db, paths, {
           year,
@@ -75,11 +87,17 @@ builder.mutationField('createMonatsrechnung', (t) =>
           auftraggeberId: Number(auftraggeberId),
           rechnungsdatum: parsedRechnungsdatum,
           force: args.input.force ?? false,
+          ...(lfdNummer !== undefined ? { lfdNummer } : {}),
         });
       } catch (err) {
         if (err instanceof RechnungExistiertError) {
           throw new GraphQLError('Für diesen Monat wurde bereits eine Rechnung erzeugt.', {
             extensions: { code: 'DUPLICATE_RECHNUNG' },
+          });
+        }
+        if (err instanceof RechnungsnummerDuplicateError) {
+          throw new GraphQLError(`Diese Nummer ist im Jahr ${err.year} bereits vergeben.`, {
+            extensions: { code: 'DUPLICATE_RECHNUNGSNUMMER', year: err.year, lfd: err.lfd },
           });
         }
         if (err instanceof KeineBehandlungenError) {

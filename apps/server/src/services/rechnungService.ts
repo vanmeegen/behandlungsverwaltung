@@ -22,8 +22,10 @@ import {
 import type { Paths } from '../paths';
 import { renderRechnungPdf, type RechnungPdfInput } from '../pdf/rechnungPdf';
 import { collectBehandlungen } from './rechnungAggregation';
-import { allocateNummer } from './nummer';
+import { allocateOrUseNummer } from './nummer';
 import { resolveTemplate } from './templateResolver';
+
+export { RechnungsnummerDuplicateError } from './nummer';
 
 export class RechnungExistiertError extends Error {
   constructor(year: number, month: number, kindId: number, auftraggeberId: number) {
@@ -61,6 +63,16 @@ export interface CreateRechnungInput {
    * Die Datei wird neu erzeugt, `downloadedAt` wird zurückgesetzt.
    */
   force?: boolean;
+  /**
+   * Optional vom Nutzer gewählte laufende Nummer (NNNN, 1..9999). Nur die
+   * NNNN ist im Dialog editierbar; der Präfix `RE-YYYY-MM-` wird hier auf
+   * Basis von `year`/`month` gesetzt. Wenn nicht gesetzt, ermittelt der
+   * Service `max+1` im Jahr (PRD §4).
+   *
+   * **Wichtig**: Bei `force === true` (Korrektur) wird dieser Wert
+   * ignoriert — die ursprüngliche Nummer bleibt unverändert (PRD §4).
+   */
+  lfdNummer?: number;
 }
 
 function isUniqueViolation(err: unknown): boolean {
@@ -123,9 +135,14 @@ export async function createMonatsrechnung(
   );
   const gesamtCents = sumZeilenbetraege(lines);
 
-  // PRD §4: Bei force=true behalten wir die bestehende Nummer; sonst wird
-  // neu allokiert.
-  const nummer = existingRow ? existingRow.nummer : allocateNummer(db, input.year, input.month);
+  // PRD §4: Bei force=true behalten wir die bestehende Nummer; ein vom
+  // Nutzer übergebenes `lfdNummer` wird in diesem Fall bewusst ignoriert
+  // (siehe Doc-Kommentar an `CreateRechnungInput.lfdNummer`).
+  // Sonst wird neu allokiert — entweder mit der vom Nutzer gewählten NNNN
+  // oder als max+1 für das Jahr.
+  const nummer = existingRow
+    ? existingRow.nummer
+    : allocateOrUseNummer(db, input.year, input.month, input.lfdNummer);
   const dateiname = `${nummer}-${sanitizeKindesname(kind.vorname, kind.nachname)}.pdf`;
 
   // Resolve template (per-Auftraggeber → global fallback).

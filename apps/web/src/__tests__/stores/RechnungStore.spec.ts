@@ -90,4 +90,72 @@ describe('RechnungStore.create', () => {
     store.draftRechnung.setRechnungsdatum('');
     expect(store.draftRechnung.valid()).toBe(false);
   });
+
+  it('loadNextFreeLfdNummer prefills the draft when not touched (AC-RECH-15)', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue({ nextFreeRechnungsLfdNummer: 7 }) as unknown as GraphQLFetcher;
+    const store = new RechnungStore(fetcher);
+    expect(store.draftRechnung.lfdNummer).toBe(1);
+    expect(store.draftRechnung.lfdNummerTouched).toBe(false);
+    await store.loadNextFreeLfdNummer(2026);
+    expect(store.draftRechnung.lfdNummer).toBe(7);
+  });
+
+  it('loadNextFreeLfdNummer does NOT overwrite a touched draft', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue({ nextFreeRechnungsLfdNummer: 12 }) as unknown as GraphQLFetcher;
+    const store = new RechnungStore(fetcher);
+    store.draftRechnung.setLfdNummer(42);
+    expect(store.draftRechnung.lfdNummerTouched).toBe(true);
+    await store.loadNextFreeLfdNummer(2026);
+    expect(store.draftRechnung.lfdNummer).toBe(42);
+  });
+
+  it('saveDraft sends lfdNummer through to createMonatsrechnung', async () => {
+    const fetcher = vi.fn().mockResolvedValue({
+      createMonatsrechnung: {
+        id: '1',
+        nummer: 'RE-2026-04-0007',
+        jahr: 2026,
+        monat: 4,
+        kindId: '10',
+        auftraggeberId: '20',
+        stundensatzCentsSnapshot: 4500,
+        gesamtCents: 9000,
+        dateiname: 'RE-2026-04-0007-Anna_Musterfrau.pdf',
+        rechnungsdatum: '2026-05-02T00:00:00.000Z',
+      },
+    });
+    const store = new RechnungStore(fetcher as unknown as GraphQLFetcher);
+    store.draftRechnung.setKindId('10');
+    store.draftRechnung.setAuftraggeberId('20');
+    store.draftRechnung.setLfdNummer(7);
+    const r = await store.saveDraft();
+    expect(r?.nummer).toBe('RE-2026-04-0007');
+    const callArgs = (fetcher as unknown as ReturnType<typeof vi.fn>).mock.calls[0]?.[1] as
+      | { input?: { lfdNummer?: number } }
+      | undefined;
+    expect(callArgs?.input?.lfdNummer).toBe(7);
+  });
+
+  it('detects DUPLICATE_RECHNUNGSNUMMER from the German message text (AC-RECH-15)', async () => {
+    const fetcher = vi
+      .fn()
+      .mockRejectedValue(
+        new Error('Diese Nummer ist im Jahr 2026 bereits vergeben.'),
+      ) as unknown as GraphQLFetcher;
+    const store = new RechnungStore(fetcher);
+    await store.create({
+      year: 2026,
+      month: 4,
+      kindId: '10',
+      auftraggeberId: '20',
+      rechnungsdatum: '2026-05-02',
+      lfdNummer: 7,
+    });
+    expect(store.error?.code).toBe('DUPLICATE_RECHNUNGSNUMMER');
+    expect(store.error?.message).toBe('Diese Nummer ist im Jahr 2026 bereits vergeben.');
+  });
 });

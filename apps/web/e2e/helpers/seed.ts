@@ -283,6 +283,7 @@ export async function createMonatsrechnungApi(input: {
   kindId: string;
   auftraggeberId: string;
   rechnungsdatum?: string;
+  lfdNummer?: number;
 }): Promise<SeededRechnung> {
   const payload = {
     ...input,

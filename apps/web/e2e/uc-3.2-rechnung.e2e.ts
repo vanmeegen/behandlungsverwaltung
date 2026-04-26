@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { PDFParse } from 'pdf-parse';
 import { BILLS_DIR } from './helpers/paths';
 import {
+  createMonatsrechnungApi,
   readRechnungen,
   resetDb,
   seedAuftraggeber,
@@ -89,6 +90,11 @@ test.describe('UC-3.2 Monatsrechnung erzeugen', () => {
     await formPage.setRechnungsdatum('2026-05-02');
     await formPage.chooseKind(kindId);
     await formPage.chooseAuftraggeber(auftraggeberId);
+
+    // AC-RECH-15: Präfix ist read-only und NNNN auf 0001 vorbelegt.
+    await expect(formPage.nummerPrefix).toHaveText('RE-2026-04-');
+    await expect(formPage.nummerLfd).toHaveValue('0001');
+
     await formPage.submitAndWait();
 
     await expect(formPage.successToast).toHaveText('Rechnung erstellt: RE-2026-04-0001');
@@ -151,5 +157,105 @@ test.describe('UC-3.2 Monatsrechnung erzeugen', () => {
     // Dismiss returns focus to the form.
     await formPage.duplicateDismiss.click();
     await expect(formPage.duplicateDialog).toBeHidden();
+  });
+
+  test('Szenario 3: Nur die laufende Nummer NNNN ist editierbar (AC-RECH-15)', async ({ page }) => {
+    const { kindId, auftraggeberId } = await seedHappyPath();
+
+    const formPage = new RechnungCreatePage(page);
+    await formPage.goto();
+    await formPage.setMonat(2026, 4);
+    await formPage.setRechnungsdatum('2026-05-02');
+    await formPage.chooseKind(kindId);
+    await formPage.chooseAuftraggeber(auftraggeberId);
+
+    await expect(formPage.nummerPrefix).toHaveText('RE-2026-04-');
+    await formPage.setLfdNummer('0007');
+    await expect(formPage.nummerLfd).toHaveValue('0007');
+
+    await formPage.submitAndWait();
+    await expect(formPage.successToast).toHaveText('Rechnung erstellt: RE-2026-04-0007');
+
+    const rows = await readRechnungen();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.nummer).toBe('RE-2026-04-0007');
+    expect(rows[0]?.dateiname).toBe('RE-2026-04-0007-Anna_Musterfrau.pdf');
+  });
+
+  test('Szenario 4: Bereits vergebene NNNN im selben Jahr → Fehler-Alert (AC-RECH-15)', async ({
+    page,
+  }) => {
+    // Seed an existing Rechnung with lfdNummer = 7 in 2026 for a different
+    // Kind/Monat-Kombination, sodass die DUPLICATE_RECHNUNGSNUMMER-Prüfung
+    // (Jahr-weite NNNN-Eindeutigkeit) anschlägt.
+    const otherKind = await seedKind({
+      vorname: 'Ben',
+      nachname: 'Beispiel',
+      geburtsdatum: '2019-05-10',
+      strasse: 'Lindenallee',
+      hausnummer: '7',
+      plz: '51103',
+      stadt: 'Köln',
+      aktenzeichen: 'K-2026-002',
+    });
+    const otherAg = await seedAuftraggeber({
+      typ: 'firma',
+      firmenname: 'Anderes Jugendamt',
+      vorname: null,
+      nachname: null,
+      strasse: 'Str',
+      hausnummer: '1',
+      plz: '50667',
+      stadt: 'Köln',
+      stundensatzCents: 5000,
+    });
+    const otherTherapie = await seedTherapie({
+      kindId: otherKind.id,
+      auftraggeberId: otherAg.id,
+      form: 'lerntherapie',
+      kommentar: null,
+      bewilligteBe: 60,
+      taetigkeit: 'lerntherapie',
+    });
+    await seedBehandlung({
+      therapieId: otherTherapie.id,
+      datum: '2026-03-15',
+      be: 2,
+      taetigkeit: 'lerntherapie',
+    });
+    const fixtureBase64 = readFileSync(FIXTURE_PATH).toString('base64');
+    await uploadFixtureTemplate({
+      kind: 'rechnung',
+      auftraggeberId: null,
+      base64: fixtureBase64,
+    });
+    await createMonatsrechnungApi({
+      year: 2026,
+      month: 3,
+      kindId: otherKind.id,
+      auftraggeberId: otherAg.id,
+      rechnungsdatum: '2026-04-01',
+      lfdNummer: 7,
+    });
+
+    // Now seed the happy-path fixtures (Anna / Jugendamt Köln / Lerntherapie / April 2026)
+    // and try to use the already-taken NNNN 0007.
+    const { kindId, auftraggeberId } = await seedHappyPath();
+
+    const formPage = new RechnungCreatePage(page);
+    await formPage.goto();
+    await formPage.setMonat(2026, 4);
+    await formPage.setRechnungsdatum('2026-05-02');
+    await formPage.chooseKind(kindId);
+    await formPage.chooseAuftraggeber(auftraggeberId);
+    await formPage.setLfdNummer('0007');
+    await formPage.submitAndWait();
+
+    await expect(formPage.duplicateNummerAlert).toBeVisible();
+    await expect(formPage.duplicateNummerAlert).toContainText('bereits vergeben');
+
+    // Es darf bei dem Versuch keine zweite Rechnung in 2026 mit Anna entstehen.
+    const rows = await readRechnungen();
+    expect(rows.some((r) => r.nummer === 'RE-2026-04-0007')).toBe(false);
   });
 });

@@ -43,16 +43,26 @@ export function stundennachweisFileStem(rechnungsnummer: string): string {
   return STUNDENNACHWEIS_PREFIX + rechnungsnummer.slice(RECHNUNGSNUMMER_PREFIX.length);
 }
 
-export function generateRechnungsnummer(
-  existing: readonly string[],
-  year: number,
-  month: number,
-): string {
+/**
+ * PRD §4 / AC-RECH-04: Liefert die nächste freie laufende Nummer (NNNN)
+ * im Jahr `year`. Lücken werden **nicht** geschlossen — wir nehmen
+ * `max + 1` der bestehenden NNNN. Falls noch keine Nummer für das Jahr
+ * existiert, ist das Ergebnis `1`.
+ */
+export function nextFreeLfdNummer(existing: readonly string[], year: number): number {
   let maxLfdForYear = 0;
   for (const entry of existing) {
     const parsed = parseRechnungsnummer(entry);
     if (parsed.year !== year) continue;
     if (parsed.lfd > maxLfdForYear) maxLfdForYear = parsed.lfd;
   }
-  return formatRechnungsnummer(year, month, maxLfdForYear + 1);
+  return maxLfdForYear + 1;
+}
+
+export function generateRechnungsnummer(
+  existing: readonly string[],
+  year: number,
+  month: number,
+): string {
+  return formatRechnungsnummer(year, month, nextFreeLfdNummer(existing, year));
 }

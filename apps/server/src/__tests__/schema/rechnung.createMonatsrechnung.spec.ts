@@ -165,4 +165,86 @@ describe('createMonatsrechnung mutation (AC-RECH-01, AC-RECH-05)', () => {
     });
     expect(res.errors?.[0]?.extensions?.code).toBe('VALIDATION_ERROR');
   });
+
+  it('uses an explicit lfdNummer when supplied (AC-RECH-15)', async () => {
+    const result = await runCreate(ctx, {
+      year: 2026,
+      month: 4,
+      kindId: String(kindId),
+      auftraggeberId: String(agId),
+      rechnungsdatum: '2026-05-02',
+      lfdNummer: 7,
+    });
+    expect(result.errors).toBeUndefined();
+    const created = (result.data as { createMonatsrechnung: Record<string, unknown> })
+      .createMonatsrechnung;
+    expect(created.nummer).toBe('RE-2026-04-0007');
+    expect(created.dateiname).toBe('RE-2026-04-0007-Anna_Musterfrau.pdf');
+  });
+
+  it('rejects an out-of-range lfdNummer with VALIDATION_ERROR', async () => {
+    const res = await runCreate(ctx, {
+      year: 2026,
+      month: 4,
+      kindId: String(kindId),
+      auftraggeberId: String(agId),
+      rechnungsdatum: '2026-05-02',
+      lfdNummer: 0,
+    });
+    expect(res.errors?.[0]?.extensions?.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('rejects a duplicate lfdNummer in the same year with DUPLICATE_RECHNUNGSNUMMER', async () => {
+    await runCreate(ctx, {
+      year: 2026,
+      month: 4,
+      kindId: String(kindId),
+      auftraggeberId: String(agId),
+      rechnungsdatum: '2026-05-02',
+      lfdNummer: 7,
+    });
+    // Add a second Kind + Therapie + Behandlung to dodge the per-month
+    // unique constraint and reach the lfd duplicate guard.
+    const [k2] = ctx.db
+      .insert(kinder)
+      .values({
+        vorname: 'Ben',
+        nachname: 'Beispiel',
+        geburtsdatum: new Date('2019-05-10T00:00:00.000Z'),
+        strasse: 'Lindenallee',
+        hausnummer: '7',
+        plz: '51103',
+        stadt: 'Köln',
+        aktenzeichen: 'K-2026-002',
+      })
+      .returning()
+      .all();
+    const [t2] = ctx.db
+      .insert(therapien)
+      .values({ kindId: k2!.id, auftraggeberId: agId, form: 'lerntherapie', bewilligteBe: 60 })
+      .returning()
+      .all();
+    ctx.db
+      .insert(behandlungen)
+      .values([
+        {
+          therapieId: t2!.id,
+          datum: new Date('2026-05-04T00:00:00.000Z'),
+          be: 2,
+          taetigkeit: 'lerntherapie',
+        },
+      ])
+      .run();
+
+    const dup = await runCreate(ctx, {
+      year: 2026,
+      month: 5,
+      kindId: String(k2!.id),
+      auftraggeberId: String(agId),
+      rechnungsdatum: '2026-06-01',
+      lfdNummer: 7,
+    });
+    expect(dup.errors?.[0]?.extensions?.code).toBe('DUPLICATE_RECHNUNGSNUMMER');
+    expect(dup.errors?.[0]?.message).toMatch(/2026.*bereits vergeben/);
+  });
 });

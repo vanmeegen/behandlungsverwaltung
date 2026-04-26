@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { auftraggeber, kinder, rechnungen } from '../../db/schema';
-import { allocateNummer } from '../../services/nummer';
+import {
+  allocateNummer,
+  allocateOrUseNummer,
+  RechnungsnummerDuplicateError,
+} from '../../services/nummer';
 import { createTestDb, type TestDb } from '../helpers/testDb';
 
 async function seedRechnungen(
@@ -88,5 +92,35 @@ describe('allocateNummer (PRD §4)', () => {
       { nummer: 'RE-2026-02-0001', jahr: 2026, monat: 2 },
     ]);
     expect(allocateNummer(ctx.db, 2026, 3)).toBe('RE-2026-03-0002');
+  });
+});
+
+describe('allocateOrUseNummer (PRD §3.2 / AC-RECH-15)', () => {
+  let ctx: TestDb;
+
+  beforeEach(() => {
+    ctx = createTestDb();
+  });
+
+  afterEach(() => {
+    ctx.cleanup();
+  });
+
+  it('falls back to max+1 when no lfdNummer is supplied', () => {
+    expect(allocateOrUseNummer(ctx.db, 2026, 4)).toBe('RE-2026-04-0001');
+  });
+
+  it('uses the supplied lfdNummer when free', async () => {
+    expect(allocateOrUseNummer(ctx.db, 2026, 4, 7)).toBe('RE-2026-04-0007');
+  });
+
+  it('throws RechnungsnummerDuplicateError when the lfdNummer is already used in the year', async () => {
+    await seedRechnungen(ctx, [{ nummer: 'RE-2026-03-0007', jahr: 2026, monat: 3 }]);
+    expect(() => allocateOrUseNummer(ctx.db, 2026, 4, 7)).toThrow(RechnungsnummerDuplicateError);
+  });
+
+  it('allows the same lfdNummer in a different year', async () => {
+    await seedRechnungen(ctx, [{ nummer: 'RE-2025-03-0007', jahr: 2025, monat: 3 }]);
+    expect(allocateOrUseNummer(ctx.db, 2026, 4, 7)).toBe('RE-2026-04-0007');
   });
 });

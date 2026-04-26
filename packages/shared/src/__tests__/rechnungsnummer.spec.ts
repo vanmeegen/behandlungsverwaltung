@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import {
   formatRechnungsnummer,
   generateRechnungsnummer,
+  nextFreeLfdNummer,
   parseRechnungsnummer,
   stundennachweisFileStem,
 } from '../domain/rechnungsnummer';
@@ -78,6 +79,27 @@ describe('formatRechnungsnummer', () => {
 
   it('throws when lfd is > 9999 (format can only hold 4 digits)', () => {
     expect(() => formatRechnungsnummer(2026, 4, 10000)).toThrow();
+  });
+});
+
+describe('nextFreeLfdNummer (PRD §4, AC-RECH-15)', () => {
+  it('returns 1 when no numbers exist for the year', () => {
+    expect(nextFreeLfdNummer([], 2026)).toBe(1);
+    expect(nextFreeLfdNummer(['RE-2025-12-0099'], 2026)).toBe(1);
+  });
+
+  it('returns max(NNNN)+1 — gaps are not filled', () => {
+    expect(nextFreeLfdNummer(['RE-2026-03-0005', 'RE-2026-03-0007'], 2026)).toBe(8);
+  });
+
+  it('only counts numbers from the same year', () => {
+    expect(nextFreeLfdNummer(['RE-2025-11-0050', 'RE-2026-02-0001', 'RE-2027-01-0010'], 2026)).toBe(
+      2,
+    );
+  });
+
+  it('throws on malformed entries', () => {
+    expect(() => nextFreeLfdNummer(['RE-2026-04-ABCD'], 2026)).toThrow(/Ungültige Rechnungsnummer/);
   });
 });
 

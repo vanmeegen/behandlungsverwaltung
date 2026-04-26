@@ -12,7 +12,11 @@ import {
   templateFiles,
   therapien,
 } from '../../db/schema';
-import { createMonatsrechnung, RechnungExistiertError } from '../../services/rechnungService';
+import {
+  createMonatsrechnung,
+  RechnungExistiertError,
+  RechnungsnummerDuplicateError,
+} from '../../services/rechnungService';
 import { createTestDb, type TestDb } from '../helpers/testDb';
 
 async function writeBlankTemplate(ctx: TestDb, filename: string): Promise<void> {
@@ -153,6 +157,132 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
     ).rejects.toBeInstanceOf(RechnungExistiertError);
     const all = ctx.db.select().from(rechnungen).all();
     expect(all).toHaveLength(1);
+  });
+
+  it('uses an explicit lfdNummer in the produced Rechnungsnummer (AC-RECH-15)', async () => {
+    const row = await createMonatsrechnung(ctx.db, ctx.paths, {
+      year: 2026,
+      month: 4,
+      kindId,
+      auftraggeberId,
+      rechnungsdatum: new Date('2026-05-02T00:00:00.000Z'),
+      lfdNummer: 7,
+    });
+    expect(row.nummer).toBe('RE-2026-04-0007');
+    expect(row.dateiname).toBe('RE-2026-04-0007-Anna_Musterfrau.pdf');
+  });
+
+  it('throws RechnungsnummerDuplicateError when reusing a lfdNummer in the same year', async () => {
+    // First Rechnung uses lfdNummer = 7 in April 2026.
+    await createMonatsrechnung(ctx.db, ctx.paths, {
+      year: 2026,
+      month: 4,
+      kindId,
+      auftraggeberId,
+      rechnungsdatum: new Date('2026-05-02T00:00:00.000Z'),
+      lfdNummer: 7,
+    });
+    // A second Kind so we don't trip the (year/month/kind/auftraggeber)
+    // unique key — we want the lfd-collision to surface.
+    const [k2] = ctx.db
+      .insert(kinder)
+      .values({
+        vorname: 'Ben',
+        nachname: 'Beispiel',
+        geburtsdatum: new Date('2019-05-10T00:00:00.000Z'),
+        strasse: 'Lindenallee',
+        hausnummer: '7',
+        plz: '51103',
+        stadt: 'Köln',
+        aktenzeichen: 'K-2026-002',
+      })
+      .returning()
+      .all();
+    ctx.db
+      .insert(therapien)
+      .values({
+        kindId: k2!.id,
+        auftraggeberId,
+        form: 'lerntherapie',
+        bewilligteBe: 60,
+        taetigkeit: 'lerntherapie',
+      })
+      .returning()
+      .all();
+    const therapienRows = ctx.db.select().from(therapien).all();
+    const t2 = therapienRows.find((t) => t.kindId === k2!.id)!;
+    ctx.db
+      .insert(behandlungen)
+      .values([
+        {
+          therapieId: t2.id,
+          datum: new Date('2026-05-04T00:00:00.000Z'),
+          be: 2,
+          taetigkeit: 'lerntherapie',
+        },
+      ])
+      .run();
+
+    await expect(
+      createMonatsrechnung(ctx.db, ctx.paths, {
+        year: 2026,
+        month: 5,
+        kindId: k2!.id,
+        auftraggeberId,
+        rechnungsdatum: new Date('2026-06-01T00:00:00.000Z'),
+        lfdNummer: 7,
+      }),
+    ).rejects.toBeInstanceOf(RechnungsnummerDuplicateError);
+  });
+
+  it('allows the same lfdNummer in a different year', async () => {
+    // Insert a Rechnung with lfd=7 in 2025 (different year) directly.
+    ctx.db
+      .insert(rechnungen)
+      .values({
+        nummer: 'RE-2025-04-0007',
+        jahr: 2025,
+        monat: 4,
+        kindId,
+        auftraggeberId,
+        stundensatzCentsSnapshot: 4500,
+        gesamtCents: 9000,
+        dateiname: 'RE-2025-04-0007-Anna_Musterfrau.pdf',
+      })
+      .run();
+    const row = await createMonatsrechnung(ctx.db, ctx.paths, {
+      year: 2026,
+      month: 4,
+      kindId,
+      auftraggeberId,
+      rechnungsdatum: new Date('2026-05-02T00:00:00.000Z'),
+      lfdNummer: 7,
+    });
+    expect(row.nummer).toBe('RE-2026-04-0007');
+  });
+
+  it('ignores lfdNummer on force=true correction (PRD §4: Nummer bleibt)', async () => {
+    const first = await createMonatsrechnung(ctx.db, ctx.paths, {
+      year: 2026,
+      month: 4,
+      kindId,
+      auftraggeberId,
+      rechnungsdatum: new Date('2026-05-02T00:00:00.000Z'),
+    });
+    expect(first.nummer).toBe('RE-2026-04-0001');
+
+    const second = await createMonatsrechnung(ctx.db, ctx.paths, {
+      year: 2026,
+      month: 4,
+      kindId,
+      auftraggeberId,
+      rechnungsdatum: new Date('2026-05-20T00:00:00.000Z'),
+      force: true,
+      // User attempt to override — must be silently ignored on force=true.
+      lfdNummer: 42,
+    });
+    expect(second.nummer).toBe('RE-2026-04-0001');
+    expect(second.id).toBe(first.id);
   });
 
   it('force=true keeps the nummer, overwrites the PDF, resets downloadedAt (PRD §3.2, §4)', async () => {

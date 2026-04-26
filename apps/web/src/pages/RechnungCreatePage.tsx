@@ -1,6 +1,7 @@
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import InputAdornment from '@mui/material/InputAdornment';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -36,6 +37,13 @@ export const RechnungCreatePage = observer(
 
     const { draftRechnung: draft } = rechnungStore;
 
+    // PRD §3.2 / AC-RECH-15: Vorbelegung der laufenden Nummer (NNNN)
+    // beim Mount und bei Wechsel des Jahres — nur wenn der Nutzer den
+    // Wert noch nicht angepasst hat (`lfdNummerTouched === false`).
+    useEffect(() => {
+      void rechnungStore.loadNextFreeLfdNummer(draft.year);
+    }, [rechnungStore, draft.year]);
+
     const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
       event.preventDefault();
       await rechnungStore.saveDraft();
@@ -51,6 +59,14 @@ export const RechnungCreatePage = observer(
 
     const monthValue = `${draft.year}-${String(draft.month).padStart(2, '0')}`;
     const duplicate = rechnungStore.error?.code === 'DUPLICATE_RECHNUNG';
+    const prefix = `RE-${draft.year}-${String(draft.month).padStart(2, '0')}-`;
+    const lfdValue = String(draft.lfdNummer).padStart(4, '0');
+
+    const onLfdChange = (event: ChangeEvent<HTMLInputElement>): void => {
+      const raw = event.target.value.replace(/\D+/g, '').slice(0, 4);
+      const parsed = raw.length === 0 ? 0 : Number.parseInt(raw, 10);
+      draft.setLfdNummer(parsed);
+    };
 
     return (
       <Box data-testselector="rechnung-create-page">
@@ -75,6 +91,31 @@ export const RechnungCreatePage = observer(
               onChange={(e): void => draft.setRechnungsdatum(e.target.value)}
               inputProps={{ 'data-testselector': 'rechnung-create-rechnungsdatum' }}
               InputLabelProps={{ shrink: true }}
+            />
+
+            <TextField
+              label="Rechnungsnummer"
+              value={lfdValue}
+              onChange={onLfdChange}
+              helperText="Nur die laufende Nummer (NNNN) ist editierbar."
+              inputProps={{
+                'data-testselector': 'rechnung-create-lfd',
+                inputMode: 'numeric',
+                maxLength: 4,
+                pattern: '[0-9]*',
+              }}
+              InputLabelProps={{ shrink: true }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment
+                    position="start"
+                    data-testselector="rechnung-create-prefix"
+                    disableTypography
+                  >
+                    {prefix}
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <TextField
@@ -157,8 +198,20 @@ export const RechnungCreatePage = observer(
           </Alert>
         )}
 
+        {rechnungStore.error?.code === 'DUPLICATE_RECHNUNGSNUMMER' && (
+          <Alert
+            severity="error"
+            role="alert"
+            data-testselector="rechnung-create-duplicate-nummer"
+            sx={{ mt: 2 }}
+          >
+            {rechnungStore.error.message}
+          </Alert>
+        )}
+
         {rechnungStore.error &&
           rechnungStore.error.code !== 'DUPLICATE_RECHNUNG' &&
+          rechnungStore.error.code !== 'DUPLICATE_RECHNUNGSNUMMER' &&
           rechnungStore.error.code !== 'KEINE_BEHANDLUNGEN' && (
             <Alert
               severity="error"

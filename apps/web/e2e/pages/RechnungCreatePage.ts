@@ -10,6 +10,9 @@ export class RechnungCreatePage {
   readonly successToast: Locator;
   readonly duplicateDialog: Locator;
   readonly duplicateDismiss: Locator;
+  readonly nummerPrefix: Locator;
+  readonly nummerLfd: Locator;
+  readonly duplicateNummerAlert: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -21,6 +24,9 @@ export class RechnungCreatePage {
     this.successToast = page.getByTestId('rechnung-create-success');
     this.duplicateDialog = page.getByTestId('duplicate-confirm');
     this.duplicateDismiss = page.getByTestId('duplicate-confirm-cancel');
+    this.nummerPrefix = page.getByTestId('rechnung-create-prefix');
+    this.nummerLfd = page.getByTestId('rechnung-create-lfd');
+    this.duplicateNummerAlert = page.getByTestId('rechnung-create-duplicate-nummer');
   }
 
   async goto(): Promise<void> {
@@ -42,6 +48,15 @@ export class RechnungCreatePage {
 
   async chooseAuftraggeber(id: string): Promise<void> {
     await this.auftraggeberSelect.selectOption(id);
+  }
+
+  /**
+   * PRD §3.2 / AC-RECH-15: Nur die NNNN ist editierbar. Setzt sie als
+   * Vier-Ziffern-String (z.B. "0007"); der `RE-YYYY-MM-`-Präfix bleibt
+   * unverändert.
+   */
+  async setLfdNummer(value: string): Promise<void> {
+    await this.nummerLfd.fill(value);
   }
 
   async submitAndWait(): Promise<void> {

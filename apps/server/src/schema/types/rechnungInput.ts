@@ -12,5 +12,11 @@ export const CreateMonatsrechnungInputRef = builder.inputType('CreateMonatsrechn
     // explizite Bestätigung durch force=true, um die Rechnung neu zu erzeugen.
     // Die Rechnungsnummer bleibt dabei erhalten (§4).
     force: t.boolean({ required: false }),
+    // PRD §3.2 / AC-RECH-15: Optional manuell gewählte laufende Nummer (NNNN)
+    // im Bereich 1..9999. Falls weggelassen, wird sie wie bisher serverseitig
+    // als max+1 ermittelt. Der Präfix `RE-YYYY-MM-` wird in jedem Fall vom
+    // Server bestimmt. Bei `force=true` (Korrektur) wird der Override
+    // ignoriert (Nummer bleibt unverändert).
+    lfdNummer: t.int({ required: false }),
   }),
 });

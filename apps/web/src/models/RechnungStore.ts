@@ -3,6 +3,7 @@ import type { GraphQLFetcher } from '../api/graphqlClient';
 
 export type RechnungErrorCode =
   | 'DUPLICATE_RECHNUNG'
+  | 'DUPLICATE_RECHNUNGSNUMMER'
   | 'KEINE_BEHANDLUNGEN'
   | 'TEMPLATE_NOT_FOUND'
   | 'TEMPLATE_FILE_MISSING'
@@ -29,6 +30,11 @@ export interface CreateMonatsrechnungInput {
   auftraggeberId: string;
   rechnungsdatum: string;
   force?: boolean;
+  /**
+   * PRD §3.2 / AC-RECH-15: optional vom Nutzer gewählte laufende Nummer
+   * (NNNN, 1..9999). Server ignoriert den Wert, wenn `force=true`.
+   */
+  lfdNummer?: number;
 }
 
 const RECHNUNG_COLUMNS = /* GraphQL */ `
@@ -62,6 +68,12 @@ const CREATE_MONATSRECHNUNG = /* GraphQL */ `
   }
 `;
 
+const NEXT_FREE_LFD_NUMMER = /* GraphQL */ `
+  query NextFreeLfdNummer($year: Int!) {
+    nextFreeRechnungsLfdNummer(year: $year)
+  }
+`;
+
 const RECHNUNGEN_QUERY = /* GraphQL */ `
   query Rechnungen($year: Int, $month: Int, $kindId: ID, $auftraggeberId: ID) {
     rechnungen(year: $year, month: $month, kindId: $kindId, auftraggeberId: $auftraggeberId) {
@@ -89,6 +101,11 @@ export class RechnungDraft {
   kindId = '';
   auftraggeberId = '';
   rechnungsdatum: string;
+  // PRD §3.2 / AC-RECH-15: NNNN. Initial 1; wird beim Mount durch
+  // serverseitig gelieferte `nextFreeRechnungsLfdNummer` ersetzt, sofern
+  // der Nutzer den Wert noch nicht angefasst hat.
+  lfdNummer = 1;
+  lfdNummerTouched = false;
 
   constructor() {
     const { year, month } = todayMonth();
@@ -113,6 +130,17 @@ export class RechnungDraft {
   setRechnungsdatum(iso: string): void {
     this.rechnungsdatum = iso;
   }
+  /** Vom Nutzer in der UI eingegebener Wert — markiert den Draft als „touched". */
+  setLfdNummer(n: number): void {
+    this.lfdNummer = n;
+    this.lfdNummerTouched = true;
+  }
+  /** Server-Vorbelegung. Überschreibt den Wert nur, wenn der Nutzer noch nichts eingegeben hat. */
+  prefillLfdNummer(n: number): void {
+    if (!this.lfdNummerTouched) {
+      this.lfdNummer = n;
+    }
+  }
 
   reset(): void {
     const { year, month } = todayMonth();
@@ -121,6 +149,8 @@ export class RechnungDraft {
     this.kindId = '';
     this.auftraggeberId = '';
     this.rechnungsdatum = todayIso();
+    this.lfdNummer = 1;
+    this.lfdNummerTouched = false;
   }
 
   valid(): boolean {
@@ -133,7 +163,10 @@ export class RechnungDraft {
       this.month <= 12 &&
       this.kindId.length > 0 &&
       this.auftraggeberId.length > 0 &&
-      /^\d{4}-\d{2}-\d{2}$/.test(this.rechnungsdatum)
+      /^\d{4}-\d{2}-\d{2}$/.test(this.rechnungsdatum) &&
+      Number.isInteger(this.lfdNummer) &&
+      this.lfdNummer >= 1 &&
+      this.lfdNummer <= 9999
     );
   }
 }
@@ -224,6 +257,15 @@ function parseErrorCode(err: unknown): { code: RechnungErrorCode; message: strin
       message: 'Für diesen Monat wurde bereits eine Rechnung erzeugt.',
     };
   }
+  // PRD §3.2 / AC-RECH-15
+  const dupNumMatch = /Diese Nummer ist im Jahr (\d{4}) bereits vergeben/.exec(msg);
+  if (dupNumMatch) {
+    const yr = dupNumMatch[1];
+    return {
+      code: 'DUPLICATE_RECHNUNGSNUMMER',
+      message: `Diese Nummer ist im Jahr ${yr} bereits vergeben.`,
+    };
+  }
   if (msg.includes('Für den gewählten Monat liegen keine Behandlungen vor')) {
     return {
       code: 'KEINE_BEHANDLUNGEN',
@@ -306,7 +348,31 @@ export class RechnungStore {
       auftraggeberId: this.draftRechnung.auftraggeberId,
       rechnungsdatum: this.draftRechnung.rechnungsdatum,
       force: options.force ?? false,
+      // PRD §3.2 / AC-RECH-15: Bei force=true (Korrektur) ignoriert der
+      // Server den Wert ohnehin; wir senden ihn der Einfachheit halber mit.
+      lfdNummer: this.draftRechnung.lfdNummer,
     });
+  }
+
+  /**
+   * PRD §3.2 / AC-RECH-15: Holt vom Server die nächste freie laufende
+   * Nummer für `year` und schreibt sie als Vorbelegung in den Draft —
+   * sofern der Nutzer den Wert noch nicht angepasst hat.
+   */
+  async loadNextFreeLfdNummer(year: number): Promise<void> {
+    try {
+      const data = await this.fetcher<{ nextFreeRechnungsLfdNummer: number }>(
+        NEXT_FREE_LFD_NUMMER,
+        { year },
+      );
+      runInAction(() => {
+        this.draftRechnung.prefillLfdNummer(data.nextFreeRechnungsLfdNummer);
+      });
+    } catch (err) {
+      runInAction(() => {
+        this.error = parseErrorCode(err);
+      });
+    }
   }
 
   // PRD §3.8: markiert die Rechnungen als "zum Versand heruntergeladen".
