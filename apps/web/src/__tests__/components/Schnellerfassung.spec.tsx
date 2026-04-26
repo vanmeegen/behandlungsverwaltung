@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import type { GraphQLFetcher } from '../../api/graphqlClient';
@@ -157,6 +157,73 @@ describe('<SchnellerfassungPage /> — „noch verfügbar" im Formular (Bug 6)',
   it('does not render the indicator before a Therapie is chosen', () => {
     renderPage();
     expect(screen.queryByTestId('schnellerfassung-noch-verfuegbar')).not.toBeInTheDocument();
+  });
+});
+
+describe('<SchnellerfassungPage /> — verfuegbareBe wird nach Submit aktualisiert (Bug 7)', () => {
+  it('reloads the Therapie list after a successful Behandlung save', async () => {
+    let therapienCallCount = 0;
+    const fetcher = vi.fn().mockImplementation(async (query: string) => {
+      if (query.includes('therapien {') || query.includes('therapien(')) {
+        therapienCallCount += 1;
+        const verfuegbareBe = therapienCallCount === 1 ? 60 : 58;
+        return {
+          therapien: [
+            {
+              ...lern,
+              verfuegbareBe,
+              kind: { vorname: 'Anna', nachname: 'Musterfrau' },
+            },
+          ],
+        };
+      }
+      if (query.includes('createBehandlung')) {
+        return {
+          createBehandlung: {
+            id: '1',
+            therapieId: '7',
+            datum: '2026-04-20T00:00:00.000Z',
+            be: 2,
+            taetigkeit: 'lerntherapie',
+            gruppentherapie: false,
+          },
+        };
+      }
+      return { therapien: [{ id: '7', gruppentherapie: false }] };
+    });
+    const kindStore = new KindStore(vi.fn() as unknown as GraphQLFetcher);
+    const auftraggeberStore = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    const therapieStore = new TherapieStore(fetcher as unknown as GraphQLFetcher);
+    const behandlungStore = new BehandlungStore(fetcher as unknown as GraphQLFetcher);
+    kindStore.items = [anna];
+    auftraggeberStore.items = [jugendamt];
+    render(
+      <MemoryRouter>
+        <SchnellerfassungPage
+          kindStore={kindStore}
+          auftraggeberStore={auftraggeberStore}
+          therapieStore={therapieStore}
+          behandlungStore={behandlungStore}
+        />
+      </MemoryRouter>,
+    );
+    // Warten bis erste therapien-Antwort verarbeitet ist
+    await waitFor(() => expect(therapieStore.items).toHaveLength(1));
+    fireEvent.change(screen.getByTestId('schnellerfassung-kindId'), { target: { value: '10' } });
+    fireEvent.change(screen.getByTestId('schnellerfassung-therapieId'), {
+      target: { value: '7' },
+    });
+    expect(screen.getByTestId('schnellerfassung-noch-verfuegbar').textContent).toContain('60');
+
+    fireEvent.click(screen.getByTestId('schnellerfassung-be-plus'));
+    fireEvent.change(screen.getByTestId('schnellerfassung-datum'), {
+      target: { value: '2026-04-20' },
+    });
+    fireEvent.click(screen.getByTestId('schnellerfassung-submit'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('schnellerfassung-noch-verfuegbar').textContent).toContain('58');
+    });
   });
 });
 

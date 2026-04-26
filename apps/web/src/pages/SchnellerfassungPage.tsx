@@ -79,6 +79,9 @@ export const SchnellerfassungPage = observer(
       event.preventDefault();
       const saved = await behandlungStore.saveDraft();
       if (saved) {
+        // Therapie-Liste neu laden, damit verfuegbareBe/geleisteteBe
+        // im „noch verfügbar"-Indikator nicht stale ist (Bug 7).
+        void therapieStore.load();
         // PRD §3.1: Maske bereit für die nächste Behandlung derselben
         // Therapie. Kind/Therapie bleiben, Datum/BE zurückgesetzt,
         // Tätigkeit erneut aus der Therapie vorbelegt.
