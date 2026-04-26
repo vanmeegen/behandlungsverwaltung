@@ -22,7 +22,7 @@ export function App(): JSX.Element {
   return (
     <Routes>
       <Route element={<AppShell uiStore={rootStore.uiStore} />}>
-        <Route path="/" element={<Navigate to="/schnellerfassung" replace />} />
+        <Route path="/" element={<Navigate to="/behandlungen" replace />} />
         <Route path="/kinder" element={<KindListPage store={rootStore.kindStore} />} />
         <Route
           path="/kinder/new"
@@ -88,7 +88,7 @@ export function App(): JSX.Element {
           }
         />
         <Route
-          path="/schnellerfassung"
+          path="/behandlungen"
           element={
             <SchnellerfassungPage
               kindStore={rootStore.kindStore}

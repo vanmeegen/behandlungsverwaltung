@@ -24,7 +24,7 @@ interface NavEntry {
 }
 
 const NAV_ENTRIES: readonly NavEntry[] = [
-  { to: '/schnellerfassung', label: 'Schnellerfassung', testId: 'nav-schnellerfassung' },
+  { to: '/behandlungen', label: 'Behandlungen', testId: 'nav-behandlungen' },
   { to: '/kinder', label: 'Kinder', testId: 'nav-kinder' },
   { to: '/auftraggeber', label: 'Auftraggeber', testId: 'nav-auftraggeber' },
   { to: '/therapien', label: 'Therapien', testId: 'nav-therapien' },

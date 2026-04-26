@@ -65,7 +65,7 @@ export const BehandlungEditPage = observer(({ behandlungStore }: BehandlungEditP
     };
     const result = await behandlungStore.update(id, input);
     if (result) {
-      navigate('/schnellerfassung');
+      navigate('/behandlungen');
     } else {
       setError(behandlungStore.error);
     }
