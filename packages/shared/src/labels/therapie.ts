@@ -2,9 +2,9 @@ import type { TherapieFormValue } from '../validation/therapie';
 import type { TaetigkeitValue } from '../validation/taetigkeit';
 
 export const THERAPIE_FORM_LABELS: Record<TherapieFormValue, string> = {
-  dyskalkulie: 'Dyskalkulietherapie',
-  lerntherapie: 'Lerntherapie',
-  lrs_therapie: 'LRS-Therapie',
+  dyskalkulie: 'Dyskalkulie-Therapie',
+  lerntherapie: 'Lern-Therapie',
+  lrs_therapie: 'Legasthenie-Therapie',
   resilienztraining: 'Resilienztraining',
   heilpaedagogik: 'Heilpädagogik',
   elternberatung: 'Elternberatung',

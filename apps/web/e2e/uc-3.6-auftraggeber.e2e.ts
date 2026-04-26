@@ -12,7 +12,7 @@ const jugendamt = {
   plz: '51103',
   stadt: 'Köln',
   stundensatz: '45,00',
-  rechnungskopfText: 'Mein Honorar für die Teilmaßnahme Lerntherapie betrug im Monat April 2026:',
+  rechnungskopfText: 'Mein Honorar für die Teilmaßnahme Lern-Therapie betrug im Monat April 2026:',
 };
 
 const petra = {
@@ -24,7 +24,7 @@ const petra = {
   plz: '50667',
   stadt: 'Köln',
   stundensatz: '60,00',
-  rechnungskopfText: 'Mein Honorar für die Teilmaßnahme Lerntherapie betrug im Monat April 2026:',
+  rechnungskopfText: 'Mein Honorar für die Teilmaßnahme Lern-Therapie betrug im Monat April 2026:',
 };
 
 test.describe('UC-3.6 Auftraggeber erfassen', () => {
@@ -63,7 +63,7 @@ test.describe('UC-3.6 Auftraggeber erfassen', () => {
     expect(created.stundensatzCents).toBe(4500);
     expect(created.abteilung).toBe('Wirtschaftliche Jugendhilfe');
     expect(created.rechnungskopfText).toBe(
-      'Mein Honorar für die Teilmaßnahme Lerntherapie betrug im Monat April 2026:',
+      'Mein Honorar für die Teilmaßnahme Lern-Therapie betrug im Monat April 2026:',
     );
 
     await expect(listPage.firmennameCellFor(created.id)).toHaveText('Jugendamt Köln');
@@ -72,7 +72,7 @@ test.describe('UC-3.6 Auftraggeber erfassen', () => {
     await expect(formPage.input('firmenname')).toHaveValue('Jugendamt Köln');
     await expect(formPage.input('abteilung')).toHaveValue('Wirtschaftliche Jugendhilfe');
     await expect(formPage.input('rechnungskopfText')).toHaveValue(
-      'Mein Honorar für die Teilmaßnahme Lerntherapie betrug im Monat April 2026:',
+      'Mein Honorar für die Teilmaßnahme Lern-Therapie betrug im Monat April 2026:',
     );
     await expect(page.getByTestId('auftraggeber-form-vorname')).toHaveCount(0);
     await expect(page.getByTestId('auftraggeber-form-nachname')).toHaveCount(0);

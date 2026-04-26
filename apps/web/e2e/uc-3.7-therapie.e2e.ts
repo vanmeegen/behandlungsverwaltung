@@ -43,7 +43,7 @@ test.describe('UC-3.7 Therapie erfassen', () => {
     await resetDb();
   });
 
-  test('Szenario 1: Lerntherapie mit 60 BE anlegen (AC-TH-02, AC-TH-04)', async ({ page }) => {
+  test('Szenario 1: Lern-Therapie mit 60 BE anlegen (AC-TH-02, AC-TH-04)', async ({ page }) => {
     const { kind, ag } = await seedBaseEntities();
 
     const listPage = new TherapieListPage(page);
@@ -87,14 +87,14 @@ test.describe('UC-3.7 Therapie erfassen', () => {
 
     // Dual-parent visibility: appears on both Kind detail and Auftraggeber detail pages
     await page.goto(`/kinder/${kind.id}/detail`);
-    await expect(page.getByTestId(`therapie-row-form-${t.id}`)).toHaveText('Lerntherapie');
+    await expect(page.getByTestId(`therapie-row-form-${t.id}`)).toHaveText('Lern-Therapie');
     await expect(page.getByTestId(`therapie-row-be-${t.id}`)).toHaveText('60 BE');
     await expect(page.getByTestId(`therapie-row-gruppentherapie-${t.id}`)).toHaveText(
       'Gruppentherapie: Nein',
     );
 
     await page.goto(`/auftraggeber/${ag.id}/detail`);
-    await expect(page.getByTestId(`therapie-row-form-${t.id}`)).toHaveText('Lerntherapie');
+    await expect(page.getByTestId(`therapie-row-form-${t.id}`)).toHaveText('Lern-Therapie');
     await expect(page.getByTestId(`therapie-row-be-${t.id}`)).toHaveText('60 BE');
     await expect(page.getByTestId(`therapie-row-gruppentherapie-${t.id}`)).toHaveText(
       'Gruppentherapie: Nein',

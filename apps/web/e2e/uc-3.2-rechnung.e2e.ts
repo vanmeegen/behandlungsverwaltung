@@ -117,16 +117,16 @@ test.describe('UC-3.2 Monatsrechnung erzeugen', () => {
     const { text } = (await parser.getText()) as { text: string };
     expect(text).toContain('RE-2026-04-0001');
     expect(text).toContain('270,00');
-    expect(text).toContain('Lerntherapie');
+    expect(text).toContain('Lern-Therapie');
     // AC-RECH-09: Rechnungsdatum from the form lands in the PDF.
     expect(text).toContain('02.05.2026');
     // Kindesname + Aktenzeichen as Titelzeile above the table.
     expect(text).toContain('Anna Musterfrau');
     expect(text).toContain('K-2026-001');
     // AC-RECH-10: one row per Behandlung, date + Taetigkeit-Label.
-    expect(text).toContain('01.04.2026 · Lerntherapie');
-    expect(text).toContain('15.04.2026 · Lerntherapie');
-    expect(text).toContain('29.04.2026 · Lerntherapie');
+    expect(text).toContain('01.04.2026 · Lern-Therapie');
+    expect(text).toContain('15.04.2026 · Lern-Therapie');
+    expect(text).toContain('29.04.2026 · Lern-Therapie');
     // AC-RECH-08: USt-Befreiungshinweis kommt jetzt aus der Vorlage.
     expect(text).toContain('§ 4 Nr. 14 UStG umsatzsteuerfrei');
   });
@@ -238,7 +238,7 @@ test.describe('UC-3.2 Monatsrechnung erzeugen', () => {
       lfdNummer: 7,
     });
 
-    // Now seed the happy-path fixtures (Anna / Jugendamt Köln / Lerntherapie / April 2026)
+    // Now seed the happy-path fixtures (Anna / Jugendamt Köln / Lern-Therapie / April 2026)
     // and try to use the already-taken NNNN 0007.
     const { kindId, auftraggeberId } = await seedHappyPath();
 

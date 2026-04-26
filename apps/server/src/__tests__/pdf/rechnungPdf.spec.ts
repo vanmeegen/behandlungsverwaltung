@@ -67,28 +67,28 @@ const BASE_INPUT: Omit<RechnungPdfInput, 'templateBytes'> = {
     stadt: 'Köln',
   },
   auftraggeberRechnungskopfText:
-    'Mein Honorar für die Lerntherapie von Anna berechne ich Ihnen wie folgt:',
+    'Mein Honorar für die Lern-Therapie von Anna berechne ich Ihnen wie folgt:',
   therapieForm: 'lerntherapie',
   stundensatzCents: 4500,
   lines: [
     {
       datum: new Date(Date.UTC(2026, 3, 1)),
       taetigkeit: 'lerntherapie',
-      taetigkeitLabel: 'Lerntherapie',
+      taetigkeitLabel: 'Lern-Therapie',
       be: 2,
       zeilenbetragCents: 9000,
     },
     {
       datum: new Date(Date.UTC(2026, 3, 15)),
       taetigkeit: 'lerntherapie',
-      taetigkeitLabel: 'Lerntherapie',
+      taetigkeitLabel: 'Lern-Therapie',
       be: 2,
       zeilenbetragCents: 9000,
     },
     {
       datum: new Date(Date.UTC(2026, 3, 29)),
       taetigkeit: 'lerntherapie',
-      taetigkeitLabel: 'Lerntherapie',
+      taetigkeitLabel: 'Lern-Therapie',
       be: 2,
       zeilenbetragCents: 9000,
     },
@@ -174,9 +174,9 @@ describe('renderRechnungPdf (AcroForm pipeline)', () => {
 
   it('renders one table row per Behandlung with date and Taetigkeit label (AC-RECH-10)', async () => {
     const { text } = await renderAndExtract();
-    expect(text).toContain('01.04.2026 · Lerntherapie');
-    expect(text).toContain('15.04.2026 · Lerntherapie');
-    expect(text).toContain('29.04.2026 · Lerntherapie');
+    expect(text).toContain('01.04.2026 · Lern-Therapie');
+    expect(text).toContain('15.04.2026 · Lern-Therapie');
+    expect(text).toContain('29.04.2026 · Lern-Therapie');
   });
 
   it('falls back to the therapy form label when taetigkeit is null', async () => {
@@ -192,7 +192,7 @@ describe('renderRechnungPdf (AcroForm pipeline)', () => {
       ],
       gesamtCents: 9000,
     });
-    expect(text).toContain('01.04.2026 · Lerntherapie');
+    expect(text).toContain('01.04.2026 · Lern-Therapie');
   });
 
   it('writes the Gesamtsumme into the acro-form field', async () => {
@@ -213,7 +213,7 @@ describe('renderRechnungPdf (AcroForm pipeline)', () => {
     const many = Array.from({ length: 50 }, (_, i) => ({
       datum: new Date(Date.UTC(2026, 3, (i % 28) + 1)),
       taetigkeit: 'lerntherapie',
-      taetigkeitLabel: 'Lerntherapie',
+      taetigkeitLabel: 'Lern-Therapie',
       be: 1,
       zeilenbetragCents: 4500,
     }));
@@ -234,6 +234,6 @@ describe('renderRechnungPdf (AcroForm pipeline)', () => {
     const bytes = await renderRechnungPdf({ ...BASE_INPUT, templateBytes });
     const text = await parsePdfText(bytes);
     expect(text).toContain('RE-2026-04-0001');
-    expect(text).toContain('Lerntherapie');
+    expect(text).toContain('Lern-Therapie');
   });
 });
