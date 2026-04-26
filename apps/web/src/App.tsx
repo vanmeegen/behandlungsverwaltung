@@ -148,6 +148,7 @@ export function App(): JSX.Element {
               kindStore={rootStore.kindStore}
               auftraggeberStore={rootStore.auftraggeberStore}
               stundennachweisStore={rootStore.stundennachweisStore}
+              therapieStore={rootStore.therapieStore}
             />
           }
         />

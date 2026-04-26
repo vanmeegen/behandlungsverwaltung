@@ -9,11 +9,13 @@ import { useEffect, type ChangeEvent, type FormEvent } from 'react';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
 import type { KindStore } from '../models/KindStore';
 import type { StundennachweisStore } from '../models/StundennachweisStore';
+import type { TherapieStore } from '../models/TherapieStore';
 
 interface StundennachweisPageProps {
   kindStore: KindStore;
   auftraggeberStore: AuftraggeberStore;
   stundennachweisStore: StundennachweisStore;
+  therapieStore: TherapieStore;
 }
 
 function auftraggeberLabel(ag: {
@@ -27,13 +29,38 @@ function auftraggeberLabel(ag: {
 }
 
 export const StundennachweisPage = observer(
-  ({ kindStore, auftraggeberStore, stundennachweisStore }: StundennachweisPageProps) => {
+  ({
+    kindStore,
+    auftraggeberStore,
+    stundennachweisStore,
+    therapieStore,
+  }: StundennachweisPageProps) => {
     useEffect(() => {
       void kindStore.load();
       void auftraggeberStore.load();
-    }, [kindStore, auftraggeberStore]);
+      void therapieStore.load();
+    }, [kindStore, auftraggeberStore, therapieStore]);
 
     const draft = stundennachweisStore.draftStundennachweis;
+
+    // Auftraggeber-Dropdown auf jene filtern, für die zum gewählten Kind
+    // eine Therapie hinterlegt ist.
+    const erlaubteAgIds = new Set(
+      therapieStore.items.filter((t) => t.kindId === draft.kindId).map((t) => t.auftraggeberId),
+    );
+    const auftraggeberOptions = draft.kindId
+      ? auftraggeberStore.items.filter((a) => erlaubteAgIds.has(a.id))
+      : [];
+
+    const onKindChange = (newKindId: string): void => {
+      draft.setKindId(newKindId);
+      const allowed = new Set(
+        therapieStore.items.filter((t) => t.kindId === newKindId).map((t) => t.auftraggeberId),
+      );
+      if (draft.auftraggeberId && !allowed.has(draft.auftraggeberId)) {
+        draft.setAuftraggeberId('');
+      }
+    };
 
     const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
       event.preventDefault();
@@ -70,7 +97,7 @@ export const StundennachweisPage = observer(
               select
               label="Kind"
               value={draft.kindId}
-              onChange={(e): void => draft.setKindId(e.target.value)}
+              onChange={(e): void => onKindChange(e.target.value)}
               SelectProps={{
                 native: true,
                 inputProps: { 'data-testselector': 'stundennachweis-kindId' },
@@ -95,9 +122,10 @@ export const StundennachweisPage = observer(
                 inputProps: { 'data-testselector': 'stundennachweis-auftraggeberId' },
               }}
               InputLabelProps={{ shrink: true }}
+              disabled={!draft.kindId}
             >
               <option value="">– bitte wählen –</option>
-              {auftraggeberStore.items.map((a) => (
+              {auftraggeberOptions.map((a) => (
                 <option key={a.id} value={a.id}>
                   {auftraggeberLabel(a)}
                 </option>

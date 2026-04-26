@@ -1,10 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import type { GraphQLFetcher } from '../../api/graphqlClient';
 import { AuftraggeberStore, type Auftraggeber } from '../../models/AuftraggeberStore';
 import { KindStore, type Kind } from '../../models/KindStore';
 import { StundennachweisStore } from '../../models/StundennachweisStore';
+import { TherapieStore, type Therapie } from '../../models/TherapieStore';
 import { StundennachweisPage } from '../../pages/StundennachweisPage';
 
 const anna: Kind = {
@@ -34,18 +35,36 @@ const jugendamt: Auftraggeber = {
   rechnungskopfText: 'Mein Honorar …:',
 };
 
-function renderPage(fetcher: GraphQLFetcher): { stundennachweisStore: StundennachweisStore } {
+const annaTherapie: Therapie = {
+  id: '7',
+  kindId: '10',
+  auftraggeberId: '20',
+  form: 'lerntherapie',
+  kommentar: null,
+  startdatum: '2026-01-01',
+  bewilligteBe: 60,
+  taetigkeit: 'lerntherapie',
+  gruppentherapie: false,
+};
+
+function renderPage(
+  fetcher: GraphQLFetcher,
+  opts: { kinder?: Kind[]; auftraggeber?: Auftraggeber[]; therapien?: Therapie[] } = {},
+): { stundennachweisStore: StundennachweisStore } {
   const kindStore = new KindStore(vi.fn() as unknown as GraphQLFetcher);
   const auftraggeberStore = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+  const therapieStore = new TherapieStore(vi.fn() as unknown as GraphQLFetcher);
   const stundennachweisStore = new StundennachweisStore(fetcher);
-  kindStore.items = [anna];
-  auftraggeberStore.items = [jugendamt];
+  kindStore.items = opts.kinder ?? [anna];
+  auftraggeberStore.items = opts.auftraggeber ?? [jugendamt];
+  therapieStore.items = opts.therapien ?? [];
   render(
     <MemoryRouter>
       <StundennachweisPage
         kindStore={kindStore}
         auftraggeberStore={auftraggeberStore}
         stundennachweisStore={stundennachweisStore}
+        therapieStore={therapieStore}
       />
     </MemoryRouter>,
   );
@@ -72,7 +91,7 @@ describe('<StundennachweisPage />', () => {
         dateiname: 'ST-2026-04-0001-Anna_Musterfrau.pdf',
       },
     });
-    renderPage(fetcher as unknown as GraphQLFetcher);
+    renderPage(fetcher as unknown as GraphQLFetcher, { therapien: [annaTherapie] });
 
     fireEvent.change(screen.getByTestId('stundennachweis-monat'), {
       target: { value: '2026-04' },
@@ -106,7 +125,7 @@ describe('<StundennachweisPage />', () => {
           'Für diesen Monat wurde noch keine Rechnung erzeugt. Bitte zuerst die Rechnung anlegen.',
         ),
       );
-    renderPage(fetcher as unknown as GraphQLFetcher);
+    renderPage(fetcher as unknown as GraphQLFetcher, { therapien: [annaTherapie] });
 
     fireEvent.change(screen.getByTestId('stundennachweis-monat'), {
       target: { value: '2026-04' },
@@ -120,5 +139,65 @@ describe('<StundennachweisPage />', () => {
     expect(await screen.findByTestId('stundennachweis-error')).toHaveTextContent(
       'Bitte zuerst die Rechnung anlegen',
     );
+  });
+});
+
+describe('<StundennachweisPage /> Auftraggeber-Filter auf Therapien des Kindes', () => {
+  const otto: Kind = { ...anna, id: '11', vorname: 'Otto', nachname: 'Beispiel' };
+  const dachau: Auftraggeber = { ...jugendamt, id: '21', firmenname: 'Landratsamt Dachau' };
+  const therapieAnnaJugendamt: Therapie = {
+    id: '7',
+    kindId: '10',
+    auftraggeberId: '20',
+    form: 'lerntherapie',
+    kommentar: null,
+    startdatum: '2026-01-01',
+    bewilligteBe: 60,
+    taetigkeit: 'lerntherapie',
+    gruppentherapie: false,
+  };
+
+  it('only lists Auftraggeber that have a Therapie for the selected Kind', () => {
+    const { stundennachweisStore } = renderPage(vi.fn() as unknown as GraphQLFetcher, {
+      kinder: [anna, otto],
+      auftraggeber: [jugendamt, dachau],
+      therapien: [therapieAnnaJugendamt],
+    });
+    act(() => {
+      stundennachweisStore.draftStundennachweis.setKindId('10');
+    });
+    const select = screen.getByTestId('stundennachweis-auftraggeberId') as HTMLSelectElement;
+    const values = Array.from(select.querySelectorAll('option')).map((o) => o.value);
+    expect(values).toContain('20');
+    expect(values).not.toContain('21');
+  });
+
+  it('shows no Auftraggeber options for a Kind without any Therapie', () => {
+    const { stundennachweisStore } = renderPage(vi.fn() as unknown as GraphQLFetcher, {
+      kinder: [anna, otto],
+      auftraggeber: [jugendamt, dachau],
+      therapien: [therapieAnnaJugendamt],
+    });
+    act(() => {
+      stundennachweisStore.draftStundennachweis.setKindId('11');
+    });
+    const select = screen.getByTestId('stundennachweis-auftraggeberId') as HTMLSelectElement;
+    const realOptions = Array.from(select.querySelectorAll('option')).filter((o) => o.value !== '');
+    expect(realOptions).toHaveLength(0);
+  });
+
+  it('clears auftraggeberId when the Kind change leaves it invalid', () => {
+    const { stundennachweisStore } = renderPage(vi.fn() as unknown as GraphQLFetcher, {
+      kinder: [anna, otto],
+      auftraggeber: [jugendamt, dachau],
+      therapien: [therapieAnnaJugendamt],
+    });
+    fireEvent.change(screen.getByTestId('stundennachweis-kindId'), { target: { value: '10' } });
+    fireEvent.change(screen.getByTestId('stundennachweis-auftraggeberId'), {
+      target: { value: '20' },
+    });
+    expect(stundennachweisStore.draftStundennachweis.auftraggeberId).toBe('20');
+    fireEvent.change(screen.getByTestId('stundennachweis-kindId'), { target: { value: '11' } });
+    expect(stundennachweisStore.draftStundennachweis.auftraggeberId).toBe('');
   });
 });
