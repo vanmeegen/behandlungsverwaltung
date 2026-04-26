@@ -1,11 +1,12 @@
-import { TAETIGKEIT_LABELS, THERAPIE_FORM_LABELS } from '@behandlungsverwaltung/shared';
+import { THERAPIE_FORM_LABELS } from '@behandlungsverwaltung/shared';
 import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
 import { Link as RouterLink } from 'react-router-dom';
@@ -39,62 +40,67 @@ export const TherapieList = observer(
             {store.error}
           </Alert>
         )}
-        <List data-testselector="therapie-list">
-          {items.map((t) => (
-            <ListItem
-              key={t.id}
-              data-testselector="therapie-row"
-              secondaryAction={
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    component={RouterLink}
-                    to={`/therapien/${t.id}`}
-                    size="small"
-                    variant="outlined"
-                    data-testselector={`therapie-row-edit-${t.id}`}
-                  >
-                    Bearbeiten
-                  </Button>
-                  {store && (
+        <Table data-testselector="therapie-list">
+          <TableHead>
+            <TableRow>
+              <TableCell>Nachname</TableCell>
+              <TableCell>Vorname</TableCell>
+              <TableCell>Geleistete BE</TableCell>
+              <TableCell>Therapieform</TableCell>
+              <TableCell />
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {items.map((t) => (
+              <TableRow key={t.id} data-testselector="therapie-row">
+                <TableCell>
+                  <span data-testselector={`therapie-row-nachname-${t.id}`}>
+                    {t.kind?.nachname ?? ''}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span data-testselector={`therapie-row-vorname-${t.id}`}>
+                    {t.kind?.vorname ?? ''}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span data-testselector={`therapie-row-geleistete-be-${t.id}`}>
+                    {t.geleisteteBe ?? 0}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span data-testselector={`therapie-row-form-${t.id}`}>
+                    {THERAPIE_FORM_LABELS[t.form]}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <Stack direction="row" spacing={1}>
                     <Button
+                      component={RouterLink}
+                      to={`/therapien/${t.id}`}
                       size="small"
                       variant="outlined"
-                      color="error"
-                      onClick={(): void => store.requestDelete(t.id)}
-                      data-testselector={`therapie-row-delete-${t.id}`}
+                      data-testselector={`therapie-row-edit-${t.id}`}
                     >
-                      Löschen
+                      Bearbeiten
                     </Button>
-                  )}
-                </Stack>
-              }
-            >
-              <ListItemText
-                primary={
-                  <Box component="span">
-                    <span data-testselector={`therapie-row-form-${t.id}`}>
-                      {THERAPIE_FORM_LABELS[t.form]}
-                    </span>
-                    {' · '}
-                    <span data-testselector={`therapie-row-be-${t.id}`}>{t.bewilligteBe} BE</span>
-                    {t.taetigkeit && (
-                      <>
-                        {' · '}
-                        <span data-testselector={`therapie-row-taetigkeit-${t.id}`}>
-                          {TAETIGKEIT_LABELS[t.taetigkeit]}
-                        </span>
-                      </>
+                    {store && (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        onClick={(): void => store.requestDelete(t.id)}
+                        data-testselector={`therapie-row-delete-${t.id}`}
+                      >
+                        Löschen
+                      </Button>
                     )}
-                    {' · '}
-                    <span data-testselector={`therapie-row-gruppentherapie-${t.id}`}>
-                      Gruppentherapie: {t.gruppentherapie ? 'Ja' : 'Nein'}
-                    </span>
-                  </Box>
-                }
-              />
-            </ListItem>
-          ))}
-        </List>
+                  </Stack>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
         {store && (
           <ConfirmDialog

@@ -9,6 +9,16 @@ const THERAPIEN_QUERY = /* GraphQL */ `
     therapien {
       id
       form
+      geleisteteBe
+    }
+  }
+`;
+
+const GELEISTETE_BE_QUERY = /* GraphQL */ `
+  query TherapieGeleisteteBe($kindId: ID!) {
+    therapienByKind(kindId: $kindId) {
+      id
+      geleisteteBe
     }
   }
 `;
@@ -151,5 +161,89 @@ describe('therapien queries (PRD §3.7)', () => {
     for (const r of data.therapienByAuftraggeber) {
       expect(r.auftraggeberId).toBe(String(agXId));
     }
+  });
+});
+
+describe('therapie.geleisteteBe (AC-TH-06)', () => {
+  let ctx: TestDb;
+  let kindId: number;
+  let therapieId: number;
+
+  beforeEach(() => {
+    ctx = createTestDb();
+    const [k] = ctx.db
+      .insert(kinder)
+      .values({
+        vorname: 'Anna',
+        nachname: 'Musterfrau',
+        geburtsdatum: new Date('2018-03-14'),
+        strasse: 'Hauptstr.',
+        hausnummer: '12',
+        plz: '50667',
+        stadt: 'Köln',
+        aktenzeichen: 'K-2026-001',
+      })
+      .returning()
+      .all();
+    kindId = k!.id;
+    const [a] = ctx.db
+      .insert(auftraggeber)
+      .values({
+        typ: 'firma',
+        firmenname: 'Jugendamt Köln',
+        strasse: 'Kalker Hauptstr.',
+        hausnummer: '247-273',
+        plz: '51103',
+        stadt: 'Köln',
+        stundensatzCents: 4500,
+        rechnungskopfText: 'Mein Honorar …:',
+      })
+      .returning()
+      .all();
+    const [t] = ctx.db
+      .insert(therapien)
+      .values({ kindId, auftraggeberId: a!.id, form: 'lerntherapie', bewilligteBe: 60 })
+      .returning()
+      .all();
+    therapieId = t!.id;
+  });
+
+  afterEach(() => {
+    ctx.cleanup();
+  });
+
+  it('returns 0 for a Therapie with no Behandlungen', async () => {
+    const result = await graphql({
+      schema,
+      source: GELEISTETE_BE_QUERY,
+      variableValues: { kindId: String(kindId) },
+      contextValue: { db: ctx.db, requestId: 'test' },
+    });
+    expect(result.errors).toBeUndefined();
+    const rows = (result.data as { therapienByKind: Array<{ id: string; geleisteteBe: number }> })
+      .therapienByKind;
+    const t = rows.find((r) => r.id === String(therapieId));
+    expect(t?.geleisteteBe).toBe(0);
+  });
+
+  it('returns sum of BE across three Behandlungen (3×2=6)', async () => {
+    const { behandlungen: behandlungenTbl } = await import('../../db/schema');
+    for (const d of ['2026-04-01', '2026-04-15', '2026-04-29']) {
+      ctx.db
+        .insert(behandlungenTbl)
+        .values({ therapieId, datum: new Date(d), be: 2 })
+        .run();
+    }
+    const result = await graphql({
+      schema,
+      source: GELEISTETE_BE_QUERY,
+      variableValues: { kindId: String(kindId) },
+      contextValue: { db: ctx.db, requestId: 'test' },
+    });
+    expect(result.errors).toBeUndefined();
+    const rows = (result.data as { therapienByKind: Array<{ id: string; geleisteteBe: number }> })
+      .therapienByKind;
+    const t = rows.find((r) => r.id === String(therapieId));
+    expect(t?.geleisteteBe).toBe(6);
   });
 });

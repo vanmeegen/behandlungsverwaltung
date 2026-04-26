@@ -32,6 +32,8 @@ export interface Therapie {
   bewilligteBe: number;
   taetigkeit: TaetigkeitValue | null;
   gruppentherapie: boolean;
+  geleisteteBe?: number;
+  kind?: { vorname: string; nachname: string } | null;
 }
 
 export interface TherapieFormInput {
@@ -55,6 +57,8 @@ const THERAPIE_COLUMNS = /* GraphQL */ `
   bewilligteBe
   taetigkeit
   gruppentherapie
+  geleisteteBe
+  kind { vorname nachname }
 `;
 
 const THERAPIEN_QUERY = /* GraphQL */ `
