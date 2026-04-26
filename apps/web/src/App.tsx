@@ -118,6 +118,7 @@ export function App(): JSX.Element {
               kindStore={rootStore.kindStore}
               auftraggeberStore={rootStore.auftraggeberStore}
               rechnungStore={rootStore.rechnungStore}
+              therapieStore={rootStore.therapieStore}
             />
           }
         />

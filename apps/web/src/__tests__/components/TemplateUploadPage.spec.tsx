@@ -84,7 +84,7 @@ describe('<TemplateUploadPage /> — Auto-Upload (AC-TPL-04)', () => {
 
 describe('<TemplateUploadPage /> — Vorlage löschen (Bug 3)', () => {
   it('dispatches deleteTemplate with the row data when "Entfernen" is clicked', async () => {
-    const fetcher = vi.fn(async (query: string) => {
+    const fetcher = vi.fn(async (query: string, _vars?: Record<string, unknown>) => {
       if (query.includes('templateFiles {')) return { templateFiles: [] };
       return { deleteTemplate: true };
     });
@@ -106,7 +106,7 @@ describe('<TemplateUploadPage /> — Vorlage löschen (Bug 3)', () => {
   });
 
   it('passes auftraggeberId=null for global template removal', async () => {
-    const fetcher = vi.fn(async (query: string) => {
+    const fetcher = vi.fn(async (query: string, _vars?: Record<string, unknown>) => {
       if (query.includes('templateFiles {')) return { templateFiles: [] };
       return { deleteTemplate: true };
     });

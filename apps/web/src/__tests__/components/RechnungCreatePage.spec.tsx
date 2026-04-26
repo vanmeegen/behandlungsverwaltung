@@ -1,10 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ThemeProvider } from '@mui/material/styles';
 import { describe, expect, it, vi } from 'vitest';
 import type { GraphQLFetcher } from '../../api/graphqlClient';
 import { AuftraggeberStore, type Auftraggeber } from '../../models/AuftraggeberStore';
 import { KindStore, type Kind } from '../../models/KindStore';
 import { RechnungStore } from '../../models/RechnungStore';
+import { TherapieStore, type Therapie } from '../../models/TherapieStore';
 import { RechnungCreatePage } from '../../pages/RechnungCreatePage';
 import { theme } from '../../theme';
 
@@ -39,14 +40,22 @@ interface Stores {
   rechnungStore: RechnungStore;
   kindStore: KindStore;
   auftraggeberStore: AuftraggeberStore;
+  therapieStore: TherapieStore;
 }
 
-function renderPage(fetcher: GraphQLFetcher, year = 2026, month = 4): Stores {
+function renderPage(
+  fetcher: GraphQLFetcher,
+  year = 2026,
+  month = 4,
+  opts: { therapien?: Therapie[]; kinder?: Kind[]; auftraggeber?: Auftraggeber[] } = {},
+): Stores {
   const rechnungStore = new RechnungStore(fetcher);
   const kindStore = new KindStore(vi.fn() as unknown as GraphQLFetcher);
   const aStore = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
-  kindStore.items = [anna];
-  aStore.items = [jugendamt];
+  const therapieStore = new TherapieStore(vi.fn() as unknown as GraphQLFetcher);
+  kindStore.items = opts.kinder ?? [anna];
+  aStore.items = opts.auftraggeber ?? [jugendamt];
+  therapieStore.items = opts.therapien ?? [];
   rechnungStore.draftRechnung.setYear(year);
   rechnungStore.draftRechnung.setMonth(month);
   render(
@@ -55,10 +64,11 @@ function renderPage(fetcher: GraphQLFetcher, year = 2026, month = 4): Stores {
         rechnungStore={rechnungStore}
         kindStore={kindStore}
         auftraggeberStore={aStore}
+        therapieStore={therapieStore}
       />
     </ThemeProvider>,
   );
-  return { rechnungStore, kindStore, auftraggeberStore: aStore };
+  return { rechnungStore, kindStore, auftraggeberStore: aStore, therapieStore };
 }
 
 describe('<RechnungCreatePage /> Direktlink „Rechnung öffnen" (AC-RECH-19)', () => {
@@ -240,5 +250,72 @@ describe('<RechnungCreatePage /> Fehler-Rückmeldung im Submit-Pfad (Bug 8)', ()
       expect(screen.queryByTestId('rechnung-create-success-link')).not.toBeInTheDocument();
     });
     expect(screen.getByTestId('keine-behandlungen')).toBeInTheDocument();
+  });
+});
+
+describe('<RechnungCreatePage /> Auftraggeber-Filter auf Therapien des Kindes (Bug 9)', () => {
+  const otto: Kind = { ...anna, id: '11', vorname: 'Otto', nachname: 'Beispiel' };
+  const dachau: Auftraggeber = {
+    ...jugendamt,
+    id: '21',
+    firmenname: 'Landratsamt Dachau',
+  };
+  const therapieAnnaJugendamt: Therapie = {
+    id: '7',
+    kindId: '10',
+    auftraggeberId: '20',
+    form: 'lerntherapie',
+    kommentar: null,
+    startdatum: '2026-01-01',
+    bewilligteBe: 60,
+    taetigkeit: 'lerntherapie',
+    gruppentherapie: false,
+  };
+
+  it('only lists Auftraggeber that have a Therapie for the selected Kind', () => {
+    const fetcher = vi.fn().mockResolvedValue({ nextFreeRechnungsLfdNummer: 1 });
+    const { rechnungStore } = renderPage(fetcher as unknown as GraphQLFetcher, 2026, 4, {
+      kinder: [anna, otto],
+      auftraggeber: [jugendamt, dachau],
+      therapien: [therapieAnnaJugendamt],
+    });
+    act(() => {
+      rechnungStore.draftRechnung.setKindId('10');
+    });
+    const select = screen.getByTestId('rechnung-create-auftraggeberId') as HTMLSelectElement;
+    const values = Array.from(select.querySelectorAll('option')).map((o) => o.value);
+    expect(values).toContain('20');
+    expect(values).not.toContain('21');
+  });
+
+  it('shows no Auftraggeber options for a Kind without any Therapie', () => {
+    const fetcher = vi.fn().mockResolvedValue({ nextFreeRechnungsLfdNummer: 1 });
+    const { rechnungStore } = renderPage(fetcher as unknown as GraphQLFetcher, 2026, 4, {
+      kinder: [anna, otto],
+      auftraggeber: [jugendamt, dachau],
+      therapien: [therapieAnnaJugendamt],
+    });
+    act(() => {
+      rechnungStore.draftRechnung.setKindId('11'); // otto has no therapy
+    });
+    const select = screen.getByTestId('rechnung-create-auftraggeberId') as HTMLSelectElement;
+    const realOptions = Array.from(select.querySelectorAll('option')).filter((o) => o.value !== '');
+    expect(realOptions).toHaveLength(0);
+  });
+
+  it('clears auftraggeberId when the selected Kind change leaves it invalid', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ nextFreeRechnungsLfdNummer: 1 });
+    const { rechnungStore } = renderPage(fetcher as unknown as GraphQLFetcher, 2026, 4, {
+      kinder: [anna, otto],
+      auftraggeber: [jugendamt, dachau],
+      therapien: [therapieAnnaJugendamt],
+    });
+    fireEvent.change(screen.getByTestId('rechnung-create-kindId'), { target: { value: '10' } });
+    fireEvent.change(screen.getByTestId('rechnung-create-auftraggeberId'), {
+      target: { value: '20' },
+    });
+    expect(rechnungStore.draftRechnung.auftraggeberId).toBe('20');
+    fireEvent.change(screen.getByTestId('rechnung-create-kindId'), { target: { value: '11' } });
+    expect(rechnungStore.draftRechnung.auftraggeberId).toBe('');
   });
 });

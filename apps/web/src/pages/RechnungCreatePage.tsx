@@ -11,11 +11,13 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
 import type { KindStore } from '../models/KindStore';
 import type { RechnungStore } from '../models/RechnungStore';
+import type { TherapieStore } from '../models/TherapieStore';
 
 interface RechnungCreatePageProps {
   kindStore: KindStore;
   auftraggeberStore: AuftraggeberStore;
   rechnungStore: RechnungStore;
+  therapieStore: TherapieStore;
 }
 
 function auftraggeberLabel(ag: {
@@ -29,13 +31,35 @@ function auftraggeberLabel(ag: {
 }
 
 export const RechnungCreatePage = observer(
-  ({ kindStore, auftraggeberStore, rechnungStore }: RechnungCreatePageProps) => {
+  ({ kindStore, auftraggeberStore, rechnungStore, therapieStore }: RechnungCreatePageProps) => {
     useEffect(() => {
       void kindStore.load();
       void auftraggeberStore.load();
-    }, [kindStore, auftraggeberStore]);
+      void therapieStore.load();
+    }, [kindStore, auftraggeberStore, therapieStore]);
 
     const { draftRechnung: draft } = rechnungStore;
+
+    // Bug 9: Auftraggeber-Dropdown nur mit Auftraggebern füllen, für die
+    // beim gewählten Kind eine Therapie hinterlegt ist.
+    const erlaubteAgIds = new Set(
+      therapieStore.items.filter((t) => t.kindId === draft.kindId).map((t) => t.auftraggeberId),
+    );
+    const auftraggeberOptions = draft.kindId
+      ? auftraggeberStore.items.filter((a) => erlaubteAgIds.has(a.id))
+      : [];
+
+    const onKindChange = (newKindId: string): void => {
+      draft.setKindId(newKindId);
+      // Wenn der vorher gewählte Auftraggeber für das neue Kind keine
+      // Therapie hat, zurücksetzen (Bug 9).
+      const allowed = new Set(
+        therapieStore.items.filter((t) => t.kindId === newKindId).map((t) => t.auftraggeberId),
+      );
+      if (draft.auftraggeberId && !allowed.has(draft.auftraggeberId)) {
+        draft.setAuftraggeberId('');
+      }
+    };
 
     // PRD §3.2 / AC-RECH-15: Vorbelegung der laufenden Nummer (NNNN)
     // beim Mount und bei Wechsel des Jahres — nur wenn der Nutzer den
@@ -124,7 +148,7 @@ export const RechnungCreatePage = observer(
               select
               label="Kind"
               value={draft.kindId}
-              onChange={(e): void => draft.setKindId(e.target.value)}
+              onChange={(e): void => onKindChange(e.target.value)}
               SelectProps={{
                 native: true,
                 inputProps: { 'data-testselector': 'rechnung-create-kindId' },
@@ -149,9 +173,10 @@ export const RechnungCreatePage = observer(
                 inputProps: { 'data-testselector': 'rechnung-create-auftraggeberId' },
               }}
               InputLabelProps={{ shrink: true }}
+              disabled={!draft.kindId}
             >
               <option value="">– bitte wählen –</option>
-              {auftraggeberStore.items.map((a) => (
+              {auftraggeberOptions.map((a) => (
                 <option key={a.id} value={a.id}>
                   {auftraggeberLabel(a)}
                 </option>
