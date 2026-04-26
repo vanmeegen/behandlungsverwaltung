@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { BehandlungsListeInline } from '../../components/BehandlungsListeInline';
 import type { Behandlung } from '../../models/BehandlungStore';
 
@@ -22,7 +22,10 @@ const b2: Behandlung = {
   gruppentherapie: false,
 };
 
-function renderListe(behandlungen: Behandlung[], verfuegbareBe: number): ReturnType<typeof render> {
+function renderListe(
+  behandlungen: Behandlung[],
+  verfuegbareBe?: number | null,
+): ReturnType<typeof render> {
   return render(
     <MemoryRouter>
       <BehandlungsListeInline behandlungen={behandlungen} verfuegbareBe={verfuegbareBe} />
@@ -66,5 +69,23 @@ describe('<BehandlungsListeInline /> (AC-BEH-10, AC-BEH-11)', () => {
       </MemoryRouter>,
     );
     expect(screen.getByText('Löschen')).toBeInTheDocument();
+  });
+
+  it('hides the noch-verfügbar indicator when verfuegbareBe is null', () => {
+    renderListe([b1], null);
+    expect(
+      screen.queryByTestId('schnellerfassung-behandlungsliste-noch-verfuegbar'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('passes therapieId to onDelete callback (for cross-therapy delete)', () => {
+    const spy = vi.fn();
+    render(
+      <MemoryRouter>
+        <BehandlungsListeInline behandlungen={[b1]} verfuegbareBe={58} onDelete={spy} />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByText('Löschen'));
+    expect(spy).toHaveBeenCalledWith('1', '7');
   });
 });

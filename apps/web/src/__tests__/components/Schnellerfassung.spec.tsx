@@ -136,6 +136,170 @@ describe('<SchnellerfassungPage /> — Kind → Therapie cascade', () => {
     expect(lernOption!.textContent).toContain('Lern-Therapie');
     expect(lernOption!.textContent).not.toContain('lerntherapie');
   });
+
+  it('auto-selects the only available Therapie when a Kind has just one', () => {
+    const stores = makeStores();
+    stores.therapieStore.items = [lern]; // nur eine Therapie
+    render(
+      <MemoryRouter>
+        <SchnellerfassungPage
+          kindStore={stores.kindStore}
+          auftraggeberStore={stores.auftraggeberStore}
+          therapieStore={stores.therapieStore}
+          behandlungStore={stores.behandlungStore}
+        />
+      </MemoryRouter>,
+    );
+    fireEvent.change(screen.getByTestId('schnellerfassung-kindId'), { target: { value: '10' } });
+    expect(stores.behandlungStore.draftBehandlung.therapieId).toBe('7');
+  });
+
+  it('does NOT auto-select the Therapie when more than one is available', () => {
+    const { behandlungStore } = renderPage();
+    fireEvent.change(screen.getByTestId('schnellerfassung-kindId'), { target: { value: '10' } });
+    expect(behandlungStore.draftBehandlung.therapieId).toBe('');
+  });
+});
+
+describe('<SchnellerfassungPage /> — Behandlungsliste bei Kind-Auswahl', () => {
+  it('shows behandlungen of all therapies of the chosen Kind even before a Therapie is picked', async () => {
+    const fetcher = vi
+      .fn()
+      .mockImplementation(async (query: string, vars?: Record<string, unknown>) => {
+        if (query.includes('behandlungenByTherapie')) {
+          const therapieId = (vars as { therapieId: string }).therapieId;
+          if (therapieId === '7') {
+            return {
+              behandlungenByTherapie: [
+                {
+                  id: 'b1',
+                  therapieId: '7',
+                  datum: '2026-04-10T00:00:00.000Z',
+                  be: 2,
+                  taetigkeit: 'lerntherapie',
+                  gruppentherapie: false,
+                  sonstigesText: null,
+                },
+              ],
+            };
+          }
+          if (therapieId === '8') {
+            return {
+              behandlungenByTherapie: [
+                {
+                  id: 'b2',
+                  therapieId: '8',
+                  datum: '2026-04-15T00:00:00.000Z',
+                  be: 1,
+                  taetigkeit: null,
+                  gruppentherapie: false,
+                  sonstigesText: null,
+                },
+              ],
+            };
+          }
+          return { behandlungenByTherapie: [] };
+        }
+        return { therapien: [] };
+      });
+    const kindStore = new KindStore(vi.fn() as unknown as GraphQLFetcher);
+    const auftraggeberStore = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    const therapieStore = new TherapieStore(vi.fn() as unknown as GraphQLFetcher);
+    const behandlungStore = new BehandlungStore(fetcher as unknown as GraphQLFetcher);
+    kindStore.items = [anna];
+    auftraggeberStore.items = [jugendamt];
+    therapieStore.items = [lern, lernOhneThema]; // beide für kind 10
+
+    render(
+      <MemoryRouter>
+        <SchnellerfassungPage
+          kindStore={kindStore}
+          auftraggeberStore={auftraggeberStore}
+          therapieStore={therapieStore}
+          behandlungStore={behandlungStore}
+        />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(screen.getByTestId('schnellerfassung-kindId'), { target: { value: '10' } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('schnellerfassung-behandlungsliste-zeile-b1')).toBeInTheDocument();
+      expect(screen.getByTestId('schnellerfassung-behandlungsliste-zeile-b2')).toBeInTheDocument();
+    });
+  });
+
+  it('narrows the list to the selected Therapie once one is picked', async () => {
+    const fetcher = vi
+      .fn()
+      .mockImplementation(async (query: string, vars?: Record<string, unknown>) => {
+        if (query.includes('behandlungenByTherapie')) {
+          const therapieId = (vars as { therapieId: string }).therapieId;
+          if (therapieId === '7') {
+            return {
+              behandlungenByTherapie: [
+                {
+                  id: 'b1',
+                  therapieId: '7',
+                  datum: '2026-04-10T00:00:00.000Z',
+                  be: 2,
+                  taetigkeit: 'lerntherapie',
+                  gruppentherapie: false,
+                  sonstigesText: null,
+                },
+              ],
+            };
+          }
+          if (therapieId === '8') {
+            return {
+              behandlungenByTherapie: [
+                {
+                  id: 'b2',
+                  therapieId: '8',
+                  datum: '2026-04-15T00:00:00.000Z',
+                  be: 1,
+                  taetigkeit: null,
+                  gruppentherapie: false,
+                  sonstigesText: null,
+                },
+              ],
+            };
+          }
+          return { behandlungenByTherapie: [] };
+        }
+        return { therapien: [] };
+      });
+    const kindStore = new KindStore(vi.fn() as unknown as GraphQLFetcher);
+    const auftraggeberStore = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    const therapieStore = new TherapieStore(vi.fn() as unknown as GraphQLFetcher);
+    const behandlungStore = new BehandlungStore(fetcher as unknown as GraphQLFetcher);
+    kindStore.items = [anna];
+    auftraggeberStore.items = [jugendamt];
+    therapieStore.items = [lern, lernOhneThema];
+
+    render(
+      <MemoryRouter>
+        <SchnellerfassungPage
+          kindStore={kindStore}
+          auftraggeberStore={auftraggeberStore}
+          therapieStore={therapieStore}
+          behandlungStore={behandlungStore}
+        />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(screen.getByTestId('schnellerfassung-kindId'), { target: { value: '10' } });
+    await waitFor(() => {
+      expect(screen.getByTestId('schnellerfassung-behandlungsliste-zeile-b1')).toBeInTheDocument();
+    });
+    fireEvent.change(screen.getByTestId('schnellerfassung-therapieId'), {
+      target: { value: '7' },
+    });
+    expect(screen.getByTestId('schnellerfassung-behandlungsliste-zeile-b1')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('schnellerfassung-behandlungsliste-zeile-b2'),
+    ).not.toBeInTheDocument();
+  });
 });
 
 describe('<SchnellerfassungPage /> — „noch verfügbar" im Formular (Bug 6)', () => {

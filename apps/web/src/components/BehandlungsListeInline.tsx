@@ -15,8 +15,8 @@ import type { TaetigkeitValue } from '@behandlungsverwaltung/shared';
 
 interface BehandlungsListeInlineProps {
   behandlungen: Behandlung[];
-  verfuegbareBe: number;
-  onDelete?: (id: string) => void;
+  verfuegbareBe?: number | null | undefined;
+  onDelete?: (id: string, therapieId: string) => void;
 }
 
 function formatDatum(isoOrDate: string): string {
@@ -37,12 +37,14 @@ export const BehandlungsListeInline = observer(
       <Box data-testselector="schnellerfassung-behandlungsliste">
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
           <Typography variant="subtitle2">Erfasste Behandlungen</Typography>
-          <Typography
-            variant="body2"
-            data-testselector="schnellerfassung-behandlungsliste-noch-verfuegbar"
-          >
-            noch verfügbar: {verfuegbareBe} BE
-          </Typography>
+          {verfuegbareBe != null && (
+            <Typography
+              variant="body2"
+              data-testselector="schnellerfassung-behandlungsliste-noch-verfuegbar"
+            >
+              noch verfügbar: {verfuegbareBe} BE
+            </Typography>
+          )}
         </Stack>
         <Table size="small">
           <TableHead>
@@ -81,7 +83,7 @@ export const BehandlungsListeInline = observer(
                         size="small"
                         variant="outlined"
                         color="error"
-                        onClick={(): void => onDelete(b.id)}
+                        onClick={(): void => onDelete(b.id, b.therapieId)}
                       >
                         Löschen
                       </Button>
