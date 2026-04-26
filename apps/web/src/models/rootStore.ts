@@ -1,6 +1,7 @@
 import { createGraphQLClient } from '../api/graphqlClient';
 import { AuftraggeberStore } from './AuftraggeberStore';
 import { BehandlungStore } from './BehandlungStore';
+import { ErziehungsberechtigterStore } from './ErziehungsberechtigterStore';
 import { KindStore } from './KindStore';
 import { RechnungStore } from './RechnungStore';
 import { StundennachweisStore } from './StundennachweisStore';
@@ -15,6 +16,7 @@ export interface RootStore {
   auftraggeberStore: AuftraggeberStore;
   therapieStore: TherapieStore;
   behandlungStore: BehandlungStore;
+  ezbStore: ErziehungsberechtigterStore;
   templateStore: TemplateStore;
   rechnungStore: RechnungStore;
   stundennachweisStore: StundennachweisStore;
@@ -26,6 +28,7 @@ export const rootStore: RootStore = {
   auftraggeberStore: new AuftraggeberStore(fetcher),
   therapieStore: new TherapieStore(fetcher),
   behandlungStore: new BehandlungStore(fetcher),
+  ezbStore: new ErziehungsberechtigterStore(fetcher),
   templateStore: new TemplateStore(fetcher),
   rechnungStore: new RechnungStore(fetcher),
   stundennachweisStore: new StundennachweisStore(fetcher),

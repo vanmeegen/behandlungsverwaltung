@@ -264,17 +264,19 @@ export class BehandlungStore {
   }
 
   async loadByTherapie(therapieId: string): Promise<Behandlung[]> {
-    const data = await this.fetcher<{ behandlungenByTherapie: Behandlung[] }>(
-      BEHANDLUNGEN_BY_THERAPIE_QUERY,
-      { therapieId },
-    );
-    runInAction(() => {
-      this.byTherapie = {
-        ...this.byTherapie,
-        [therapieId]: data.behandlungenByTherapie,
-      };
-    });
-    return data.behandlungenByTherapie;
+    try {
+      const data = await this.fetcher<{ behandlungenByTherapie: Behandlung[] }>(
+        BEHANDLUNGEN_BY_THERAPIE_QUERY,
+        { therapieId },
+      );
+      const rows = data.behandlungenByTherapie ?? [];
+      runInAction(() => {
+        this.byTherapie = { ...this.byTherapie, [therapieId]: rows };
+      });
+      return rows;
+    } catch {
+      return [];
+    }
   }
 
   async create(input: BehandlungFormInput): Promise<Behandlung | null> {

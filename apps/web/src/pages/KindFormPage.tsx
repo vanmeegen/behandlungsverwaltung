@@ -4,13 +4,15 @@ import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { KindForm } from '../components/KindForm';
+import type { ErziehungsberechtigterStore } from '../models/ErziehungsberechtigterStore';
 import type { KindStore } from '../models/KindStore';
 
 interface KindFormPageProps {
   store: KindStore;
+  ezbStore?: ErziehungsberechtigterStore | undefined;
 }
 
-export const KindFormPage = observer(({ store }: KindFormPageProps) => {
+export const KindFormPage = observer(({ store, ezbStore }: KindFormPageProps) => {
   const { id } = useParams<{ id: string }>();
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export const KindFormPage = observer(({ store }: KindFormPageProps) => {
       <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
         {id ? 'Kind bearbeiten' : 'Neues Kind'}
       </Typography>
-      <KindForm store={store} />
+      <KindForm store={store} ezbStore={ezbStore} />
     </Box>
   );
 });

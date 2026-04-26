@@ -3,12 +3,16 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import type { GraphQLFetcher } from '../../api/graphqlClient';
 import { KindForm } from '../../components/KindForm';
+import { ErziehungsberechtigterStore } from '../../models/ErziehungsberechtigterStore';
 import { KindStore } from '../../models/KindStore';
 
-function renderForm(store: KindStore): ReturnType<typeof render> {
+function renderForm(
+  store: KindStore,
+  ezbStore?: ErziehungsberechtigterStore,
+): ReturnType<typeof render> {
   return render(
     <MemoryRouter>
-      <KindForm store={store} />
+      <KindForm store={store} ezbStore={ezbStore} />
     </MemoryRouter>,
   );
 }
@@ -136,5 +140,25 @@ describe('<KindForm /> — validation', () => {
         aktenzeichen: 'K-2026-001',
       },
     });
+  });
+});
+
+describe('<KindForm /> — Erziehungsberechtigte Slots (AC-KIND-04, AC-KIND-05)', () => {
+  it('shows two EZB slots when in edit mode (editingId set)', () => {
+    const store = new KindStore(vi.fn() as unknown as GraphQLFetcher);
+    const ezbStore = new ErziehungsberechtigterStore(vi.fn() as unknown as GraphQLFetcher);
+    act(() => {
+      store.draftKind.setEditingId('10');
+    });
+    renderForm(store, ezbStore);
+    expect(screen.getByTestId('kind-form-ezb-slot-1')).toBeInTheDocument();
+    expect(screen.getByTestId('kind-form-ezb-slot-2')).toBeInTheDocument();
+  });
+
+  it('does not show EZB slots when not in edit mode (no editingId)', () => {
+    const store = new KindStore(vi.fn() as unknown as GraphQLFetcher);
+    const ezbStore = new ErziehungsberechtigterStore(vi.fn() as unknown as GraphQLFetcher);
+    renderForm(store, ezbStore);
+    expect(screen.queryByTestId('kind-form-ezb-slot-1')).not.toBeInTheDocument();
   });
 });

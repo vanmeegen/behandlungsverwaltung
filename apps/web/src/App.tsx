@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { rootStore } from './models/rootStore';
 import { BehandlungEditPage } from './pages/BehandlungEditPage';
+import { ErziehungsberechtigterFormPage } from './pages/ErziehungsberechtigterFormPage';
 import { AuftraggeberDetailPage } from './pages/AuftraggeberDetailPage';
 import { AuftraggeberFormPage } from './pages/AuftraggeberFormPage';
 import { AuftraggeberListPage } from './pages/AuftraggeberListPage';
@@ -23,8 +24,18 @@ export function App(): JSX.Element {
       <Route element={<AppShell uiStore={rootStore.uiStore} />}>
         <Route path="/" element={<Navigate to="/schnellerfassung" replace />} />
         <Route path="/kinder" element={<KindListPage store={rootStore.kindStore} />} />
-        <Route path="/kinder/new" element={<KindFormPage store={rootStore.kindStore} />} />
-        <Route path="/kinder/:id" element={<KindFormPage store={rootStore.kindStore} />} />
+        <Route
+          path="/kinder/new"
+          element={<KindFormPage store={rootStore.kindStore} ezbStore={rootStore.ezbStore} />}
+        />
+        <Route
+          path="/kinder/:id"
+          element={<KindFormPage store={rootStore.kindStore} ezbStore={rootStore.ezbStore} />}
+        />
+        <Route
+          path="/kinder/:id/erziehungsberechtigte/:slot"
+          element={<ErziehungsberechtigterFormPage ezbStore={rootStore.ezbStore} />}
+        />
         <Route
           path="/kinder/:id/detail"
           element={

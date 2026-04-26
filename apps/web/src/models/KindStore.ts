@@ -126,6 +126,9 @@ export class KindDraft {
     return false;
   }
 
+  setEditingId(v: string | null): void {
+    this.editingId = v;
+  }
   setVorname(v: string): void {
     this.vorname = v;
   }
