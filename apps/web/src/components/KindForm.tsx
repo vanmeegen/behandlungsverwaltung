@@ -43,10 +43,18 @@ export const KindForm = observer(
 
     const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
       event.preventDefault();
+      const wasCreate = !draftKind.editingId;
       const saved = await store.saveDraft();
       if (saved) {
-        draftKind.reset();
-        navigate(redirectOnSuccess);
+        if (wasCreate) {
+          // Nach dem Anlegen direkt in den Edit-Modus, damit die
+          // Erziehungsberechtigten-Slots ohne weiteren Klick erfassbar sind.
+          draftKind.setEditingId(saved.id);
+          navigate(`/kinder/${saved.id}`, { replace: true });
+        } else {
+          draftKind.reset();
+          navigate(redirectOnSuccess);
+        }
       }
     };
 
@@ -135,12 +143,27 @@ export const KindForm = observer(
             </Alert>
           )}
 
-          {ezbStore && draftKind.editingId && (
+          {ezbStore && (
             <>
               <Divider sx={{ my: 2 }} />
               <Typography variant="subtitle1">Erziehungsberechtigte</Typography>
+              {!draftKind.editingId && (
+                <Typography
+                  color="text.secondary"
+                  variant="body2"
+                  data-testselector="kind-form-ezb-hint"
+                >
+                  Bitte zuerst das Kind speichern — danach lassen sich Erziehungsberechtigte
+                  erfassen.
+                </Typography>
+              )}
               {([1, 2] as const).map((slot) => {
-                const ezb = ezbStore.getSlot(draftKind.editingId!, slot);
+                const ezb = draftKind.editingId
+                  ? ezbStore.getSlot(draftKind.editingId, slot)
+                  : null;
+                const editPath = draftKind.editingId
+                  ? `/kinder/${draftKind.editingId}/erziehungsberechtigte/${slot}`
+                  : '#';
                 return (
                   <Box
                     key={slot}
@@ -153,9 +176,10 @@ export const KindForm = observer(
                     </Typography>
                     <Button
                       component={RouterLink}
-                      to={`/kinder/${draftKind.editingId}/erziehungsberechtigte/${slot}`}
+                      to={editPath}
                       size="small"
                       variant="outlined"
+                      disabled={!draftKind.editingId}
                       data-testselector={`kind-form-ezb-slot-${slot}-bearbeiten`}
                     >
                       Bearbeiten

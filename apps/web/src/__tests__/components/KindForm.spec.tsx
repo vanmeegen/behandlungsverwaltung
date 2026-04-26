@@ -155,10 +155,36 @@ describe('<KindForm /> — Erziehungsberechtigte Slots (AC-KIND-04, AC-KIND-05)'
     expect(screen.getByTestId('kind-form-ezb-slot-2')).toBeInTheDocument();
   });
 
-  it('does not show EZB slots when not in edit mode (no editingId)', () => {
+  it('shows EZB slots from the start, even when creating a new Kind (no editingId)', () => {
     const store = new KindStore(vi.fn() as unknown as GraphQLFetcher);
     const ezbStore = new ErziehungsberechtigterStore(vi.fn() as unknown as GraphQLFetcher);
     renderForm(store, ezbStore);
-    expect(screen.queryByTestId('kind-form-ezb-slot-1')).not.toBeInTheDocument();
+    expect(screen.getByTestId('kind-form-ezb-slot-1')).toBeInTheDocument();
+    expect(screen.getByTestId('kind-form-ezb-slot-2')).toBeInTheDocument();
+  });
+
+  it('shows a hint that the Kind must be saved first when there is no editingId', () => {
+    const store = new KindStore(vi.fn() as unknown as GraphQLFetcher);
+    const ezbStore = new ErziehungsberechtigterStore(vi.fn() as unknown as GraphQLFetcher);
+    renderForm(store, ezbStore);
+    expect(screen.getByTestId('kind-form-ezb-hint')).toBeInTheDocument();
+  });
+
+  it('does not show the save-first hint when editingId is already set', () => {
+    const store = new KindStore(vi.fn() as unknown as GraphQLFetcher);
+    const ezbStore = new ErziehungsberechtigterStore(vi.fn() as unknown as GraphQLFetcher);
+    act(() => {
+      store.draftKind.setEditingId('10');
+    });
+    renderForm(store, ezbStore);
+    expect(screen.queryByTestId('kind-form-ezb-hint')).not.toBeInTheDocument();
+  });
+
+  it('disables the Bearbeiten button when there is no editingId', () => {
+    const store = new KindStore(vi.fn() as unknown as GraphQLFetcher);
+    const ezbStore = new ErziehungsberechtigterStore(vi.fn() as unknown as GraphQLFetcher);
+    renderForm(store, ezbStore);
+    const slot1Btn = screen.getByTestId('kind-form-ezb-slot-1-bearbeiten');
+    expect(slot1Btn).toHaveAttribute('aria-disabled', 'true');
   });
 });
