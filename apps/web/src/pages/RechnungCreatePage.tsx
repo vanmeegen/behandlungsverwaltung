@@ -1,7 +1,6 @@
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import InputAdornment from '@mui/material/InputAdornment';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -84,14 +83,10 @@ export const RechnungCreatePage = observer(
     const monthValue = `${draft.year}-${String(draft.month).padStart(2, '0')}`;
     const duplicate = rechnungStore.error?.code === 'DUPLICATE_RECHNUNG';
     const prefix = `RE-${draft.year}-${String(draft.month).padStart(2, '0')}-`;
-    const lfdValue = String(draft.lfdNummer).padStart(4, '0');
 
     const onLfdChange = (event: ChangeEvent<HTMLInputElement>): void => {
-      // Rechte vier Ziffern behalten, damit angefügte Tasten nicht durch
-      // den Slice abgeschnitten werden (Bug 4): "0001" + "9" → "00019" → "0019".
-      const raw = event.target.value.replace(/\D+/g, '').slice(-4);
-      const parsed = raw.length === 0 ? 0 : Number.parseInt(raw, 10);
-      draft.setLfdNummer(parsed);
+      const parsed = Number.parseInt(event.target.value, 10);
+      draft.setLfdNummer(Number.isNaN(parsed) ? 0 : parsed);
     };
 
     return (
@@ -120,28 +115,17 @@ export const RechnungCreatePage = observer(
             />
 
             <TextField
-              label="Rechnungsnummer"
-              value={lfdValue}
+              label="Laufende Nummer"
+              type="number"
+              value={String(draft.lfdNummer)}
               onChange={onLfdChange}
-              helperText="Nur die laufende Nummer (NNNN) ist editierbar."
+              helperText={`Vollständige Nummer: ${prefix}${String(draft.lfdNummer).padStart(4, '0')}`}
               inputProps={{
                 'data-testselector': 'rechnung-create-lfd',
-                inputMode: 'numeric',
-                maxLength: 4,
-                pattern: '[0-9]*',
+                min: 1,
+                max: 9999,
               }}
               InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment
-                    position="start"
-                    data-testselector="rechnung-create-prefix"
-                    disableTypography
-                  >
-                    {prefix}
-                  </InputAdornment>
-                ),
-              }}
             />
 
             <TextField

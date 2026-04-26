@@ -107,42 +107,35 @@ describe('<RechnungCreatePage /> Direktlink „Rechnung öffnen" (AC-RECH-19)', 
 });
 
 describe('<RechnungCreatePage /> NNNN editing (PRD §3.2 / AC-RECH-15)', () => {
-  it('renders the read-only RE-YYYY-MM- prefix and a four-digit NNNN field', async () => {
+  it('renders the lfd-input as a plain number field with the prefix in the helper text (Bug B)', async () => {
     const fetcher = vi.fn().mockResolvedValue({ nextFreeRechnungsLfdNummer: 1 });
     renderPage(fetcher as unknown as GraphQLFetcher, 2026, 4);
 
-    const prefix = screen.getByTestId('rechnung-create-prefix');
-    expect(prefix).toHaveTextContent('RE-2026-04-');
+    // Kein InputAdornment-Präfix mehr im Input-Feld — Bug B verlangt ein
+    // einfaches Eingabefeld ohne Sonderlogik.
+    expect(screen.queryByTestId('rechnung-create-prefix')).not.toBeInTheDocument();
 
-    await waitFor(() => {
-      expect((screen.getByTestId('rechnung-create-lfd') as HTMLInputElement).value).toBe('0001');
-    });
+    const input = screen.getByTestId('rechnung-create-lfd') as HTMLInputElement;
+    await waitFor(() => expect(input.value).toBe('1'));
+    // Helper-Text zeigt das vollständige Format
+    expect(screen.getByText(/RE-2026-04-/)).toBeInTheDocument();
   });
 
-  it('user-typed NNNN replaces the prefilled value (AC-RECH-15)', async () => {
+  it('accepts a plain numeric value typed by the user (Bug B)', async () => {
     const fetcher = vi.fn().mockResolvedValue({ nextFreeRechnungsLfdNummer: 1 });
     const { rechnungStore } = renderPage(fetcher as unknown as GraphQLFetcher, 2026, 4);
 
     const input = screen.getByTestId('rechnung-create-lfd') as HTMLInputElement;
-    await waitFor(() => expect(input.value).toBe('0001'));
+    await waitFor(() => expect(input.value).toBe('1'));
 
-    fireEvent.change(input, { target: { value: '0007' } });
+    fireEvent.change(input, { target: { value: '7' } });
     expect(rechnungStore.draftRechnung.lfdNummer).toBe(7);
     expect(rechnungStore.draftRechnung.lfdNummerTouched).toBe(true);
-    expect((screen.getByTestId('rechnung-create-lfd') as HTMLInputElement).value).toBe('0007');
-  });
+    expect((screen.getByTestId('rechnung-create-lfd') as HTMLInputElement).value).toBe('7');
 
-  it('appended digit replaces the leftmost zero (Bug 4)', async () => {
-    const fetcher = vi.fn().mockResolvedValue({ nextFreeRechnungsLfdNummer: 1 });
-    const { rechnungStore } = renderPage(fetcher as unknown as GraphQLFetcher, 2026, 4);
-
-    const input = screen.getByTestId('rechnung-create-lfd') as HTMLInputElement;
-    await waitFor(() => expect(input.value).toBe('0001'));
-
-    // User cursor at end of "0001", types "9" → DOM event reports value "00019"
-    fireEvent.change(input, { target: { value: '00019' } });
-    expect(rechnungStore.draftRechnung.lfdNummer).toBe(19);
-    expect((screen.getByTestId('rechnung-create-lfd') as HTMLInputElement).value).toBe('0019');
+    fireEvent.change(input, { target: { value: '42' } });
+    expect(rechnungStore.draftRechnung.lfdNummer).toBe(42);
+    expect((screen.getByTestId('rechnung-create-lfd') as HTMLInputElement).value).toBe('42');
   });
 
   it('renders a red Alert for DUPLICATE_RECHNUNGSNUMMER', async () => {
