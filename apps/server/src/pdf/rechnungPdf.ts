@@ -2,7 +2,6 @@ import {
   formatDateDe,
   formatEuro,
   formatLeistungszeitraum,
-  monatName as monatNameDe,
   THERAPIE_FORM_LABELS,
   type TherapieFormValue,
 } from '@behandlungsverwaltung/shared';
@@ -109,10 +108,11 @@ function einleitungstext(input: RechnungPdfInput): string {
   return input.auftraggeberRechnungskopfText;
 }
 
-function kindTitel(input: RechnungPdfInput, monat: string): string {
+function kindTitel(input: RechnungPdfInput): string {
   const { vorname, nachname, geburtsdatum, aktenzeichen } = input.kind;
-  // AC-RECH-16: Geburtsdatum direkt nach dem Namen.
-  return `${vorname} ${nachname} · geb. ${formatDateDe(geburtsdatum)} · ${aktenzeichen} · im ${monat} ${input.year}`;
+  // AC-RECH-16: Nur Kind-Infos. Bug C: kein Monat/Jahr-Suffix mehr —
+  // Leistungszeitraum hat sein eigenes Feld.
+  return `${vorname} ${nachname} · geb. ${formatDateDe(geburtsdatum)} · ${aktenzeichen}`;
 }
 
 export async function renderRechnungPdf(input: RechnungPdfInput): Promise<Uint8Array> {
@@ -127,7 +127,6 @@ export async function renderRechnungPdf(input: RechnungPdfInput): Promise<Uint8A
   }
   const page = pages[0]!;
   const font = await doc.embedFont(StandardFonts.Helvetica);
-  const monat = monatNameDe(input.month);
 
   // AcroForm-Felder der Vorlage füllen.
   const form = doc.getForm();
@@ -140,7 +139,7 @@ export async function renderRechnungPdf(input: RechnungPdfInput): Promise<Uint8A
   setField(form, 'rechnungsdatum', formatDateDe(input.rechnungsdatum));
   setField(form, 'leistungszeitraum', formatLeistungszeitraum(input.year, input.month));
   setField(form, 'einleitungstext', einleitungstext(input), true);
-  setField(form, 'kindTitel', kindTitel(input, monat));
+  setField(form, 'kindTitel', kindTitel(input));
   setField(form, 'gesamtsumme', formatEuroPlain(input.gesamtCents));
   setField(form, 'unterschriftName', `${input.kind.vorname} ${input.kind.nachname}`);
 

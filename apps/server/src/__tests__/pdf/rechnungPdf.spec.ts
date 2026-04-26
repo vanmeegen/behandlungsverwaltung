@@ -123,12 +123,14 @@ describe('renderRechnungPdf (AcroForm pipeline)', () => {
     expect(text).toContain('01.04.2026 – 30.04.2026');
   });
 
-  it('writes Kindesname, Geburtsdatum and Aktenzeichen titel above the table (AC-RECH-16)', async () => {
+  it('writes Kindesname, Geburtsdatum and Aktenzeichen titel above the table without month/year (AC-RECH-16, Bug C)', async () => {
     const { text } = await renderAndExtract();
     expect(text).toContain('Anna Musterfrau');
     expect(text).toContain('geb. 14.03.2018');
     expect(text).toContain('K-2026-001');
-    expect(text).toContain('April 2026');
+    // Bug C: nur Kind-Infos, kein „im April 2026"-Suffix mehr
+    expect(text).not.toContain('· im April 2026');
+    expect(text).not.toContain('im April 2026');
   });
 
   it('writes the Auftraggeber-Rechnungskopf-Text wortgetreu in einleitungstext (AC-RECH-17)', async () => {
