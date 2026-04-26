@@ -311,4 +311,15 @@ describe('<RechnungCreatePage /> Auftraggeber-Filter auf Therapien des Kindes (B
     fireEvent.change(screen.getByTestId('rechnung-create-kindId'), { target: { value: '11' } });
     expect(rechnungStore.draftRechnung.auftraggeberId).toBe('');
   });
+
+  it('auto-selects the only Auftraggeber when the Kind has just one matching', () => {
+    const fetcher = vi.fn().mockResolvedValue({ nextFreeRechnungsLfdNummer: 1 });
+    const { rechnungStore } = renderPage(fetcher as unknown as GraphQLFetcher, 2026, 4, {
+      kinder: [anna, otto],
+      auftraggeber: [jugendamt, dachau],
+      therapien: [therapieAnnaJugendamt],
+    });
+    fireEvent.change(screen.getByTestId('rechnung-create-kindId'), { target: { value: '10' } });
+    expect(rechnungStore.draftRechnung.auftraggeberId).toBe('20');
+  });
 });

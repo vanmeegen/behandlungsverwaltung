@@ -200,4 +200,14 @@ describe('<StundennachweisPage /> Auftraggeber-Filter auf Therapien des Kindes',
     fireEvent.change(screen.getByTestId('stundennachweis-kindId'), { target: { value: '11' } });
     expect(stundennachweisStore.draftStundennachweis.auftraggeberId).toBe('');
   });
+
+  it('auto-selects the only Auftraggeber when the Kind has just one matching', () => {
+    const { stundennachweisStore } = renderPage(vi.fn() as unknown as GraphQLFetcher, {
+      kinder: [anna, otto],
+      auftraggeber: [jugendamt, dachau],
+      therapien: [therapieAnnaJugendamt],
+    });
+    fireEvent.change(screen.getByTestId('stundennachweis-kindId'), { target: { value: '10' } });
+    expect(stundennachweisStore.draftStundennachweis.auftraggeberId).toBe('20');
+  });
 });

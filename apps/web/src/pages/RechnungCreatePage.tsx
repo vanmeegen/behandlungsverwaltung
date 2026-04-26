@@ -60,6 +60,14 @@ export const RechnungCreatePage = observer(
       }
     };
 
+    // Auto-Vorbelegung: bei genau einem zulässigen Auftraggeber automatisch wählen.
+    useEffect(() => {
+      if (draft.kindId && !draft.auftraggeberId && auftraggeberOptions.length === 1) {
+        draft.setAuftraggeberId(auftraggeberOptions[0]!.id);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draft.kindId, auftraggeberOptions.length]);
+
     // PRD §3.2 / AC-RECH-15: Vorbelegung der laufenden Nummer (NNNN)
     // beim Mount und bei Wechsel des Jahres — nur wenn der Nutzer den
     // Wert noch nicht angepasst hat (`lfdNummerTouched === false`).

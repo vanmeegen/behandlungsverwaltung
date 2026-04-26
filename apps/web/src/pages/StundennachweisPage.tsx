@@ -62,6 +62,14 @@ export const StundennachweisPage = observer(
       }
     };
 
+    // Auto-Vorbelegung: bei genau einem zulässigen Auftraggeber automatisch wählen.
+    useEffect(() => {
+      if (draft.kindId && !draft.auftraggeberId && auftraggeberOptions.length === 1) {
+        draft.setAuftraggeberId(auftraggeberOptions[0]!.id);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draft.kindId, auftraggeberOptions.length]);
+
     const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
       event.preventDefault();
       await stundennachweisStore.saveDraft();
