@@ -9,6 +9,7 @@
     "start": "bun run src/index.ts",
     "build": "tsc --noEmit",
     "lint": "eslint 'src/**/*.ts'",
+    "pretypecheck": "test -f src/generated/staticFiles.ts || bun run ../../scripts/generate-static-manifest.ts",
     "typecheck": "tsc --noEmit --pretty",
     "test": "bun test",
     "test:ci": "bun test --reporter=junit --reporter-outfile=../../reports/server-junit.xml",
