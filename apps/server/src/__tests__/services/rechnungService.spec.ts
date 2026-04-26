@@ -261,7 +261,7 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
     expect(row.nummer).toBe('RE-2026-04-0007');
   });
 
-  it('ignores lfdNummer on force=true correction (PRD §4: Nummer bleibt)', async () => {
+  it('takes a new lfdNummer on force=true correction (replaces the existing nummer)', async () => {
     const first = await createMonatsrechnung(ctx.db, ctx.paths, {
       year: 2026,
       month: 4,
@@ -278,10 +278,31 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
       auftraggeberId,
       rechnungsdatum: new Date('2026-05-20T00:00:00.000Z'),
       force: true,
-      // User attempt to override — must be silently ignored on force=true.
       lfdNummer: 42,
     });
-    expect(second.nummer).toBe('RE-2026-04-0001');
+    expect(second.nummer).toBe('RE-2026-04-0042');
+    expect(second.id).toBe(first.id);
+    expect(second.dateiname).toContain('RE-2026-04-0042');
+  });
+
+  it('keeps the existing nummer on force=true when lfdNummer is omitted', async () => {
+    const first = await createMonatsrechnung(ctx.db, ctx.paths, {
+      year: 2026,
+      month: 4,
+      kindId,
+      auftraggeberId,
+      rechnungsdatum: new Date('2026-05-02T00:00:00.000Z'),
+    });
+    const second = await createMonatsrechnung(ctx.db, ctx.paths, {
+      year: 2026,
+      month: 4,
+      kindId,
+      auftraggeberId,
+      rechnungsdatum: new Date('2026-05-20T00:00:00.000Z'),
+      force: true,
+      // no lfdNummer — alte Nummer bleibt
+    });
+    expect(second.nummer).toBe(first.nummer);
     expect(second.id).toBe(first.id);
   });
 

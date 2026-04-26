@@ -3,6 +3,7 @@ import {
   generateRechnungsnummer,
   nextFreeLfdNummer,
 } from '@behandlungsverwaltung/shared';
+import { ne } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import { rechnungen } from '../db/schema';
 
@@ -21,8 +22,12 @@ export class RechnungsnummerDuplicateError extends Error {
   }
 }
 
-function loadExistingNummern(db: Db): string[] {
-  const rows = db.select({ nummer: rechnungen.nummer }).from(rechnungen).all();
+function loadExistingNummern(db: Db, excludeRechnungId?: number): string[] {
+  const query = db.select({ nummer: rechnungen.nummer }).from(rechnungen);
+  const rows =
+    excludeRechnungId === undefined
+      ? query.all()
+      : query.where(ne(rechnungen.id, excludeRechnungId)).all();
   return rows.map((r) => r.nummer);
 }
 
@@ -38,14 +43,19 @@ export function allocateNummer(db: Db, year: number, month: number): string {
  * Wenn `lfdNummer` angegeben wird, prüft sie auf Kollision mit allen
  * bestehenden Rechnungen im selben Jahr. Bei Kollision wird
  * {@link RechnungsnummerDuplicateError} geworfen.
+ *
+ * `excludeRechnungId` schließt eine bestimmte Rechnung aus dem Kollisions-
+ * Check aus — gebraucht beim Force-Update (Korrektur einer existierenden
+ * Rechnung), damit die Rechnung nicht mit sich selbst kollidiert.
  */
 export function allocateOrUseNummer(
   db: Db,
   year: number,
   month: number,
   lfdNummer?: number,
+  excludeRechnungId?: number,
 ): string {
-  const existing = loadExistingNummern(db);
+  const existing = loadExistingNummern(db, excludeRechnungId);
   if (lfdNummer === undefined) {
     return formatRechnungsnummer(year, month, nextFreeLfdNummer(existing, year));
   }

@@ -366,8 +366,8 @@ export class RechnungStore {
       auftraggeberId: this.draftRechnung.auftraggeberId,
       rechnungsdatum: this.draftRechnung.rechnungsdatum,
       force: options.force ?? false,
-      // PRD §3.2 / AC-RECH-15: Bei force=true (Korrektur) ignoriert der
-      // Server den Wert ohnehin; wir senden ihn der Einfachheit halber mit.
+      // PRD §3.2 / AC-RECH-15: Sowohl bei Erstanlage als auch bei
+      // Force-Korrektur wird die laufende Nummer aus dem Formular übernommen.
       lfdNummer: this.draftRechnung.lfdNummer,
     });
   }

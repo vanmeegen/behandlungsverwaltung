@@ -69,8 +69,10 @@ export interface CreateRechnungInput {
    * Basis von `year`/`month` gesetzt. Wenn nicht gesetzt, ermittelt der
    * Service `max+1` im Jahr (PRD §4).
    *
-   * **Wichtig**: Bei `force === true` (Korrektur) wird dieser Wert
-   * ignoriert — die ursprüngliche Nummer bleibt unverändert (PRD §4).
+   * Bei `force === true` (Korrektur): wird `lfdNummer` weggelassen, bleibt
+   * die ursprüngliche Nummer; wird ein Wert übergeben, ersetzt er die
+   * Nummer in der bestehenden Rechnung. Die Rechnung kollidiert dabei
+   * nicht mit sich selbst.
    */
   lfdNummer?: number;
 }
@@ -135,14 +137,21 @@ export async function createMonatsrechnung(
   );
   const gesamtCents = sumZeilenbetraege(lines);
 
-  // PRD §4: Bei force=true behalten wir die bestehende Nummer; ein vom
-  // Nutzer übergebenes `lfdNummer` wird in diesem Fall bewusst ignoriert
-  // (siehe Doc-Kommentar an `CreateRechnungInput.lfdNummer`).
-  // Sonst wird neu allokiert — entweder mit der vom Nutzer gewählten NNNN
-  // oder als max+1 für das Jahr.
-  const nummer = existingRow
-    ? existingRow.nummer
-    : allocateOrUseNummer(db, input.year, input.month, input.lfdNummer);
+  // Force-Update: wenn der Nutzer eine NEUE laufende Nummer übergibt,
+  // wird sie übernommen (Bug-Fix: vorher wurde sie ignoriert). Bei
+  // unverändertem oder weggelassenem lfdNummer bleibt die alte Nummer.
+  // Die existierende Rechnung wird beim Duplicate-Check ausgeschlossen,
+  // damit sie nicht mit sich selbst kollidiert.
+  let nummer: string;
+  if (existingRow) {
+    if (input.lfdNummer === undefined) {
+      nummer = existingRow.nummer;
+    } else {
+      nummer = allocateOrUseNummer(db, input.year, input.month, input.lfdNummer, existingRow.id);
+    }
+  } else {
+    nummer = allocateOrUseNummer(db, input.year, input.month, input.lfdNummer);
+  }
   const dateiname = `${nummer}-${sanitizeKindesname(kind.vorname, kind.nachname)}.pdf`;
 
   // Resolve template (per-Auftraggeber → global fallback).
@@ -208,6 +217,7 @@ export async function createMonatsrechnung(
     const [row] = db
       .update(rechnungen)
       .set({
+        nummer,
         stundensatzCentsSnapshot: ag.stundensatzCents,
         gesamtCents,
         rechnungsdatum: input.rechnungsdatum,

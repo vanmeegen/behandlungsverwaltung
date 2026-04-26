@@ -166,6 +166,77 @@ describe('createMonatsrechnung mutation (AC-RECH-01, AC-RECH-05)', () => {
     expect(res.errors?.[0]?.extensions?.code).toBe('VALIDATION_ERROR');
   });
 
+  it('uses the new lfdNummer on a force-update (Bug: changed nummer is now persisted)', async () => {
+    await runCreate(ctx, {
+      year: 2026,
+      month: 4,
+      kindId: String(kindId),
+      auftraggeberId: String(agId),
+      rechnungsdatum: '2026-05-02',
+      lfdNummer: 1,
+    });
+    const result = await runCreate(ctx, {
+      year: 2026,
+      month: 4,
+      kindId: String(kindId),
+      auftraggeberId: String(agId),
+      rechnungsdatum: '2026-05-02',
+      force: true,
+      lfdNummer: 9,
+    });
+    expect(result.errors).toBeUndefined();
+    const created = (result.data as { createMonatsrechnung: Record<string, unknown> })
+      .createMonatsrechnung;
+    expect(created.nummer).toBe('RE-2026-04-0009');
+    expect(created.dateiname).toContain('RE-2026-04-0009');
+    // Es darf nur eine Rechnung sein (Force = Replace, nicht Insert)
+    expect(ctx.db.select().from(rechnungen).all()).toHaveLength(1);
+  });
+
+  it('keeps the existing Rechnungsnummer on force-update when lfdNummer is omitted', async () => {
+    await runCreate(ctx, {
+      year: 2026,
+      month: 4,
+      kindId: String(kindId),
+      auftraggeberId: String(agId),
+      rechnungsdatum: '2026-05-02',
+      lfdNummer: 1,
+    });
+    const result = await runCreate(ctx, {
+      year: 2026,
+      month: 4,
+      kindId: String(kindId),
+      auftraggeberId: String(agId),
+      rechnungsdatum: '2026-05-02',
+      force: true,
+      // no lfdNummer
+    });
+    const created = (result.data as { createMonatsrechnung: Record<string, unknown> })
+      .createMonatsrechnung;
+    expect(created.nummer).toBe('RE-2026-04-0001');
+  });
+
+  it('does not raise DUPLICATE_RECHNUNGSNUMMER on force-update with the same lfdNummer', async () => {
+    await runCreate(ctx, {
+      year: 2026,
+      month: 4,
+      kindId: String(kindId),
+      auftraggeberId: String(agId),
+      rechnungsdatum: '2026-05-02',
+      lfdNummer: 1,
+    });
+    const result = await runCreate(ctx, {
+      year: 2026,
+      month: 4,
+      kindId: String(kindId),
+      auftraggeberId: String(agId),
+      rechnungsdatum: '2026-05-02',
+      force: true,
+      lfdNummer: 1,
+    });
+    expect(result.errors).toBeUndefined();
+  });
+
   it('uses an explicit lfdNummer when supplied (AC-RECH-15)', async () => {
     const result = await runCreate(ctx, {
       year: 2026,
