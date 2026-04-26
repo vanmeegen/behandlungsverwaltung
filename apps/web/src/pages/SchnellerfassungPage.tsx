@@ -16,6 +16,7 @@ import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
 import { useEffect, type ChangeEvent, type FormEvent, type InputHTMLAttributes } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BehandlungsListeInline } from '../components/BehandlungsListeInline';
 import { BeStepper } from '../components/BeStepper';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
 import type { BehandlungStore } from '../models/BehandlungStore';
@@ -62,7 +63,15 @@ export const SchnellerfassungPage = observer(
       const t = therapieStore.items.find((tx) => tx.id === id);
       const defaultGruppentherapie = behandlungStore.therapieGruppentherapieById[id] ?? false;
       draft.setTherapie(id, t?.taetigkeit ?? null, defaultGruppentherapie);
+      if (id) void behandlungStore.loadByTherapie(id);
     };
+
+    const selectedTherapie = draft.therapieId
+      ? therapieStore.items.find((t) => t.id === draft.therapieId)
+      : null;
+    const behandlungenForTherapie = draft.therapieId
+      ? (behandlungStore.byTherapie[draft.therapieId] ?? [])
+      : [];
 
     const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
       event.preventDefault();
@@ -259,6 +268,18 @@ export const SchnellerfassungPage = observer(
             )}
           </Stack>
         </Box>
+
+        {draft.therapieId && (
+          <Box sx={{ mt: 3 }}>
+            <BehandlungsListeInline
+              behandlungen={behandlungenForTherapie}
+              verfuegbareBe={selectedTherapie?.verfuegbareBe ?? 0}
+              onDelete={(id): void => {
+                void behandlungStore.delete(id, draft.therapieId);
+              }}
+            />
+          </Box>
+        )}
 
         <Snackbar
           open={behandlungStore.successOpen}

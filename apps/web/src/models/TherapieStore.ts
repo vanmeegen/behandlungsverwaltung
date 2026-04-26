@@ -33,6 +33,7 @@ export interface Therapie {
   taetigkeit: TaetigkeitValue | null;
   gruppentherapie: boolean;
   geleisteteBe?: number;
+  verfuegbareBe?: number;
   kind?: { vorname: string; nachname: string } | null;
 }
 
@@ -58,6 +59,7 @@ const THERAPIE_COLUMNS = /* GraphQL */ `
   taetigkeit
   gruppentherapie
   geleisteteBe
+  verfuegbareBe
   kind { vorname nachname }
 `;
 

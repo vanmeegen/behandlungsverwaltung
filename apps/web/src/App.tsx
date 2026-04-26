@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { rootStore } from './models/rootStore';
+import { BehandlungEditPage } from './pages/BehandlungEditPage';
 import { AuftraggeberDetailPage } from './pages/AuftraggeberDetailPage';
 import { AuftraggeberFormPage } from './pages/AuftraggeberFormPage';
 import { AuftraggeberListPage } from './pages/AuftraggeberListPage';
@@ -85,6 +86,10 @@ export function App(): JSX.Element {
               behandlungStore={rootStore.behandlungStore}
             />
           }
+        />
+        <Route
+          path="/behandlungen/:id/bearbeiten"
+          element={<BehandlungEditPage behandlungStore={rootStore.behandlungStore} />}
         />
         <Route
           path="/vorlagen"

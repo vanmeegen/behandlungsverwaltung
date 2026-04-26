@@ -13,6 +13,7 @@ export interface Behandlung {
   be: number;
   taetigkeit: TaetigkeitValue | null;
   gruppentherapie: boolean;
+  sonstigesText?: string | null;
 }
 
 export interface BehandlungFormInput {
@@ -39,6 +40,7 @@ const BEHANDLUNG_COLUMNS = /* GraphQL */ `
   be
   taetigkeit
   gruppentherapie
+  sonstigesText
 `;
 
 // Phase C: Eigene minimale Therapie-Selection nur für die Vorbelegung der
@@ -66,6 +68,20 @@ const BEHANDLUNGEN_BY_THERAPIE_QUERY = /* GraphQL */ `
     behandlungenByTherapie(therapieId: $therapieId) {
       ${BEHANDLUNG_COLUMNS}
     }
+  }
+`;
+
+const UPDATE_BEHANDLUNG = /* GraphQL */ `
+  mutation UpdateBehandlung($id: ID!, $input: BehandlungInput!) {
+    updateBehandlung(id: $id, input: $input) {
+      ${BEHANDLUNG_COLUMNS}
+    }
+  }
+`;
+
+const DELETE_BEHANDLUNG = /* GraphQL */ `
+  mutation DeleteBehandlung($id: ID!) {
+    deleteBehandlung(id: $id)
   }
 `;
 
@@ -280,6 +296,49 @@ export class BehandlungStore {
         this.error = err instanceof Error ? err.message : String(err);
       });
       return null;
+    }
+  }
+
+  async update(id: string, input: BehandlungFormInput): Promise<Behandlung | null> {
+    this.error = null;
+    try {
+      const data = await this.fetcher<{ updateBehandlung: Behandlung }>(UPDATE_BEHANDLUNG, {
+        id,
+        input,
+      });
+      const updated = data.updateBehandlung;
+      runInAction(() => {
+        const therapieId = updated.therapieId;
+        this.byTherapie = {
+          ...this.byTherapie,
+          [therapieId]: (this.byTherapie[therapieId] ?? []).map((b) => (b.id === id ? updated : b)),
+        };
+      });
+      return updated;
+    } catch (err) {
+      runInAction(() => {
+        this.error = err instanceof Error ? err.message : String(err);
+      });
+      return null;
+    }
+  }
+
+  async delete(id: string, therapieId: string): Promise<boolean> {
+    this.error = null;
+    try {
+      await this.fetcher<{ deleteBehandlung: boolean }>(DELETE_BEHANDLUNG, { id });
+      runInAction(() => {
+        this.byTherapie = {
+          ...this.byTherapie,
+          [therapieId]: (this.byTherapie[therapieId] ?? []).filter((b) => b.id !== id),
+        };
+      });
+      return true;
+    } catch (err) {
+      runInAction(() => {
+        this.error = err instanceof Error ? err.message : String(err);
+      });
+      return false;
     }
   }
 

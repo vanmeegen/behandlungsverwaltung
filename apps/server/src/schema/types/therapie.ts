@@ -30,6 +30,16 @@ export const TherapieRef = builder.objectRef<Therapie>('Therapie').implement({
         return row?.total ?? 0;
       },
     }),
+    verfuegbareBe: t.int({
+      resolve: (therapie, _args, { db }) => {
+        const row = db
+          .select({ total: sql<number>`COALESCE(SUM(${behandlungen.be}), 0)` })
+          .from(behandlungen)
+          .where(eq(behandlungen.therapieId, therapie.id))
+          .get();
+        return therapie.bewilligteBe - (row?.total ?? 0);
+      },
+    }),
     kind: t.field({
       type: KindRef,
       nullable: true,
