@@ -36,6 +36,13 @@
       "when": 1777198532281,
       "tag": "0004_lean_wendigo",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1777200100721,
+      "tag": "0005_dazzling_vulture",
+      "breakpoints": true
     }
   ]
 }

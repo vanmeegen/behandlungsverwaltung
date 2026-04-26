@@ -56,6 +56,7 @@ function seed(ctx: TestDb): Seeded {
       plz: '51103',
       stadt: 'Köln',
       stundensatzCents: 4500,
+      rechnungskopfText: 'Mein Honorar:',
     })
     .returning()
     .all();
