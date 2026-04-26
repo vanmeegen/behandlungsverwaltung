@@ -1,15 +1,19 @@
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
+import CircularProgress from '@mui/material/CircularProgress';
+import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { useEffect, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useRef, type ChangeEvent } from 'react';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
 import type { TemplateKindValue, TemplateStore } from '../models/TemplateStore';
 
@@ -21,12 +25,12 @@ interface TemplateUploadPageProps {
 class TemplateUploadDraft {
   kind: TemplateKindValue = 'rechnung';
   auftraggeberId = '';
-  file: File | null = null;
-  fileName = '';
+  uploading = false;
+  snackbarOpen = false;
   error: string | null = null;
 
   constructor() {
-    makeAutoObservable(this, { file: false }, { autoBind: true });
+    makeAutoObservable(this, {}, { autoBind: true });
   }
 
   setKind(v: TemplateKindValue): void {
@@ -35,20 +39,14 @@ class TemplateUploadDraft {
   setAuftraggeberId(v: string): void {
     this.auftraggeberId = v;
   }
-  setFile(f: File): void {
-    this.file = f;
-    this.fileName = f.name;
-    this.error = null;
+  setUploading(v: boolean): void {
+    this.uploading = v;
   }
-  setError(msg: string): void {
+  setSnackbarOpen(v: boolean): void {
+    this.snackbarOpen = v;
+  }
+  setError(msg: string | null): void {
     this.error = msg;
-  }
-  reset(): void {
-    this.kind = 'rechnung';
-    this.auftraggeberId = '';
-    this.file = null;
-    this.fileName = '';
-    this.error = null;
   }
 }
 
@@ -83,110 +81,109 @@ function auftraggeberLabel(ag: {
 
 export const TemplateUploadPage = observer(
   ({ templateStore, auftraggeberStore }: TemplateUploadPageProps) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     useEffect(() => {
       void auftraggeberStore.load();
       void templateStore.load();
     }, [auftraggeberStore, templateStore]);
 
-    const onFileChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    const onFileChange = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
       const file = event.target.files?.[0];
       if (!file) return;
-      draft.setFile(file);
-    };
-
-    const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
-      event.preventDefault();
-      if (!draft.file) {
-        draft.setError('Bitte eine PDF-Datei auswählen');
-        return;
-      }
-      const base64 = await readFileAsBase64(draft.file);
-      const saved = await templateStore.upload({
-        kind: draft.kind,
-        auftraggeberId: draft.auftraggeberId,
-        base64,
-      });
-      if (saved) {
-        draft.reset();
+      draft.setError(null);
+      draft.setUploading(true);
+      try {
+        const base64 = await readFileAsBase64(file);
+        const saved = await templateStore.upload({
+          kind: draft.kind,
+          auftraggeberId: draft.auftraggeberId,
+          base64,
+        });
+        if (saved) {
+          draft.setSnackbarOpen(true);
+          void templateStore.load();
+        } else if (templateStore.error) {
+          draft.setError(templateStore.error);
+        }
+      } catch (err) {
+        draft.setError(err instanceof Error ? err.message : 'Upload-Fehler');
+      } finally {
+        draft.setUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
       }
     };
 
     return (
       <Box data-testselector="template-upload-page">
         <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
-          PDF-Vorlage hochladen
+          Vorlagen-Verwaltung
         </Typography>
-        <Box component="form" onSubmit={onSubmit}>
-          <Stack spacing={2}>
-            <TextField
-              select
-              label="Art"
-              value={draft.kind}
-              onChange={(e): void => draft.setKind(e.target.value as TemplateKindValue)}
-              SelectProps={{
-                native: true,
-                inputProps: { 'data-testselector': 'template-upload-kind' },
-              }}
-              InputLabelProps={{ shrink: true }}
+
+        <Stack spacing={2} sx={{ mb: 4 }}>
+          <TextField
+            select
+            label="Art"
+            value={draft.kind}
+            onChange={(e): void => draft.setKind(e.target.value as TemplateKindValue)}
+            SelectProps={{
+              native: true,
+              inputProps: { 'data-testselector': 'template-upload-kind' },
+            }}
+            InputLabelProps={{ shrink: true }}
+          >
+            <option value="rechnung">Rechnung</option>
+            <option value="stundennachweis">Stundennachweis</option>
+          </TextField>
+
+          <TextField
+            select
+            label="Auftraggeber (leer = global)"
+            value={draft.auftraggeberId}
+            onChange={(e): void => draft.setAuftraggeberId(e.target.value)}
+            SelectProps={{
+              native: true,
+              inputProps: { 'data-testselector': 'template-upload-auftraggeberId' },
+            }}
+            InputLabelProps={{ shrink: true }}
+          >
+            <option value="">– global –</option>
+            {auftraggeberStore.items.map((a) => (
+              <option key={a.id} value={a.id}>
+                {auftraggeberLabel(a)}
+              </option>
+            ))}
+          </TextField>
+
+          <Box>
+            <Button
+              variant="outlined"
+              aria-busy={draft.uploading}
+              startIcon={draft.uploading ? <CircularProgress size={16} /> : undefined}
+              onClick={(): void => fileInputRef.current?.click()}
+              data-testselector="template-upload-file-btn"
+              disabled={draft.uploading}
             >
-              <option value="rechnung">Rechnung</option>
-              <option value="stundennachweis">Stundennachweis</option>
-            </TextField>
-
-            <TextField
-              select
-              label="Auftraggeber (leer = global)"
-              value={draft.auftraggeberId}
-              onChange={(e): void => draft.setAuftraggeberId(e.target.value)}
-              SelectProps={{
-                native: true,
-                inputProps: { 'data-testselector': 'template-upload-auftraggeberId' },
-              }}
-              InputLabelProps={{ shrink: true }}
-            >
-              <option value="">– global –</option>
-              {auftraggeberStore.items.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {auftraggeberLabel(a)}
-                </option>
-              ))}
-            </TextField>
-
-            <Button component="label" variant="outlined">
-              PDF-Datei auswählen
-              <input
-                key={templateStore.items.length}
-                type="file"
-                accept="application/pdf"
-                hidden
-                data-testselector="template-upload-file"
-                onChange={onFileChange}
-              />
+              {draft.uploading ? 'Hochladen…' : 'PDF-Datei hochladen'}
             </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              hidden
+              data-testselector="template-upload-file"
+              onChange={onFileChange}
+            />
+          </Box>
 
-            <Button type="submit" data-testselector="template-upload-submit">
-              Hochladen
-            </Button>
+          {draft.error && (
+            <Alert severity="error" role="alert" data-testselector="template-upload-error">
+              {draft.error}
+            </Alert>
+          )}
+        </Stack>
 
-            {draft.error && (
-              <Alert severity="error" role="alert" data-testselector="template-upload-error">
-                {draft.error}
-              </Alert>
-            )}
-            {templateStore.error && (
-              <Alert severity="error" role="alert" data-testselector="template-upload-server-error">
-                {templateStore.error}
-              </Alert>
-            )}
-            {draft.fileName && !templateStore.error && !draft.error && (
-              <Typography data-testselector="template-upload-file-name" color="text.secondary">
-                {draft.fileName}
-              </Typography>
-            )}
-          </Stack>
-        </Box>
-
-        <Box sx={{ mt: 4 }}>
+        <Box sx={{ mt: 2 }}>
           <Typography variant="h5" component="h2" sx={{ mb: 1 }}>
             Vorhandene Vorlagen
           </Typography>
@@ -195,20 +192,63 @@ export const TemplateUploadPage = observer(
               Noch keine Vorlagen vorhanden.
             </Typography>
           ) : (
-            <List data-testselector="template-list">
-              {templateStore.items.map((tpl) => (
-                <ListItem
-                  key={tpl.id}
-                  data-testselector={`template-row-${tpl.kind}-${tpl.auftraggeberId ?? 'global'}`}
-                >
-                  <ListItemText
-                    primary={`${tpl.kind} · ${tpl.auftraggeberId ?? 'global'} · ${tpl.filename}`}
-                  />
-                </ListItem>
-              ))}
-            </List>
+            <Table data-testselector="template-list">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Geltungsbereich</TableCell>
+                  <TableCell>Typ</TableCell>
+                  <TableCell>Datei</TableCell>
+                  <TableCell />
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {templateStore.items.map((tpl) => {
+                  const ag = tpl.auftraggeberId
+                    ? auftraggeberStore.items.find((a) => a.id === tpl.auftraggeberId)
+                    : null;
+                  const scope = ag ? auftraggeberLabel(ag) : 'Global';
+                  return (
+                    <TableRow
+                      key={tpl.id}
+                      data-testselector={`template-row-${tpl.kind}-${tpl.auftraggeberId ?? 'global'}`}
+                    >
+                      <TableCell>{scope}</TableCell>
+                      <TableCell>{tpl.kind}</TableCell>
+                      <TableCell>
+                        <a
+                          href={`/files/templates/${tpl.filename}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {tpl.filename}
+                        </a>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="small"
+                          color="error"
+                          onClick={(): void => {
+                            void templateStore.load();
+                          }}
+                        >
+                          Entfernen
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           )}
         </Box>
+
+        <Snackbar
+          open={draft.snackbarOpen}
+          autoHideDuration={3000}
+          onClose={(): void => draft.setSnackbarOpen(false)}
+          message="Vorlage hochgeladen"
+          data-testselector="template-upload-snackbar"
+        />
       </Box>
     );
   },

@@ -25,8 +25,6 @@ function renderPage(uploadFetcher: ReturnType<typeof vi.fn>): {
   templateStore: TemplateStore;
   aStore: AuftraggeberStore;
 } {
-  // The page calls templateStore.load() on mount; return an empty list for
-  // the templateFiles query and delegate to uploadFetcher for mutations.
   const fetcher = vi.fn(async (query: string, variables?: Record<string, unknown>) => {
     if (query.includes('templateFiles {')) return { templateFiles: [] };
     return uploadFetcher(query, variables);
@@ -46,20 +44,15 @@ function base64FromArrayLike(bytes: number[]): string {
   return btoa(String.fromCharCode(...bytes));
 }
 
-describe('<TemplateUploadPage />', () => {
-  it('renders both template kinds, an Auftraggeber selector and a file input', () => {
+describe('<TemplateUploadPage /> — Auto-Upload (AC-TPL-04)', () => {
+  it('renders a single "PDF-Datei hochladen" button (no separate submit)', () => {
     renderPage(vi.fn());
-    for (const id of [
-      'template-upload-kind',
-      'template-upload-auftraggeberId',
-      'template-upload-file',
-      'template-upload-submit',
-    ]) {
-      expect(screen.getByTestId(id)).toBeInTheDocument();
-    }
+    expect(screen.getByTestId('template-upload-kind')).toBeInTheDocument();
+    expect(screen.getByTestId('template-upload-auftraggeberId')).toBeInTheDocument();
+    expect(screen.getByTestId('template-upload-file-btn')).toBeInTheDocument();
   });
 
-  it('posts kind + auftraggeberId="" (global) + base64 on submit', async () => {
+  it('auto-starts upload on file change without needing a second button click (AC-TPL-04)', async () => {
     const uploadFetcher = vi.fn().mockResolvedValue({
       uploadTemplate: {
         id: '1',
@@ -71,14 +64,13 @@ describe('<TemplateUploadPage />', () => {
     renderPage(uploadFetcher);
     await new Promise((r) => setTimeout(r, 20));
 
-    const pdfBytes = [0x25, 0x50, 0x44, 0x46, 0x2d]; // %PDF-
+    const pdfBytes = [0x25, 0x50, 0x44, 0x46, 0x2d];
     const file = new File([new Uint8Array(pdfBytes)], 'my.pdf', { type: 'application/pdf' });
     const fileInput = screen.getByTestId('template-upload-file') as HTMLInputElement;
     Object.defineProperty(fileInput, 'files', { value: [file] });
     fireEvent.change(fileInput);
 
-    fireEvent.click(screen.getByTestId('template-upload-submit'));
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise((r) => setTimeout(r, 30));
     expect(uploadFetcher).toHaveBeenCalledTimes(1);
     const [, variables] = uploadFetcher.mock.calls[0] as [string, Record<string, unknown>];
     const input = (
