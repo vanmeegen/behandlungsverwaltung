@@ -22,6 +22,7 @@ const CREATE_BEHANDLUNG = /* GraphQL */ `
       be
       taetigkeit
       gruppentherapie
+      sonstigesText
     }
   }
 `;
@@ -356,5 +357,94 @@ describe('createBehandlung — Startdatum-Validierung (AC-BEH-07)', () => {
       be: 2,
     });
     expect(result.errors).toBeUndefined();
+  });
+});
+
+describe('createBehandlung — Sonstiges-Freitext (AC-BEH-08)', () => {
+  let ctx: TestDb;
+  let sonstigesTherapieId: number;
+
+  beforeEach(() => {
+    ctx = createTestDb();
+    const [k] = ctx.db
+      .insert(kinder)
+      .values({
+        vorname: 'Anna',
+        nachname: 'Musterfrau',
+        geburtsdatum: new Date('2018-03-14'),
+        strasse: 'Hauptstr.',
+        hausnummer: '12',
+        plz: '50667',
+        stadt: 'Köln',
+        aktenzeichen: 'K-2026-001',
+      })
+      .returning()
+      .all();
+    const [a] = ctx.db
+      .insert(auftraggeber)
+      .values({
+        typ: 'firma',
+        firmenname: 'Jugendamt Köln',
+        strasse: 'Kalker Hauptstr.',
+        hausnummer: '247-273',
+        plz: '51103',
+        stadt: 'Köln',
+        stundensatzCents: 4500,
+        rechnungskopfText: 'Mein Honorar …:',
+      })
+      .returning()
+      .all();
+    const [t] = ctx.db
+      .insert(therapien)
+      .values({
+        kindId: k!.id,
+        auftraggeberId: a!.id,
+        form: 'sonstiges',
+        bewilligteBe: 30,
+        startdatum: new Date('2026-01-01'),
+        taetigkeit: 'sonstiges',
+      })
+      .returning()
+      .all();
+    sonstigesTherapieId = t!.id;
+  });
+
+  afterEach(() => {
+    ctx.cleanup();
+  });
+
+  async function run(input: Record<string, unknown>): Promise<Awaited<ReturnType<typeof graphql>>> {
+    return graphql({
+      schema,
+      source: CREATE_BEHANDLUNG,
+      variableValues: { input },
+      contextValue: { db: ctx.db, requestId: 'test' },
+    });
+  }
+
+  it('persists sonstigesText and round-trips via GraphQL (AC-BEH-08)', async () => {
+    const result = await run({
+      therapieId: String(sonstigesTherapieId),
+      datum: '2026-04-15',
+      be: 2,
+      taetigkeit: 'sonstiges',
+      sonstigesText: 'Hospitation Schule',
+    });
+    expect(result.errors).toBeUndefined();
+    const created = (result.data as { createBehandlung: Record<string, unknown> }).createBehandlung;
+    expect(created?.sonstigesText).toBe('Hospitation Schule');
+    expect(ctx.db.select().from(behandlungen).all()[0]?.sonstigesText).toBe('Hospitation Schule');
+  });
+
+  it('rejects sonstiges without sonstigesText (AC-BEH-09)', async () => {
+    const result = await run({
+      therapieId: String(sonstigesTherapieId),
+      datum: '2026-04-15',
+      be: 2,
+      taetigkeit: 'sonstiges',
+    });
+    expect(result.errors).toBeDefined();
+    expect(result.errors?.[0]?.extensions?.code).toBe('VALIDATION_ERROR');
+    expect(ctx.db.select().from(behandlungen).all()).toHaveLength(0);
   });
 });

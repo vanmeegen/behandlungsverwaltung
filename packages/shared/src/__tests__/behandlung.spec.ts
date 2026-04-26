@@ -88,3 +88,49 @@ describe('behandlungSchema (PRD §2.4, AC-BEH-02)', () => {
     expect(result.success).toBe(false);
   });
 });
+
+describe('behandlungSchema — sonstigesText (AC-BEH-08, AC-BEH-09)', () => {
+  const sonstigesBase = { ...base, taetigkeit: 'sonstiges' as const };
+
+  it('rejects taetigkeit=sonstiges without sonstigesText', () => {
+    const result = behandlungSchema.safeParse(sonstigesBase);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path.includes('sonstigesText'));
+      expect(issue?.message).toBe('Beschreibung Pflicht bei Sonstiges');
+    }
+  });
+
+  it('rejects sonstigesText of 36 characters (max 35)', () => {
+    const result = behandlungSchema.safeParse({
+      ...sonstigesBase,
+      sonstigesText: 'A'.repeat(36),
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path.includes('sonstigesText'));
+      expect(issue?.message).toMatch(/max/i);
+    }
+  });
+
+  it('rejects sonstigesText on non-sonstiges taetigkeit', () => {
+    const result = behandlungSchema.safeParse({
+      ...base,
+      taetigkeit: 'lerntherapie',
+      sonstigesText: 'Hospitation Schule',
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path.includes('sonstigesText'));
+      expect(issue?.message).toBe('Sonstiges-Freitext nur bei Tätigkeit Sonstiges');
+    }
+  });
+
+  it('accepts taetigkeit=sonstiges with valid sonstigesText', () => {
+    const result = behandlungSchema.safeParse({
+      ...sonstigesBase,
+      sonstigesText: 'Hospitation Schule',
+    });
+    expect(result.success).toBe(true);
+  });
+});

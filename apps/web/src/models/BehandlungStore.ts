@@ -3,7 +3,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import type { GraphQLFetcher } from '../api/graphqlClient';
 
 export type BehandlungFieldErrors = Partial<
-  Record<'therapieId' | 'datum' | 'be' | 'taetigkeit' | 'gruppentherapie', string>
+  Record<'therapieId' | 'datum' | 'be' | 'taetigkeit' | 'gruppentherapie' | 'sonstigesText', string>
 >;
 
 export interface Behandlung {
@@ -21,6 +21,7 @@ export interface BehandlungFormInput {
   be: number;
   taetigkeit: TaetigkeitValue | null;
   gruppentherapie: boolean;
+  sonstigesText: string | null;
 }
 
 function todayIso(): string {
@@ -77,6 +78,7 @@ export class BehandlungDraft {
   taetigkeitTouched = false;
   gruppentherapie = false;
   gruppentherapieTouched = false;
+  sonstigesText = '';
   errors: BehandlungFieldErrors = {};
 
   constructor() {
@@ -109,6 +111,13 @@ export class BehandlungDraft {
   setTaetigkeit(v: TaetigkeitValue | ''): void {
     this.taetigkeit = v;
     this.taetigkeitTouched = true;
+    if (v !== 'sonstiges') {
+      this.sonstigesText = '';
+    }
+  }
+
+  setSonstigesText(v: string): void {
+    this.sonstigesText = v;
   }
 
   setGruppentherapie(v: boolean): void {
@@ -141,6 +150,7 @@ export class BehandlungDraft {
     this.taetigkeitTouched = false;
     this.gruppentherapie = false;
     this.gruppentherapieTouched = false;
+    this.sonstigesText = '';
     this.errors = {};
   }
 
@@ -159,16 +169,19 @@ export class BehandlungDraft {
     this.taetigkeitTouched = false;
     this.gruppentherapie = defaultGruppentherapie;
     this.gruppentherapieTouched = false;
+    this.sonstigesText = '';
     this.errors = {};
   }
 
   validate(): BehandlungFormInput | null {
+    const taetigkeitValue = this.taetigkeit === '' ? null : this.taetigkeit;
     const parsed = behandlungSchema.safeParse({
       therapieId: this.therapieId,
       datum: this.datum,
       be: this.be,
-      taetigkeit: this.taetigkeit === '' ? null : this.taetigkeit,
+      taetigkeit: taetigkeitValue,
       gruppentherapie: this.gruppentherapie,
+      sonstigesText: taetigkeitValue === 'sonstiges' ? this.sonstigesText || null : null,
     });
     if (!parsed.success) {
       const next: BehandlungFieldErrors = {};
@@ -188,6 +201,7 @@ export class BehandlungDraft {
       be: parsed.data.be,
       taetigkeit: parsed.data.taetigkeit,
       gruppentherapie: parsed.data.gruppentherapie ?? false,
+      sonstigesText: parsed.data.sonstigesText ?? null,
     };
   }
 }

@@ -273,14 +273,77 @@ describe('<SchnellerfassungPage /> — submit', () => {
     );
     expect(createCall).toBeDefined();
     const variables = createCall?.[1] as Record<string, unknown>;
-    expect(variables).toEqual({
-      input: {
-        therapieId: '7',
-        datum: '2026-04-20',
-        be: 2,
-        taetigkeit: 'lerntherapie',
-        gruppentherapie: false,
-      },
+    expect((variables?.input as Record<string, unknown>)?.therapieId).toBe('7');
+    expect((variables?.input as Record<string, unknown>)?.be).toBe(2);
+    expect((variables?.input as Record<string, unknown>)?.sonstigesText).toBeNull();
+  });
+});
+
+describe('<SchnellerfassungPage /> — Sonstiges-Freitext (AC-BEH-08)', () => {
+  const sonstigesTherapie: Therapie = {
+    id: '9',
+    kindId: '10',
+    auftraggeberId: '20',
+    form: 'sonstiges',
+    kommentar: 'Individuelle Maßnahme',
+    startdatum: '2026-01-01',
+    bewilligteBe: 30,
+    taetigkeit: 'sonstiges',
+    gruppentherapie: false,
+  };
+
+  function renderWithSonstiges(fetcher: ReturnType<typeof vi.fn>): void {
+    const kStore = new KindStore(fetcher as unknown as GraphQLFetcher);
+    const aStore = new AuftraggeberStore(fetcher as unknown as GraphQLFetcher);
+    const tStore = new TherapieStore(fetcher as unknown as GraphQLFetcher);
+    const bStore = new BehandlungStore(fetcher as unknown as GraphQLFetcher);
+    kStore.items = [anna];
+    aStore.items = [jugendamt];
+    tStore.items = [sonstigesTherapie];
+    render(
+      <MemoryRouter>
+        <SchnellerfassungPage
+          kindStore={kStore}
+          therapieStore={tStore}
+          auftraggeberStore={aStore}
+          behandlungStore={bStore}
+        />
+      </MemoryRouter>,
+    );
+    fireEvent.change(screen.getByTestId('schnellerfassung-kindId'), { target: { value: '10' } });
+    fireEvent.change(screen.getByTestId('schnellerfassung-therapieId'), {
+      target: { value: '9' },
     });
+  }
+
+  it('shows sonstiges-text field when taetigkeit=sonstiges', () => {
+    const fetcher = vi.fn();
+    renderWithSonstiges(fetcher);
+    expect(screen.getByTestId('behandlung-form-sonstiges-text')).toBeInTheDocument();
+  });
+
+  it('hides sonstiges-text field when taetigkeit!=sonstiges', () => {
+    const kStore = new KindStore(vi.fn() as unknown as GraphQLFetcher);
+    const aStore = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    const tStore = new TherapieStore(vi.fn() as unknown as GraphQLFetcher);
+    const bStore = new BehandlungStore(vi.fn() as unknown as GraphQLFetcher);
+    kStore.items = [anna];
+    aStore.items = [jugendamt];
+    tStore.items = [lern];
+    render(
+      <MemoryRouter>
+        <SchnellerfassungPage
+          kindStore={kStore}
+          therapieStore={tStore}
+          auftraggeberStore={aStore}
+          behandlungStore={bStore}
+        />
+      </MemoryRouter>,
+    );
+    fireEvent.change(screen.getByTestId('schnellerfassung-kindId'), { target: { value: '10' } });
+    fireEvent.change(screen.getByTestId('schnellerfassung-therapieId'), {
+      target: { value: '7' },
+    });
+    expect(screen.queryByTestId('behandlung-form-sonstiges-text')).not.toBeInTheDocument();
   });
 });

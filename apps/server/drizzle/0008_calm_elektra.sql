@@ -1,0 +1,1 @@
+ALTER TABLE `behandlungen` ADD `sonstiges_text` text;

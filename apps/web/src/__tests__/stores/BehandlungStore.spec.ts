@@ -106,6 +106,7 @@ describe('BehandlungStore.saveDraft', () => {
         be: 2,
         taetigkeit: 'lerntherapie',
         gruppentherapie: true,
+        sonstigesText: null,
       },
     });
   });
@@ -143,6 +144,7 @@ describe('BehandlungStore.saveDraft', () => {
         be: 1,
         taetigkeit: null,
         gruppentherapie: false,
+        sonstigesText: null,
       },
     });
   });

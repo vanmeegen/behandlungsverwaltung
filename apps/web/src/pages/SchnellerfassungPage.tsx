@@ -198,6 +198,26 @@ export const SchnellerfassungPage = observer(
               ))}
             </TextField>
 
+            {draft.taetigkeit === 'sonstiges' && (
+              <TextField
+                label="Beschreibung (max. 35 Zeichen)"
+                value={draft.sonstigesText}
+                onChange={(e): void => draft.setSonstigesText(e.target.value)}
+                inputProps={{
+                  'data-testselector': 'behandlung-form-sonstiges-text',
+                  maxLength: 35,
+                }}
+                error={Boolean(draft.errors.sonstigesText)}
+                helperText={
+                  draft.errors.sonstigesText ? (
+                    <span role="alert" data-testselector="behandlung-form-sonstiges-text-error">
+                      {draft.errors.sonstigesText}
+                    </span>
+                  ) : null
+                }
+              />
+            )}
+
             <FormControlLabel
               label="Gruppentherapie"
               control={

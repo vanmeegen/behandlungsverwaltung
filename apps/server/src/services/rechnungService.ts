@@ -182,9 +182,12 @@ export async function createMonatsrechnung(
     lines: behandlungenRows.map((b, i) => ({
       datum: b.datum,
       taetigkeit: b.taetigkeit,
-      taetigkeitLabel: b.taetigkeit
-        ? (TAETIGKEIT_LABELS[b.taetigkeit as TaetigkeitValue] ?? b.taetigkeit)
-        : null,
+      taetigkeitLabel:
+        b.taetigkeit === 'sonstiges' && b.sonstigesText
+          ? b.sonstigesText
+          : b.taetigkeit
+            ? (TAETIGKEIT_LABELS[b.taetigkeit as TaetigkeitValue] ?? b.taetigkeit)
+            : null,
       be: b.be,
       zeilenbetragCents: lines[i]!.zeilenbetragCents,
     })),

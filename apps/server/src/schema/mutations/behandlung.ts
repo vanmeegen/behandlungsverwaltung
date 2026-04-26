@@ -54,6 +54,7 @@ builder.mutationField('createBehandlung', (t) =>
           be: parsed.be,
           taetigkeit: effectiveTaetigkeit,
           gruppentherapie: effectiveGruppentherapie,
+          sonstigesText: parsed.sonstigesText ?? null,
         })
         .returning()
         .all();
@@ -107,6 +108,7 @@ builder.mutationField('updateBehandlung', (t) =>
           be: parsed.be,
           taetigkeit: effectiveTaetigkeit,
           gruppentherapie: effectiveGruppentherapie,
+          sonstigesText: parsed.sonstigesText ?? null,
           updatedAt: new Date(),
         })
         .where(eq(behandlungen.id, numericId))

@@ -177,6 +177,7 @@ describe('db/schema — behandlungen (PRD §2.4)', () => {
         'datum',
         'gruppentherapie',
         'id',
+        'sonstiges_text',
         'therapie_id',
         'updated_at',
       ].sort(),

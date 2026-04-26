@@ -29,17 +29,34 @@ const taetigkeitInputSchema = z
       : null;
   });
 
-export const behandlungSchema = z.object({
-  therapieId: idSchema,
-  datum: z
-    .string({ error: 'Datum ist Pflicht' })
-    .min(1, 'Datum ist Pflicht')
-    .refine(isValidIsoDate, { error: 'Datum ist ungültig' }),
-  be: z.number({ error: 'BE muss ≥ 1 sein' }).int('BE muss ≥ 1 sein').min(1, 'BE muss ≥ 1 sein'),
-  taetigkeit: taetigkeitInputSchema,
-  // PRD §2.4 / AC-BEH-06: optional im Input. Wenn nicht gesetzt, übernimmt
-  // der Resolver den Wert aus der zugehörigen Therapie (analog `taetigkeit`).
-  gruppentherapie: z.boolean().nullish(),
-});
+export const behandlungSchema = z
+  .object({
+    therapieId: idSchema,
+    datum: z
+      .string({ error: 'Datum ist Pflicht' })
+      .min(1, 'Datum ist Pflicht')
+      .refine(isValidIsoDate, { error: 'Datum ist ungültig' }),
+    be: z.number({ error: 'BE muss ≥ 1 sein' }).int('BE muss ≥ 1 sein').min(1, 'BE muss ≥ 1 sein'),
+    taetigkeit: taetigkeitInputSchema,
+    gruppentherapie: z.boolean().nullish(),
+    sonstigesText: z.string().trim().max(35, 'Sonstiges-Text: max. 35 Zeichen').nullish(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.taetigkeit === 'sonstiges') {
+      if (!data.sonstigesText || data.sonstigesText.trim().length === 0) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['sonstigesText'],
+          message: 'Beschreibung Pflicht bei Sonstiges',
+        });
+      }
+    } else if (data.sonstigesText && data.sonstigesText.trim().length > 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['sonstigesText'],
+        message: 'Sonstiges-Freitext nur bei Tätigkeit Sonstiges',
+      });
+    }
+  });
 
 export type BehandlungInputType = z.infer<typeof behandlungSchema>;

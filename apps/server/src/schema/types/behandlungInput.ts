@@ -8,5 +8,6 @@ export const BehandlungInputRef = builder.inputType('BehandlungInput', {
     be: t.int({ required: true }),
     taetigkeit: t.field({ type: TaetigkeitEnum, required: false }),
     gruppentherapie: t.boolean({ required: false }),
+    sonstigesText: t.string({ required: false }),
   }),
 });
