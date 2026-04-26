@@ -26,3 +26,7 @@ export async function billsHandler(url: URL, paths: Paths): Promise<Response> {
 export async function timesheetsHandler(url: URL, paths: Paths): Promise<Response> {
   return serveFrom(url, '/timesheets', paths.timesheetsDir);
 }
+
+export async function templatesHandler(url: URL, paths: Paths): Promise<Response> {
+  return serveFrom(url, '/templates', paths.templatesDir);
+}

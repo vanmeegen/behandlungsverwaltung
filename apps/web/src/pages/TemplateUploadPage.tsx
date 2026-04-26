@@ -216,7 +216,7 @@ export const TemplateUploadPage = observer(
                       <TableCell>{tpl.kind}</TableCell>
                       <TableCell>
                         <a
-                          href={`/files/templates/${tpl.filename}`}
+                          href={`/templates/${tpl.filename}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >

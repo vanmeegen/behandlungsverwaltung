@@ -1,6 +1,6 @@
 import { createYoga } from 'graphql-yoga';
 import { bootstrap } from './bootstrap';
-import { billsHandler, timesheetsHandler } from './http/billsRoute';
+import { billsHandler, templatesHandler, timesheetsHandler } from './http/billsRoute';
 import { rechnungBundleHandler } from './http/bundleRoute';
 import { schema } from './schema';
 import type { SchemaContext } from './schema/builder';
@@ -26,6 +26,7 @@ const server = Bun.serve({
     if (url.pathname === '/bills/bundle') return rechnungBundleHandler(url, db, appPaths);
     if (url.pathname.startsWith('/bills/')) return billsHandler(url, appPaths);
     if (url.pathname.startsWith('/timesheets/')) return timesheetsHandler(url, appPaths);
+    if (url.pathname.startsWith('/templates/')) return templatesHandler(url, appPaths);
     return yoga.fetch(req);
   },
 });
