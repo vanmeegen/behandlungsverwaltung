@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { sql } from 'drizzle-orm';
 import { graphql } from 'graphql';
 import { auftraggeber, behandlungen, kinder, therapien } from '../../db/schema';
 import { schema } from '../../schema';
@@ -85,6 +86,33 @@ describe('behandlungenByTherapie query (PRD §2.4)', () => {
 
   afterEach(() => {
     ctx.cleanup();
+  });
+
+  it('returns taetigkeit=null for legacy label values that are not valid enum members', async () => {
+    ctx.db
+      .insert(behandlungen)
+      .values({
+        therapieId,
+        datum: new Date('2026-04-20T00:00:00.000Z'),
+        be: 1,
+        taetigkeit: 'lerntherapie',
+      })
+      .run();
+    // Simulate old arbeitsthema free-text value that bypasses Drizzle enum constraint
+    ctx.db.run(
+      sql`UPDATE behandlungen SET taetigkeit = 'Lerntherapie' WHERE taetigkeit = 'lerntherapie'`,
+    );
+    const result = await graphql({
+      schema,
+      source: BY_THERAPIE_QUERY,
+      variableValues: { therapieId: String(therapieId) },
+      contextValue: { db: ctx.db, requestId: 'test' },
+    });
+    expect(result.errors).toBeUndefined();
+    const rows = (result.data as { behandlungenByTherapie: Array<{ taetigkeit: unknown }> })
+      .behandlungenByTherapie;
+    const legacy = rows.find((r) => r.taetigkeit !== null && r.taetigkeit !== undefined);
+    expect(legacy).toBeUndefined();
   });
 
   it('returns only the given Therapie rows, ordered by datum desc', async () => {

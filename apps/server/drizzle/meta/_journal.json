@@ -71,6 +71,13 @@
       "when": 1777216711224,
       "tag": "0009_mushy_professor_monster",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1777300000000,
+      "tag": "0010_sanitize_legacy_taetigkeit",
+      "breakpoints": true
     }
   ]
 }

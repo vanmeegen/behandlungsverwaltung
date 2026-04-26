@@ -1,4 +1,5 @@
 import type { Behandlung } from '../../db/schema';
+import { TAETIGKEIT } from '../../db/schema';
 import { builder } from '../builder';
 import { TaetigkeitEnum } from './enums';
 
@@ -11,7 +12,10 @@ export const BehandlungRef = builder.objectRef<Behandlung>('Behandlung').impleme
     taetigkeit: t.field({
       type: TaetigkeitEnum,
       nullable: true,
-      resolve: (b) => b.taetigkeit,
+      resolve: (b) =>
+        b.taetigkeit != null && (TAETIGKEIT as readonly string[]).includes(b.taetigkeit)
+          ? b.taetigkeit
+          : null,
     }),
     gruppentherapie: t.exposeBoolean('gruppentherapie'),
     sonstigesText: t.exposeString('sonstigesText', { nullable: true }),

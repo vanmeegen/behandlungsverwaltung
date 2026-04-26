@@ -1,6 +1,6 @@
 import { eq, sql } from 'drizzle-orm';
 import type { Therapie } from '../../db/schema';
-import { behandlungen, kinder } from '../../db/schema';
+import { behandlungen, kinder, TAETIGKEIT } from '../../db/schema';
 import { builder } from '../builder';
 import { KindRef } from './kind';
 import { TaetigkeitEnum, TherapieFormEnum } from './enums';
@@ -17,7 +17,10 @@ export const TherapieRef = builder.objectRef<Therapie>('Therapie').implement({
     taetigkeit: t.field({
       type: TaetigkeitEnum,
       nullable: true,
-      resolve: (r) => r.taetigkeit,
+      resolve: (r) =>
+        r.taetigkeit != null && (TAETIGKEIT as readonly string[]).includes(r.taetigkeit)
+          ? r.taetigkeit
+          : null,
     }),
     gruppentherapie: t.exposeBoolean('gruppentherapie'),
     geleisteteBe: t.int({
