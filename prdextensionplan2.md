@@ -1,4 +1,4 @@
-# PRD-Erweiterungen 2 — Implementierungsplan
+#/ PRD-Erweiterungen 2 — Implementierungsplan
 
 Setzt die in Commit `6f65319` („feat(prd,pdf): align spec & layout with optimized
 rechnungsvorlage") **neu in die PRD aufgenommenen** Anforderungen um, soweit sie
@@ -26,18 +26,22 @@ Code; ihre PRD-Inhalte werden hier nur referenziert.
 ## Phasen-Reihenfolge
 
 ```
-G  Label-Rename (Therapieformen)
-H  Auftraggeber: 8 Gruppen-Stundensätze
-I  Therapie: Startdatum + Behandlungs-Validierung
-J  Therapieliste-Tabelle (Geleistete BE)
-K  Behandlung: Sonstiges-Freitext
-L  Behandlungsliste in Schnellerfassung („noch verfügbar" + Edit/Delete)
-M  Erziehungsberechtigte (neue Entity, 0–2 pro Kind)
-N  Direktlink „Rechnung öffnen"
-O  Vorlagen-Verwaltung — Listen-/Auto-Upload-UI
-P  Menü-Eintrag „Schnellerfassung" → „Behandlungen"
-Q  Aufräumen / Querschnitt
+✅ G  Label-Rename (Therapieformen)
+✅ H  Auftraggeber: 8 Gruppen-Stundensätze
+✅ I  Therapie: Startdatum + Behandlungs-Validierung
+✅ J  Therapieliste-Tabelle (Geleistete BE)
+✅ K  Behandlung: Sonstiges-Freitext
+✅ L  Behandlungsliste in Schnellerfassung („noch verfügbar" + Edit/Delete)
+✅ M  Erziehungsberechtigte (neue Entity, 0–2 pro Kind)
+✅ N  Direktlink „Rechnung öffnen"
+✅ O  Vorlagen-Verwaltung — Listen-/Auto-Upload-UI
+✅ P  Menü-Eintrag „Schnellerfassung" → „Behandlungen" (inkl. Route-Rename /schnellerfassung → /behandlungen)
+⬜ Q  Aufräumen / Querschnitt  ← NÄCHSTE PHASE
 ```
+
+> **Stand 2026-04-26**: Phasen G–P committed, alle 154 Web-Tests grün.
+> Route `/schnellerfassung` wurde in Phase P ebenfalls auf `/behandlungen` umbenannt
+> (inkl. Redirect in `App.tsx` und `navigate()`-Aufruf in `BehandlungEditPage.tsx`).
 
 Begründung: G und P sind kosmetisch und unabhängig (G zuerst, weil viele
 Folgetests die neuen Labels referenzieren). H, I, K sind voneinander
