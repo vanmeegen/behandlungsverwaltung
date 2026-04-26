@@ -7,11 +7,13 @@ import {
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { observer } from 'mobx-react-lite';
-import type { FormEvent } from 'react';
+import type { FormEvent, InputHTMLAttributes } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
 import type { KindStore } from '../models/KindStore';
@@ -181,6 +183,21 @@ export const TherapieForm = observer(
               </MenuItem>
             ))}
           </TextField>
+
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={draft.gruppentherapie}
+                onChange={(e): void => draft.setGruppentherapie(e.target.checked)}
+                inputProps={
+                  {
+                    'data-testselector': 'therapie-form-gruppentherapie',
+                  } as InputHTMLAttributes<HTMLInputElement>
+                }
+              />
+            }
+            label="Gruppentherapie"
+          />
 
           <Button type="submit" data-testselector="therapie-form-submit">
             Speichern

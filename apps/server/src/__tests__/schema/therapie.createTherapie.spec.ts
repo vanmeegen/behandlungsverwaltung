@@ -14,6 +14,7 @@ const CREATE_THERAPIE = /* GraphQL */ `
       kommentar
       bewilligteBe
       taetigkeit
+      gruppentherapie
     }
   }
 `;
@@ -140,5 +141,25 @@ describe('createTherapie mutation (PRD §2.3, AC-TH-01)', () => {
   it('errors when kindId points at non-existent Kind (FK)', async () => {
     const result = await run(validInput({ kindId: '99999' }));
     expect(result.errors).toBeDefined();
+  });
+
+  it('stores gruppentherapie=false when omitted from input (AC-TH-04)', async () => {
+    const input = validInput();
+    delete input.gruppentherapie;
+    const result = await run(input);
+    expect(result.errors).toBeUndefined();
+    const row = ctx.db.select().from(therapien).all()[0];
+    expect(row?.gruppentherapie).toBe(false);
+    const data = result.data as { createTherapie: { gruppentherapie: boolean } } | null;
+    expect(data?.createTherapie.gruppentherapie).toBe(false);
+  });
+
+  it('stores gruppentherapie=true when explicitly set (AC-TH-04)', async () => {
+    const result = await run(validInput({ gruppentherapie: true }));
+    expect(result.errors).toBeUndefined();
+    const row = ctx.db.select().from(therapien).all()[0];
+    expect(row?.gruppentherapie).toBe(true);
+    const data = result.data as { createTherapie: { gruppentherapie: boolean } } | null;
+    expect(data?.createTherapie.gruppentherapie).toBe(true);
   });
 });

@@ -166,6 +166,7 @@ export interface SeededTherapie {
   kommentar: string | null;
   bewilligteBe: number;
   taetigkeit: SeededTaetigkeit | null;
+  gruppentherapie: boolean;
 }
 
 const THERAPIE_COLUMNS = /* GraphQL */ `
@@ -176,6 +177,7 @@ const THERAPIE_COLUMNS = /* GraphQL */ `
   kommentar
   bewilligteBe
   taetigkeit
+  gruppentherapie
 `;
 
 export async function readTherapien(): Promise<SeededTherapie[]> {
@@ -185,10 +187,18 @@ export async function readTherapien(): Promise<SeededTherapie[]> {
   return data.therapien;
 }
 
-export async function seedTherapie(input: Omit<SeededTherapie, 'id'>): Promise<SeededTherapie> {
+export type SeedTherapieInput = Omit<SeededTherapie, 'id' | 'gruppentherapie'> & {
+  gruppentherapie?: boolean;
+};
+
+export async function seedTherapie(input: SeedTherapieInput): Promise<SeededTherapie> {
+  const payload = {
+    ...input,
+    gruppentherapie: input.gruppentherapie ?? false,
+  };
   const data = await gql<{ createTherapie: SeededTherapie }>(
     /* GraphQL */ `mutation Seed($input: TherapieInput!) { createTherapie(input: $input) { ${THERAPIE_COLUMNS} } }`,
-    { input },
+    { input: payload },
   );
   return data.createTherapie;
 }

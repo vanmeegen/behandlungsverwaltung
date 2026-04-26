@@ -60,10 +60,35 @@ describe('<TherapieForm /> — inputs', () => {
       'therapie-form-form',
       'therapie-form-bewilligteBe',
       'therapie-form-taetigkeit',
+      'therapie-form-gruppentherapie',
     ]) {
       expect(screen.getByTestId(id)).toBeInTheDocument();
     }
     expect(screen.queryByTestId('therapie-form-kommentar')).not.toBeInTheDocument();
+  });
+
+  it('renders Gruppentherapie checkbox unchecked by default (AC-TH-04)', () => {
+    const kStore = new KindStore(vi.fn() as unknown as GraphQLFetcher);
+    const aStore = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    const tStore = new TherapieStore(vi.fn() as unknown as GraphQLFetcher);
+    kStore.items = [anna];
+    aStore.items = [jugendamt];
+    renderForm(tStore, kStore, aStore);
+    const checkbox = screen.getByTestId('therapie-form-gruppentherapie') as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
+  });
+
+  it('toggles draft.gruppentherapie when the checkbox is clicked (AC-TH-04)', () => {
+    const kStore = new KindStore(vi.fn() as unknown as GraphQLFetcher);
+    const aStore = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    const tStore = new TherapieStore(vi.fn() as unknown as GraphQLFetcher);
+    kStore.items = [anna];
+    aStore.items = [jugendamt];
+    renderForm(tStore, kStore, aStore);
+    const checkbox = screen.getByTestId('therapie-form-gruppentherapie') as HTMLInputElement;
+    fireEvent.click(checkbox);
+    expect(tStore.draftTherapie.gruppentherapie).toBe(true);
+    expect(checkbox.checked).toBe(true);
   });
 
   it('shows kommentar input only when form=sonstiges (AC-TH-01 UI echo)', () => {
@@ -145,6 +170,7 @@ describe('<TherapieForm /> — validation', () => {
         kommentar: null,
         bewilligteBe: 60,
         taetigkeit: null,
+        gruppentherapie: false,
       },
     });
     const kStore = new KindStore(vi.fn() as unknown as GraphQLFetcher);
@@ -170,6 +196,7 @@ describe('<TherapieForm /> — validation', () => {
         kommentar: null,
         bewilligteBe: 60,
         taetigkeit: null,
+        gruppentherapie: false,
       },
     });
   });

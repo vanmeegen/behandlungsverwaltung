@@ -125,6 +125,7 @@ describe('db/schema — therapien (PRD §2.3)', () => {
         'bewilligte_be',
         'created_at',
         'form',
+        'gruppentherapie',
         'id',
         'kind_id',
         'kommentar',
@@ -147,6 +148,13 @@ describe('db/schema — therapien (PRD §2.3)', () => {
     const cfg = getTableConfig(therapien);
     expect(cfg.columns.find((c) => c.name === 'kommentar')?.notNull).toBe(false);
     expect(cfg.columns.find((c) => c.name === 'taetigkeit')?.notNull).toBe(false);
+  });
+
+  it('gruppentherapie is NOT NULL with default false (AC-TH-04)', () => {
+    const cfg = getTableConfig(therapien);
+    const col = cfg.columns.find((c) => c.name === 'gruppentherapie');
+    expect(col?.notNull).toBe(true);
+    expect(col?.hasDefault).toBe(true);
   });
 });
 

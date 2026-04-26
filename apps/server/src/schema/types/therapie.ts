@@ -15,6 +15,7 @@ export const TherapieRef = builder.objectRef<Therapie>('Therapie').implement({
       nullable: true,
       resolve: (r) => r.taetigkeit,
     }),
+    gruppentherapie: t.exposeBoolean('gruppentherapie'),
     createdAt: t.string({ resolve: (r) => r.createdAt.toISOString() }),
     updatedAt: t.string({ resolve: (r) => r.updatedAt.toISOString() }),
   }),

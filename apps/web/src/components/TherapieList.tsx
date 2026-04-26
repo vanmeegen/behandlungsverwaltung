@@ -85,6 +85,10 @@ export const TherapieList = observer(
                         </span>
                       </>
                     )}
+                    {' · '}
+                    <span data-testselector={`therapie-row-gruppentherapie-${t.id}`}>
+                      Gruppentherapie: {t.gruppentherapie ? 'Ja' : 'Nein'}
+                    </span>
                   </Box>
                 }
               />

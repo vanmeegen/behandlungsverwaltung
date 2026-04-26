@@ -43,6 +43,7 @@ const lern: Therapie = {
   kommentar: null,
   bewilligteBe: 60,
   taetigkeit: 'lerntherapie',
+  gruppentherapie: false,
 };
 
 const lernOhneThema: Therapie = {
@@ -53,6 +54,7 @@ const lernOhneThema: Therapie = {
   kommentar: null,
   bewilligteBe: 40,
   taetigkeit: null,
+  gruppentherapie: false,
 };
 
 function makeStores(): {

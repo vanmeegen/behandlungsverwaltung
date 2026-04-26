@@ -10,6 +10,7 @@ const lerntherapie: Therapie = {
   kommentar: null,
   bewilligteBe: 60,
   taetigkeit: 'lerntherapie',
+  gruppentherapie: false,
 };
 
 describe('TherapieStore.load', () => {
@@ -33,12 +34,19 @@ describe('TherapieStore.draftTherapie', () => {
     store.draftTherapie.setKommentar('irrelevant');
     store.draftTherapie.setBewilligteBe(60);
     store.draftTherapie.setTaetigkeit('lerntherapie');
+    store.draftTherapie.setGruppentherapie(true);
     expect(store.draftTherapie.kindId).toBe('10');
     expect(store.draftTherapie.auftraggeberId).toBe('20');
     expect(store.draftTherapie.form).toBe('lerntherapie');
     expect(store.draftTherapie.kommentar).toBe('irrelevant');
     expect(store.draftTherapie.bewilligteBe).toBe(60);
     expect(store.draftTherapie.taetigkeit).toBe('lerntherapie');
+    expect(store.draftTherapie.gruppentherapie).toBe(true);
+  });
+
+  it('defaults gruppentherapie to false on a fresh draft (AC-TH-04)', () => {
+    const store = new TherapieStore(vi.fn() as unknown as GraphQLFetcher);
+    expect(store.draftTherapie.gruppentherapie).toBe(false);
   });
 });
 
@@ -70,6 +78,7 @@ describe('TherapieStore.saveDraft', () => {
         kommentar: null,
         bewilligteBe: 60,
         taetigkeit: 'lerntherapie',
+        gruppentherapie: false,
       },
     });
     expect(store.items).toContainEqual(lerntherapie);
@@ -100,5 +109,13 @@ describe('TherapieStore.saveDraft', () => {
     expect(saved).toBeNull();
     expect(fetcher).not.toHaveBeenCalled();
     expect(store.draftTherapie.errors.kindId).toBeDefined();
+  });
+
+  it('sends gruppentherapie=true when the checkbox is set (AC-TH-04)', async () => {
+    fetcher.mockResolvedValue({ createTherapie: { ...lerntherapie, gruppentherapie: true } });
+    store.draftTherapie.setGruppentherapie(true);
+    await store.saveDraft();
+    const [, variables] = fetcher.mock.calls[0] as [string, Record<string, unknown>];
+    expect((variables.input as { gruppentherapie: boolean }).gruppentherapie).toBe(true);
   });
 });

@@ -9,7 +9,16 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import type { GraphQLFetcher } from '../api/graphqlClient';
 
 export type TherapieFieldErrors = Partial<
-  Record<'kindId' | 'auftraggeberId' | 'form' | 'kommentar' | 'bewilligteBe' | 'taetigkeit', string>
+  Record<
+    | 'kindId'
+    | 'auftraggeberId'
+    | 'form'
+    | 'kommentar'
+    | 'bewilligteBe'
+    | 'taetigkeit'
+    | 'gruppentherapie',
+    string
+  >
 >;
 
 export interface Therapie {
@@ -20,6 +29,7 @@ export interface Therapie {
   kommentar: string | null;
   bewilligteBe: number;
   taetigkeit: TaetigkeitValue | null;
+  gruppentherapie: boolean;
 }
 
 export interface TherapieFormInput {
@@ -29,6 +39,7 @@ export interface TherapieFormInput {
   kommentar: string | null;
   bewilligteBe: number;
   taetigkeit: TaetigkeitValue | null;
+  gruppentherapie: boolean;
 }
 
 const THERAPIE_COLUMNS = /* GraphQL */ `
@@ -39,6 +50,7 @@ const THERAPIE_COLUMNS = /* GraphQL */ `
   kommentar
   bewilligteBe
   taetigkeit
+  gruppentherapie
 `;
 
 const THERAPIEN_QUERY = /* GraphQL */ `
@@ -95,6 +107,7 @@ export class TherapieDraft {
   kommentar = '';
   bewilligteBe = 0;
   taetigkeit: TaetigkeitValue | '' = '';
+  gruppentherapie = false;
   errors: TherapieFieldErrors = {};
 
   constructor() {
@@ -119,6 +132,9 @@ export class TherapieDraft {
   setTaetigkeit(v: TaetigkeitValue | ''): void {
     this.taetigkeit = v;
   }
+  setGruppentherapie(v: boolean): void {
+    this.gruppentherapie = v;
+  }
 
   loadFrom(t: Therapie): void {
     this.editingId = t.id;
@@ -128,6 +144,7 @@ export class TherapieDraft {
     this.kommentar = t.kommentar ?? '';
     this.bewilligteBe = t.bewilligteBe;
     this.taetigkeit = t.taetigkeit ?? '';
+    this.gruppentherapie = t.gruppentherapie;
     this.errors = {};
   }
 
@@ -139,6 +156,7 @@ export class TherapieDraft {
     this.kommentar = '';
     this.bewilligteBe = 0;
     this.taetigkeit = '';
+    this.gruppentherapie = false;
     this.errors = {};
   }
 
@@ -150,6 +168,7 @@ export class TherapieDraft {
       kommentar: this.kommentar,
       bewilligteBe: this.bewilligteBe,
       taetigkeit: this.taetigkeit === '' ? null : this.taetigkeit,
+      gruppentherapie: this.gruppentherapie,
     });
     if (!parsed.success) {
       const next: TherapieFieldErrors = {};
@@ -170,6 +189,7 @@ export class TherapieDraft {
       kommentar: parsed.data.kommentar,
       bewilligteBe: parsed.data.bewilligteBe,
       taetigkeit: parsed.data.taetigkeit,
+      gruppentherapie: parsed.data.gruppentherapie,
     };
   }
 }

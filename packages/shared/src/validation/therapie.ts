@@ -45,6 +45,7 @@ export const therapieSchema = z
       .int('Bewilligte Behandlungseinheiten müssen > 0 sein')
       .positive('Bewilligte Behandlungseinheiten müssen > 0 sein'),
     taetigkeit: taetigkeitNullableSchema,
+    gruppentherapie: z.boolean().default(false),
   })
   .superRefine((data, ctx) => {
     if (data.form === 'sonstiges' && !data.kommentar) {

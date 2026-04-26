@@ -14,6 +14,7 @@ export interface TherapieFormFields {
   bewilligteBe: number;
   kommentar?: string;
   taetigkeit?: string;
+  gruppentherapie?: boolean;
 }
 
 export class TherapieFormPage {
@@ -24,6 +25,7 @@ export class TherapieFormPage {
   readonly kommentar: Locator;
   readonly bewilligteBe: Locator;
   readonly taetigkeit: Locator;
+  readonly gruppentherapie: Locator;
   readonly submit: Locator;
 
   constructor(page: Page) {
@@ -34,6 +36,7 @@ export class TherapieFormPage {
     this.kommentar = page.getByTestId('therapie-form-kommentar');
     this.bewilligteBe = page.getByTestId('therapie-form-bewilligteBe');
     this.taetigkeit = page.getByTestId('therapie-form-taetigkeit');
+    this.gruppentherapie = page.getByTestId('therapie-form-gruppentherapie');
     this.submit = page.getByTestId('therapie-form-submit');
   }
 
@@ -55,6 +58,9 @@ export class TherapieFormPage {
     }
     if (fields.form === 'sonstiges' && fields.kommentar !== undefined) {
       await this.kommentar.fill(fields.kommentar);
+    }
+    if (fields.gruppentherapie === true) {
+      await this.gruppentherapie.check();
     }
   }
 

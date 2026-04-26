@@ -12,6 +12,7 @@ const UPDATE_THERAPIE = /* GraphQL */ `
       kommentar
       bewilligteBe
       taetigkeit
+      gruppentherapie
     }
   }
 `;
@@ -108,5 +109,20 @@ describe('updateTherapie mutation (PRD §2.3)', () => {
       bewilligteBe: 60,
     });
     expect(result.errors?.[0]?.extensions?.code).toBe('NOT_FOUND');
+  });
+
+  it('updates gruppentherapie from false to true (AC-TH-04)', async () => {
+    const result = await runUpdate(therapieId, {
+      kindId: String(kindId),
+      auftraggeberId: String(auftraggeberId),
+      form: 'lerntherapie',
+      kommentar: null,
+      bewilligteBe: 60,
+      taetigkeit: 'lerntherapie',
+      gruppentherapie: true,
+    });
+    expect(result.errors).toBeUndefined();
+    const row = ctx.db.select().from(therapien).all()[0];
+    expect(row?.gruppentherapie).toBe(true);
   });
 });

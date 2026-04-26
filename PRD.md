@@ -52,6 +52,9 @@ Auftraggeber. Die PLZ darf in keinem Fall leer gespeichert werden.
   Tätigkeit jeder daraus erfassten Behandlung (§2.4). Auswahlwerte
   sind **alle Therapieformen** (oben) **plus** Elterngespräch ·
   Lehrergespräch · Bericht · Förderplan · Teamberatung.
+- **Gruppentherapie** (Ja/Nein, Default Nein): kennzeichnet die
+  Therapie als Gruppentherapie. Dient als Vorbelegung für die
+  daraus erfassten Behandlungen (§2.4).
 
 ### 2.4 Behandlung (zuvor „Termin", wird durchgängig **Behandlung** genannt)
 
@@ -350,10 +353,12 @@ Testgrundlage (TDD).
 - **AC-TH-03** `[unit]` Given die Therapieform-Auswahl, Then enthält
   sie genau: Dyskalkulietherapie, Lerntherapie, **LRS-Therapie**,
   **Resilienztraining**, Heilpädagogik, Elternberatung, Sonstiges.
-- **AC-TH-04** `[unit]` Given das „Neu"-Formular für eine Therapie,
-  Then ist die Checkbox **Gruppentherapie** verfügbar und mit
-  **false** vorbelegt; der gespeicherte Wert ist persistiert und
-  steht den abhängigen Behandlungen als Vorbelegung zur Verfügung.
+- **AC-TH-04** `[unit][e2e]` Given das Therapie-Formular, Then ist die
+  Checkbox **Gruppentherapie** standardmäßig **nicht angehakt**; When
+  die Therapeutin sie anhakt und speichert, Then wird der Wert
+  persistiert, in der Detailansicht als „Gruppentherapie: Ja"
+  (sonst „Gruppentherapie: Nein") angezeigt und steht den abhängigen
+  Behandlungen als Vorbelegung zur Verfügung (§2.4).
 
 ### Behandlung
 
@@ -794,6 +799,7 @@ Feature: Eine Therapie zwischen Kind und Auftraggeber anlegen
   Scenario: Lerntherapie mit 60 bewilligten BE anlegen
     Given ich öffne die Therapieliste
     When ich auf „Neu" tippe
+    And die Checkbox „Gruppentherapie" ist standardmäßig nicht angehakt
     And ich Kind „Anna Musterfrau" wähle
     And ich Auftraggeber „Jugendamt Köln" wähle
     And ich Therapieform „Lerntherapie" wähle
@@ -945,7 +951,7 @@ Feature: Eine auftraggeber-spezifische PDF-Vorlage entfernen
 | UC-3.4   | —                                                          | Filter- und Download-Flow aus §3.4                                        |
 | UC-3.5   | AC-KIND-01, AC-KIND-02, AC-KIND-03                         | Delete-Flow + Referenz-Schutz (Kind mit Therapie)                         |
 | UC-3.6   | AC-AG-01, AC-AG-02                                         | Update-Flow (Stundensatz), Delete-Flow + Referenz-Schutz                  |
-| UC-3.7   | AC-TH-01, AC-TH-02                                         | Update-Flow (BE, Tätigkeit), Delete-Flow + Referenz-Schutz                |
+| UC-3.7   | AC-TH-01, AC-TH-02, AC-TH-04                               | Update-Flow (BE, Tätigkeit), Delete-Flow + Referenz-Schutz                |
 | UC-3.8   | AC-RECH-12                                                 | Bündel-Download pro Auftraggeber/Monat, Versand-Vermerk (§3.8)            |
 | UC-3.9   | —                                                          | Behandlung bearbeiten / löschen (Abbrechen-Pfad inkl.)                    |
 | UC-3.10  | AC-TPL-01 (Gegenstück)                                     | Auftraggeber-Vorlage entfernen, Fallback greift wieder                    |

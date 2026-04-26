@@ -14,6 +14,7 @@ interface RowValues {
   kommentar: string | null;
   bewilligteBe: number;
   taetigkeit: TherapieInputType['taetigkeit'];
+  gruppentherapie: boolean;
 }
 
 function toRowValues(parsed: TherapieInputType): RowValues {
@@ -24,6 +25,7 @@ function toRowValues(parsed: TherapieInputType): RowValues {
     kommentar: parsed.kommentar,
     bewilligteBe: parsed.bewilligteBe,
     taetigkeit: parsed.taetigkeit,
+    gruppentherapie: parsed.gruppentherapie,
   };
 }
 

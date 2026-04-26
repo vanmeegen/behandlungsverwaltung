@@ -115,4 +115,28 @@ describe('therapieSchema (PRD §2.3, AC-TH-01)', () => {
       expect(result.data.auftraggeberId).toBe('2');
     }
   });
+
+  it('defaults gruppentherapie to false when omitted (AC-TH-04)', () => {
+    const result = therapieSchema.safeParse(baseValid);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.gruppentherapie).toBe(false);
+    }
+  });
+
+  it('round-trips an explicit gruppentherapie=true (AC-TH-04)', () => {
+    const result = therapieSchema.safeParse({ ...baseValid, gruppentherapie: true });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.gruppentherapie).toBe(true);
+    }
+  });
+
+  it('keeps gruppentherapie=false when explicitly provided', () => {
+    const result = therapieSchema.safeParse({ ...baseValid, gruppentherapie: false });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.gruppentherapie).toBe(false);
+    }
+  });
 });

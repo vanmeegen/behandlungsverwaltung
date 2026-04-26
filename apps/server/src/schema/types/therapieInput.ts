@@ -9,5 +9,6 @@ export const TherapieInputRef = builder.inputType('TherapieInput', {
     kommentar: t.string({ required: false }),
     bewilligteBe: t.int({ required: true }),
     taetigkeit: t.field({ type: TaetigkeitEnum, required: false }),
+    gruppentherapie: t.boolean({ required: false }),
   }),
 });

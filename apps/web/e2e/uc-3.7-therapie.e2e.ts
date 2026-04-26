@@ -43,7 +43,7 @@ test.describe('UC-3.7 Therapie erfassen', () => {
     await resetDb();
   });
 
-  test('Szenario 1: Lerntherapie mit 60 BE anlegen (AC-TH-02)', async ({ page }) => {
+  test('Szenario 1: Lerntherapie mit 60 BE anlegen (AC-TH-02, AC-TH-04)', async ({ page }) => {
     const { kind, ag } = await seedBaseEntities();
 
     const listPage = new TherapieListPage(page);
@@ -53,6 +53,9 @@ test.describe('UC-3.7 Therapie erfassen', () => {
     const formPage = new TherapieFormPage(page);
     await listPage.newLink.click();
     await expect(page).toHaveURL(/\/therapien\/new$/);
+
+    // AC-TH-04: Gruppentherapie-Checkbox ist standardmäßig nicht angehakt
+    await expect(formPage.gruppentherapie).not.toBeChecked();
 
     await formPage.fillCore({
       kindId: kind.id,
@@ -75,15 +78,57 @@ test.describe('UC-3.7 Therapie erfassen', () => {
     expect(t.kommentar).toBeNull();
     expect(t.bewilligteBe).toBe(60);
     expect(t.taetigkeit).toBe('lerntherapie');
+    expect(t.gruppentherapie).toBe(false);
+
+    // Detailansicht (Liste) zeigt „Gruppentherapie: Nein"
+    await expect(page.getByTestId(`therapie-row-gruppentherapie-${t.id}`)).toHaveText(
+      'Gruppentherapie: Nein',
+    );
 
     // Dual-parent visibility: appears on both Kind detail and Auftraggeber detail pages
     await page.goto(`/kinder/${kind.id}/detail`);
     await expect(page.getByTestId(`therapie-row-form-${t.id}`)).toHaveText('Lerntherapie');
     await expect(page.getByTestId(`therapie-row-be-${t.id}`)).toHaveText('60 BE');
+    await expect(page.getByTestId(`therapie-row-gruppentherapie-${t.id}`)).toHaveText(
+      'Gruppentherapie: Nein',
+    );
 
     await page.goto(`/auftraggeber/${ag.id}/detail`);
     await expect(page.getByTestId(`therapie-row-form-${t.id}`)).toHaveText('Lerntherapie');
     await expect(page.getByTestId(`therapie-row-be-${t.id}`)).toHaveText('60 BE');
+    await expect(page.getByTestId(`therapie-row-gruppentherapie-${t.id}`)).toHaveText(
+      'Gruppentherapie: Nein',
+    );
+  });
+
+  test('Szenario: Therapie als Gruppentherapie anlegen (AC-TH-04)', async ({ page }) => {
+    const { kind, ag } = await seedBaseEntities();
+
+    const listPage = new TherapieListPage(page);
+    await listPage.goto();
+    const formPage = new TherapieFormPage(page);
+    await listPage.newLink.click();
+
+    await formPage.fillCore({
+      kindId: kind.id,
+      auftraggeberId: ag.id,
+      form: 'lerntherapie',
+      bewilligteBe: 60,
+      taetigkeit: 'lerntherapie',
+      gruppentherapie: true,
+    });
+    await formPage.submitAndWait();
+
+    await expect(listPage.rows).toHaveCount(1);
+
+    const rows = await readTherapien();
+    expect(rows).toHaveLength(1);
+    const t = rows[0]!;
+    expect(t.gruppentherapie).toBe(true);
+
+    await expect(page.getByTestId(`therapie-row-gruppentherapie-${t.id}`)).toHaveText(
+      'Gruppentherapie: Ja',
+    );
   });
 
   test('Szenario Sonstiges-Happy: kommentar persistiert', async ({ page }) => {
