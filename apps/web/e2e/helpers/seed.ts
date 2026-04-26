@@ -189,13 +189,26 @@ export async function readTherapien(): Promise<SeededTherapie[]> {
   return data.therapien;
 }
 
-export type SeedTherapieInput = Omit<SeededTherapie, 'id' | 'gruppentherapie'> & {
+export interface SeedTherapieInput {
+  kindId: string;
+  auftraggeberId: string;
+  form: SeededTherapieForm;
+  bewilligteBe: number;
+  kommentar?: string | null;
+  startdatum?: string;
+  taetigkeit?: SeededTaetigkeit | null;
   gruppentherapie?: boolean;
-};
+}
 
 export async function seedTherapie(input: SeedTherapieInput): Promise<SeededTherapie> {
   const payload = {
-    ...input,
+    kindId: input.kindId,
+    auftraggeberId: input.auftraggeberId,
+    form: input.form,
+    bewilligteBe: input.bewilligteBe,
+    kommentar: input.kommentar ?? null,
+    startdatum: input.startdatum ?? '2026-01-01',
+    taetigkeit: input.taetigkeit ?? null,
     gruppentherapie: input.gruppentherapie ?? false,
   };
   const data = await gql<{ createTherapie: SeededTherapie }>(
@@ -211,6 +224,7 @@ export interface SeededBehandlung {
   datum: string;
   be: number;
   taetigkeit: SeededTaetigkeit | null;
+  sonstigesText: string | null;
   gruppentherapie: boolean;
 }
 
@@ -220,6 +234,7 @@ const BEHANDLUNG_COLUMNS = /* GraphQL */ `
   datum
   be
   taetigkeit
+  sonstigesText
   gruppentherapie
 `;
 
@@ -235,7 +250,8 @@ export async function seedBehandlung(input: {
   therapieId: string;
   datum: string;
   be: number;
-  taetigkeit?: SeededTaetigkeit;
+  taetigkeit?: SeededTaetigkeit | null;
+  sonstigesText?: string | null;
   gruppentherapie?: boolean;
 }): Promise<SeededBehandlung> {
   const data = await gql<{ createBehandlung: SeededBehandlung }>(
@@ -243,6 +259,67 @@ export async function seedBehandlung(input: {
     { input },
   );
   return data.createBehandlung;
+}
+
+export interface SeededErziehungsberechtigter {
+  id: string;
+  kindId: string;
+  slot: number;
+  vorname: string;
+  nachname: string;
+  strasse: string | null;
+  hausnummer: string | null;
+  plz: string | null;
+  stadt: string | null;
+  email1: string | null;
+  telefon1: string | null;
+}
+
+export async function seedErziehungsberechtigter(input: {
+  kindId: string;
+  slot: 1 | 2;
+  vorname: string;
+  nachname: string;
+  strasse?: string | null;
+  hausnummer?: string | null;
+  plz?: string | null;
+  stadt?: string | null;
+  email1?: string | null;
+  telefon1?: string | null;
+}): Promise<SeededErziehungsberechtigter> {
+  const payload = {
+    kindId: input.kindId,
+    slot: input.slot,
+    vorname: input.vorname,
+    nachname: input.nachname,
+    strasse: input.strasse ?? null,
+    hausnummer: input.hausnummer ?? null,
+    plz: input.plz ?? null,
+    stadt: input.stadt ?? null,
+    email1: input.email1 ?? null,
+    telefon1: input.telefon1 ?? null,
+  };
+  const data = await gql<{ createErziehungsberechtigter: SeededErziehungsberechtigter }>(
+    /* GraphQL */ `
+      mutation Seed($input: ErziehungsberechtigterInput!) {
+        createErziehungsberechtigter(input: $input) {
+          id
+          kindId
+          slot
+          vorname
+          nachname
+          strasse
+          hausnummer
+          plz
+          stadt
+          email1
+          telefon1
+        }
+      }
+    `,
+    { input: payload },
+  );
+  return data.createErziehungsberechtigter;
 }
 
 export async function uploadFixtureTemplate(input: {
