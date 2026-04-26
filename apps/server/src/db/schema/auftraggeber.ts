@@ -14,6 +14,8 @@ export const auftraggeber = sqliteTable('auftraggeber', {
   plz: text('plz').notNull(),
   stadt: text('stadt').notNull(),
   stundensatzCents: integer('stundensatz_cents').notNull(),
+  abteilung: text('abteilung'),
+  rechnungskopfText: text('rechnungskopf_text').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .$defaultFn(() => new Date()),

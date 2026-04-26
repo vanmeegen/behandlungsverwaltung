@@ -29,6 +29,7 @@ describe('resolveTemplate (PRD §5, AC-RECH-06 / AC-RECH-07, AC-TPL-02)', () => 
         plz: '51103',
         stadt: 'Köln',
         stundensatzCents: 4500,
+        rechnungskopfText: 'Mein Honorar …:',
       })
       .returning()
       .all();

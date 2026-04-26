@@ -82,6 +82,7 @@ describe('<AuftraggeberForm /> — validation', () => {
       plz: '51103',
       stadt: 'Köln',
       stundensatz: '45,00',
+      rechnungskopfText: 'Mein Honorar …:',
     };
     store.draftAuftraggeber.setTyp('firma');
     for (const [field, v] of Object.entries(values)) {
@@ -156,6 +157,8 @@ describe('<AuftraggeberForm /> — validation', () => {
         plz: '51103',
         stadt: 'Köln',
         stundensatzCents: 4500,
+        abteilung: null,
+        rechnungskopfText: 'Mein Honorar …:',
       },
     });
     const store = new AuftraggeberStore(fetcher as unknown as GraphQLFetcher);
@@ -177,7 +180,81 @@ describe('<AuftraggeberForm /> — validation', () => {
         plz: '51103',
         stadt: 'Köln',
         stundensatzCents: 4500,
+        abteilung: null,
+        rechnungskopfText: 'Mein Honorar …:',
       },
     });
+  });
+});
+
+describe('<AuftraggeberForm /> — Abteilung & Rechnungskopf-Text (AC-AG-04, AC-AG-05)', () => {
+  it('shows the Abteilung field only when typ=firma (AC-AG-04)', () => {
+    const store = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    renderForm(store);
+    act(() => {
+      store.draftAuftraggeber.setTyp('firma');
+    });
+    expect(screen.getByTestId('auftraggeber-form-abteilung')).toBeInTheDocument();
+    act(() => {
+      store.draftAuftraggeber.setTyp('person');
+    });
+    expect(screen.queryByTestId('auftraggeber-form-abteilung')).not.toBeInTheDocument();
+  });
+
+  it('always shows the Rechnungskopf-Text field (AC-AG-05)', () => {
+    const store = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    renderForm(store);
+    act(() => {
+      store.draftAuftraggeber.setTyp('firma');
+    });
+    expect(screen.getByTestId('auftraggeber-form-rechnungskopf')).toBeInTheDocument();
+    act(() => {
+      store.draftAuftraggeber.setTyp('person');
+    });
+    expect(screen.getByTestId('auftraggeber-form-rechnungskopf')).toBeInTheDocument();
+  });
+
+  it('renders the Rechnungskopf-Text field as multiline (textarea)', () => {
+    const store = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    renderForm(store);
+    const field = screen.getByTestId('auftraggeber-form-rechnungskopf');
+    expect(field.tagName).toBe('TEXTAREA');
+  });
+
+  it('shows "Rechnungskopf-Text ist Pflicht" when submit with empty text (AC-AG-05)', () => {
+    const fetcher = vi.fn();
+    const store = new AuftraggeberStore(fetcher as unknown as GraphQLFetcher);
+    // Fill everything but rechnungskopfText
+    store.draftAuftraggeber.setTyp('firma');
+    store.draftAuftraggeber.setFirmenname('Jugendamt Köln');
+    store.draftAuftraggeber.setStrasse('Kalker Hauptstr.');
+    store.draftAuftraggeber.setHausnummer('247-273');
+    store.draftAuftraggeber.setPlz('51103');
+    store.draftAuftraggeber.setStadt('Köln');
+    store.draftAuftraggeber.setStundensatz('45,00');
+    renderForm(store);
+    fireEvent.click(screen.getByTestId('auftraggeber-form-submit'));
+    expect(screen.getByTestId('auftraggeber-form-rechnungskopfText-error')).toHaveTextContent(
+      'Rechnungskopf-Text ist Pflicht',
+    );
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('binds Abteilung input to setter', () => {
+    const store = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    renderForm(store);
+    fireEvent.change(screen.getByTestId('auftraggeber-form-abteilung'), {
+      target: { value: 'Wirtschaftliche Jugendhilfe' },
+    });
+    expect(store.draftAuftraggeber.abteilung).toBe('Wirtschaftliche Jugendhilfe');
+  });
+
+  it('binds Rechnungskopf-Text textarea to setter', () => {
+    const store = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    renderForm(store);
+    fireEvent.change(screen.getByTestId('auftraggeber-form-rechnungskopf'), {
+      target: { value: 'Multi\nLine\nText' },
+    });
+    expect(store.draftAuftraggeber.rechnungskopfText).toBe('Multi\nLine\nText');
   });
 });

@@ -12,5 +12,7 @@ export const AuftraggeberInputRef = builder.inputType('AuftraggeberInput', {
     plz: t.string({ required: true }),
     stadt: t.string({ required: true }),
     stundensatzCents: t.int({ required: true }),
+    abteilung: t.string({ required: false }),
+    rechnungskopfText: t.string({ required: true }),
   }),
 });

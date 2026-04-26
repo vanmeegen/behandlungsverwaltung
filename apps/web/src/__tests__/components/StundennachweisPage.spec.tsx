@@ -30,6 +30,8 @@ const jugendamt: Auftraggeber = {
   plz: '51103',
   stadt: 'Köln',
   stundensatzCents: 4500,
+  abteilung: null,
+  rechnungskopfText: 'Mein Honorar …:',
 };
 
 function renderPage(fetcher: GraphQLFetcher): { stundennachweisStore: StundennachweisStore } {

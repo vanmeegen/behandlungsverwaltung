@@ -63,6 +63,7 @@ describe('auftraggeber query (PRD §2.2, §3.6)', () => {
           plz: '10000',
           stadt: 'Berlin',
           stundensatzCents: 4500,
+          rechnungskopfText: 'Mein Honorar …:',
         },
         {
           typ: 'person',
@@ -73,6 +74,7 @@ describe('auftraggeber query (PRD §2.2, §3.6)', () => {
           plz: '20000',
           stadt: 'Hamburg',
           stundensatzCents: 6000,
+          rechnungskopfText: 'Mein Honorar …:',
         },
         {
           typ: 'firma',
@@ -82,6 +84,7 @@ describe('auftraggeber query (PRD §2.2, §3.6)', () => {
           plz: '51103',
           stadt: 'Köln',
           stundensatzCents: 4500,
+          rechnungskopfText: 'Mein Honorar …:',
         },
       ])
       .run();

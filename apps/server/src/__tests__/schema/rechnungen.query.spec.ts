@@ -80,6 +80,7 @@ describe('rechnungen query (PRD §3.4, UC-3.4)', () => {
           plz: '51103',
           stadt: 'Köln',
           stundensatzCents: 4500,
+          rechnungskopfText: 'Mein Honorar …:',
         },
         {
           typ: 'person',
@@ -90,6 +91,7 @@ describe('rechnungen query (PRD §3.4, UC-3.4)', () => {
           plz: '50667',
           stadt: 'Köln',
           stundensatzCents: 5000,
+          rechnungskopfText: 'Mein Honorar …:',
         },
       ])
       .returning()

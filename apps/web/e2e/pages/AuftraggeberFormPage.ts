@@ -12,6 +12,8 @@ export interface AuftraggeberFormFields {
   plz: string;
   stadt: string;
   stundensatz: string;
+  abteilung?: string;
+  rechnungskopfText?: string;
 }
 
 const TEXT_FIELD_IDS = {
@@ -23,6 +25,8 @@ const TEXT_FIELD_IDS = {
   plz: 'auftraggeber-form-plz',
   stadt: 'auftraggeber-form-stadt',
   stundensatz: 'auftraggeber-form-stundensatz',
+  abteilung: 'auftraggeber-form-abteilung',
+  rechnungskopfText: 'auftraggeber-form-rechnungskopf',
 } as const;
 
 export type TextField = keyof typeof TEXT_FIELD_IDS;
@@ -36,6 +40,8 @@ const ERROR_FIELDS: Record<TextField, string> = {
   plz: 'plz',
   stadt: 'stadt',
   stundensatz: 'stundensatzCents',
+  abteilung: 'abteilung',
+  rechnungskopfText: 'rechnungskopfText',
 };
 
 export class AuftraggeberFormPage {

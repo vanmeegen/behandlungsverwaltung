@@ -13,6 +13,8 @@ const firma: Auftraggeber = {
   plz: '51103',
   stadt: 'Köln',
   stundensatzCents: 4500,
+  abteilung: null,
+  rechnungskopfText: 'Mein Honorar …:',
 };
 
 const person: Auftraggeber = {
@@ -26,6 +28,8 @@ const person: Auftraggeber = {
   plz: '50667',
   stadt: 'Köln',
   stundensatzCents: 6000,
+  abteilung: null,
+  rechnungskopfText: 'Mein Honorar …:',
 };
 
 function makeFetcher(map: Record<string, unknown>): GraphQLFetcher {
@@ -108,6 +112,7 @@ describe('AuftraggeberStore.saveDraft — Firma', () => {
     store.draftAuftraggeber.setPlz('51103');
     store.draftAuftraggeber.setStadt('Köln');
     store.draftAuftraggeber.setStundensatz('45,00');
+    store.draftAuftraggeber.setRechnungskopfText('Mein Honorar …:');
   });
 
   it('dispatches createAuftraggeber with stundensatzCents=4500 and null vorname/nachname', async () => {
@@ -127,6 +132,8 @@ describe('AuftraggeberStore.saveDraft — Firma', () => {
         plz: '51103',
         stadt: 'Köln',
         stundensatzCents: 4500,
+        abteilung: null,
+        rechnungskopfText: 'Mein Honorar …:',
       },
     });
     expect(store.items).toContainEqual(firma);
@@ -153,6 +160,7 @@ describe('AuftraggeberStore.saveDraft — Person', () => {
     store.draftAuftraggeber.setPlz('50667');
     store.draftAuftraggeber.setStadt('Köln');
     store.draftAuftraggeber.setStundensatz('60,00');
+    store.draftAuftraggeber.setRechnungskopfText('Mein Honorar …:');
 
     await store.saveDraft();
     expect(fetcher).toHaveBeenCalledTimes(1);
@@ -168,6 +176,8 @@ describe('AuftraggeberStore.saveDraft — Person', () => {
         plz: '50667',
         stadt: 'Köln',
         stundensatzCents: 6000,
+        abteilung: null,
+        rechnungskopfText: 'Mein Honorar …:',
       },
     });
   });
@@ -181,10 +191,88 @@ describe('AuftraggeberStore.saveDraft — Person', () => {
     store.draftAuftraggeber.setPlz('50667');
     store.draftAuftraggeber.setStadt('Köln');
     store.draftAuftraggeber.setStundensatz('45,00');
+    store.draftAuftraggeber.setRechnungskopfText('Mein Honorar …:');
 
     const saved = await store.saveDraft();
     expect(saved).toBeNull();
     expect(fetcher).not.toHaveBeenCalled();
     expect(store.draftAuftraggeber.errors.vorname).toBe('Vor- und Nachname Pflicht');
+  });
+});
+
+describe('AuftraggeberStore.draftAuftraggeber — Abteilung & Rechnungskopf-Text (AC-AG-04, AC-AG-05)', () => {
+  it('exposes setAbteilung/setRechnungskopfText that mutate the observable', () => {
+    const store = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    store.draftAuftraggeber.setAbteilung('Wirtschaftliche Jugendhilfe');
+    store.draftAuftraggeber.setRechnungskopfText('Multi\nLine');
+    expect(store.draftAuftraggeber.abteilung).toBe('Wirtschaftliche Jugendhilfe');
+    expect(store.draftAuftraggeber.rechnungskopfText).toBe('Multi\nLine');
+  });
+
+  it('reset() clears abteilung and rechnungskopfText', () => {
+    const store = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    store.draftAuftraggeber.setAbteilung('X');
+    store.draftAuftraggeber.setRechnungskopfText('Y');
+    store.draftAuftraggeber.reset();
+    expect(store.draftAuftraggeber.abteilung).toBe('');
+    expect(store.draftAuftraggeber.rechnungskopfText).toBe('');
+  });
+
+  it('refuses to submit Firma without rechnungskopfText (AC-AG-05)', async () => {
+    const fetcher = vi.fn();
+    const store = new AuftraggeberStore(fetcher as unknown as GraphQLFetcher);
+    store.draftAuftraggeber.setTyp('firma');
+    store.draftAuftraggeber.setFirmenname('Jugendamt Köln');
+    store.draftAuftraggeber.setStrasse('Kalker Hauptstr.');
+    store.draftAuftraggeber.setHausnummer('247-273');
+    store.draftAuftraggeber.setPlz('51103');
+    store.draftAuftraggeber.setStadt('Köln');
+    store.draftAuftraggeber.setStundensatz('45,00');
+
+    const saved = await store.saveDraft();
+    expect(saved).toBeNull();
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(store.draftAuftraggeber.errors.rechnungskopfText).toBe('Rechnungskopf-Text ist Pflicht');
+  });
+
+  it('passes abteilung through on submit when typ=firma (AC-AG-04)', async () => {
+    const fetcher = vi.fn().mockResolvedValue({
+      createAuftraggeber: { ...firma, abteilung: 'Wirtschaftliche Jugendhilfe' },
+    });
+    const store = new AuftraggeberStore(fetcher as unknown as GraphQLFetcher);
+    store.draftAuftraggeber.setTyp('firma');
+    store.draftAuftraggeber.setFirmenname('Jugendamt Köln');
+    store.draftAuftraggeber.setStrasse('Kalker Hauptstr.');
+    store.draftAuftraggeber.setHausnummer('247-273');
+    store.draftAuftraggeber.setPlz('51103');
+    store.draftAuftraggeber.setStadt('Köln');
+    store.draftAuftraggeber.setStundensatz('45,00');
+    store.draftAuftraggeber.setAbteilung('Wirtschaftliche Jugendhilfe');
+    store.draftAuftraggeber.setRechnungskopfText('Mein Honorar …:');
+
+    await store.saveDraft();
+    const [, variables] = fetcher.mock.calls[0] as [string, Record<string, unknown>];
+    expect((variables.input as Record<string, unknown>).abteilung).toBe(
+      'Wirtschaftliche Jugendhilfe',
+    );
+  });
+
+  it('drops abteilung when typ=person (AC-AG-04)', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ createAuftraggeber: person });
+    const store = new AuftraggeberStore(fetcher as unknown as GraphQLFetcher);
+    store.draftAuftraggeber.setTyp('person');
+    store.draftAuftraggeber.setVorname('Petra');
+    store.draftAuftraggeber.setNachname('Privatzahlerin');
+    store.draftAuftraggeber.setStrasse('Lindenallee');
+    store.draftAuftraggeber.setHausnummer('7');
+    store.draftAuftraggeber.setPlz('50667');
+    store.draftAuftraggeber.setStadt('Köln');
+    store.draftAuftraggeber.setStundensatz('60,00');
+    store.draftAuftraggeber.setAbteilung('Wird ignoriert');
+    store.draftAuftraggeber.setRechnungskopfText('Mein Honorar …:');
+
+    await store.saveDraft();
+    const [, variables] = fetcher.mock.calls[0] as [string, Record<string, unknown>];
+    expect((variables.input as Record<string, unknown>).abteilung).toBeNull();
   });
 });

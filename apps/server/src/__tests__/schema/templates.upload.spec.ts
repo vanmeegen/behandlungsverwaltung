@@ -40,6 +40,7 @@ describe('uploadTemplate mutation (PRD §5, AC-TPL-01)', () => {
         plz: '51103',
         stadt: 'Köln',
         stundensatzCents: 4500,
+        rechnungskopfText: 'Mein Honorar …:',
       })
       .returning()
       .all();

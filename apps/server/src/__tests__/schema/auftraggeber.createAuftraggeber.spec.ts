@@ -17,6 +17,8 @@ const CREATE_AUFTRAGGEBER = /* GraphQL */ `
       plz
       stadt
       stundensatzCents
+      abteilung
+      rechnungskopfText
     }
   }
 `;
@@ -29,6 +31,7 @@ const validFirma = {
   plz: '51103',
   stadt: 'Köln',
   stundensatzCents: 4500,
+  rechnungskopfText: 'Mein Honorar für die Teilmaßnahme … betrug im Monat …:',
 };
 
 const validPerson = {
@@ -40,6 +43,7 @@ const validPerson = {
   plz: '50667',
   stadt: 'Köln',
   stundensatzCents: 6000,
+  rechnungskopfText: 'Mein Honorar für die Teilmaßnahme … betrug im Monat …:',
 };
 
 describe('createAuftraggeber mutation (PRD §2.2, AC-AG-01/02/03)', () => {
@@ -156,6 +160,55 @@ describe('createAuftraggeber mutation (PRD §2.2, AC-AG-01/02/03)', () => {
       expect(row?.plz).toBe('51103');
       expect(row?.stadt).toBe('Köln');
       expect(row?.stundensatzCents).toBe(4500);
+    });
+
+    it('creates a Firma with abteilung and rechnungskopfText (AC-AG-04, AC-AG-05)', async () => {
+      const result = await run({
+        ...validFirma,
+        abteilung: 'Wirtschaftliche Jugendhilfe',
+        rechnungskopfText: 'Mein Honorar für …:',
+      });
+      expect(result.errors).toBeUndefined();
+      const created = (result.data as { createAuftraggeber: Record<string, unknown> } | null)
+        ?.createAuftraggeber;
+      expect(created?.abteilung).toBe('Wirtschaftliche Jugendhilfe');
+      expect(created?.rechnungskopfText).toBe('Mein Honorar für …:');
+
+      const rows = ctx.db.select().from(auftraggeber).all();
+      expect(rows[0]?.abteilung).toBe('Wirtschaftliche Jugendhilfe');
+      expect(rows[0]?.rechnungskopfText).toBe('Mein Honorar für …:');
+    });
+
+    it('persists abteilung=null when omitted on Firma (AC-AG-04)', async () => {
+      const result = await run(validFirma);
+      expect(result.errors).toBeUndefined();
+      const rows = ctx.db.select().from(auftraggeber).all();
+      expect(rows[0]?.abteilung).toBeNull();
+    });
+
+    it('rejects creating an Auftraggeber with empty rechnungskopfText (AC-AG-05)', async () => {
+      const result = await run({ ...validFirma, rechnungskopfText: '' });
+      expect(result.errors).toBeDefined();
+      expect(result.errors?.[0]?.message).toBe('Rechnungskopf-Text ist Pflicht');
+      expect(result.errors?.[0]?.extensions?.code).toBe('VALIDATION_ERROR');
+      const rows = ctx.db.select().from(auftraggeber).all();
+      expect(rows).toHaveLength(0);
+    });
+
+    it('rejects a whitespace-only rechnungskopfText (AC-AG-05)', async () => {
+      const result = await run({ ...validFirma, rechnungskopfText: '   ' });
+      expect(result.errors).toBeDefined();
+      expect(result.errors?.[0]?.message).toBe('Rechnungskopf-Text ist Pflicht');
+    });
+
+    it('creates a Person with rechnungskopfText (AC-AG-05)', async () => {
+      const result = await run(validPerson);
+      expect(result.errors).toBeUndefined();
+      const rows = ctx.db.select().from(auftraggeber).all();
+      expect(rows[0]?.rechnungskopfText).toBe(
+        'Mein Honorar für die Teilmaßnahme … betrug im Monat …:',
+      );
+      expect(rows[0]?.abteilung).toBeNull();
     });
 
     it('creates a Person with vorname+nachname (no firmenname)', async () => {

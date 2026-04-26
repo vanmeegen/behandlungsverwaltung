@@ -55,6 +55,7 @@ describe('createMonatsrechnung (AC-RECH-01, AC-RECH-05, AC-RECH-09)', () => {
         plz: '51103',
         stadt: 'Köln',
         stundensatzCents: 4500,
+        rechnungskopfText: 'Mein Honorar …:',
       })
       .returning()
       .all();

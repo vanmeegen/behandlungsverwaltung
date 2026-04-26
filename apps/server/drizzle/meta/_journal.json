@@ -29,6 +29,13 @@
       "when": 1776799915446,
       "tag": "0003_add_rechnungsdatum",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1777198532281,
+      "tag": "0004_lean_wendigo",
+      "breakpoints": true
     }
   ]
 }

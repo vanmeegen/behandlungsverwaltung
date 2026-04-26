@@ -46,6 +46,7 @@ describe('behandlungenByTherapie query (PRD §2.4)', () => {
         plz: '51103',
         stadt: 'Köln',
         stundensatzCents: 4500,
+        rechnungskopfText: 'Mein Honorar …:',
       })
       .returning()
       .all();

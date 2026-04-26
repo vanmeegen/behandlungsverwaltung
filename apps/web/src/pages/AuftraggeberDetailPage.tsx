@@ -42,6 +42,31 @@ export const AuftraggeberDetailPage = observer(
           )}
           {!ag && 'Auftraggeber'}
         </Typography>
+        {ag?.typ === 'firma' && ag.abteilung && (
+          <Typography
+            variant="subtitle1"
+            sx={{ mb: 2 }}
+            data-testselector="auftraggeber-detail-abteilung"
+          >
+            {ag.abteilung}
+          </Typography>
+        )}
+        {ag && (
+          <Card variant="outlined" sx={{ mb: 2 }}>
+            <CardContent>
+              <Typography variant="h6" component="h2" sx={{ mb: 1 }}>
+                Rechnungskopf-Text
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{ whiteSpace: 'pre-wrap' }}
+                data-testselector="auftraggeber-detail-rechnungskopf"
+              >
+                {ag.rechnungskopfText}
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
         <Card variant="outlined">
           <CardContent>
             <Typography variant="h6" component="h2" sx={{ mb: 1 }}>

@@ -17,6 +17,8 @@ const UPDATE_AUFTRAGGEBER = /* GraphQL */ `
       plz
       stadt
       stundensatzCents
+      abteilung
+      rechnungskopfText
     }
   }
 `;
@@ -31,6 +33,8 @@ const seedFirma = {
   plz: '51103',
   stadt: 'Köln',
   stundensatzCents: 4500,
+  abteilung: null,
+  rechnungskopfText: 'Mein Honorar für …:',
 };
 
 const inputShape = {
@@ -41,6 +45,7 @@ const inputShape = {
   plz: '51103',
   stadt: 'Köln',
   stundensatzCents: 4500,
+  rechnungskopfText: 'Mein Honorar für …:',
 };
 
 describe('updateAuftraggeber mutation (PRD §2.2)', () => {
@@ -88,6 +93,7 @@ describe('updateAuftraggeber mutation (PRD §2.2)', () => {
       plz: '50667',
       stadt: 'Köln',
       stundensatzCents: 6000,
+      rechnungskopfText: 'Mein Honorar …:',
     });
     expect(result.errors).toBeUndefined();
     const rows = ctx.db.select().from(auftraggeber).all();
@@ -95,6 +101,25 @@ describe('updateAuftraggeber mutation (PRD §2.2)', () => {
     expect(rows[0]?.vorname).toBe('Petra');
     expect(rows[0]?.nachname).toBe('Privatzahlerin');
     expect(rows[0]?.firmenname).toBeNull();
+    expect(rows[0]?.abteilung).toBeNull();
+  });
+
+  it('updates abteilung and rechnungskopfText round-trip (AC-AG-04, AC-AG-05)', async () => {
+    const result = await runUpdate(agId, {
+      ...inputShape,
+      abteilung: 'Abteilung X',
+      rechnungskopfText: 'Neuer Kopftext',
+    });
+    expect(result.errors).toBeUndefined();
+    const rows = ctx.db.select().from(auftraggeber).all();
+    expect(rows[0]?.abteilung).toBe('Abteilung X');
+    expect(rows[0]?.rechnungskopfText).toBe('Neuer Kopftext');
+  });
+
+  it('rejects update with empty rechnungskopfText (AC-AG-05)', async () => {
+    const result = await runUpdate(agId, { ...inputShape, rechnungskopfText: '' });
+    expect(result.errors).toBeDefined();
+    expect(result.errors?.[0]?.message).toBe('Rechnungskopf-Text ist Pflicht');
   });
 
   it('rejects an update with invalid plz', async () => {

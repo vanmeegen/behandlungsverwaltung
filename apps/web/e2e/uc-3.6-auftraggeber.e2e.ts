@@ -6,11 +6,13 @@ import { AuftraggeberListPage } from './pages/AuftraggeberListPage';
 const jugendamt = {
   typ: 'firma' as const,
   firmenname: 'Jugendamt Köln',
+  abteilung: 'Wirtschaftliche Jugendhilfe',
   strasse: 'Kalker Hauptstr.',
   hausnummer: '247-273',
   plz: '51103',
   stadt: 'Köln',
   stundensatz: '45,00',
+  rechnungskopfText: 'Mein Honorar für die Teilmaßnahme Lerntherapie betrug im Monat April 2026:',
 };
 
 const petra = {
@@ -22,6 +24,7 @@ const petra = {
   plz: '50667',
   stadt: 'Köln',
   stundensatz: '60,00',
+  rechnungskopfText: 'Mein Honorar für die Teilmaßnahme Lerntherapie betrug im Monat April 2026:',
 };
 
 test.describe('UC-3.6 Auftraggeber erfassen', () => {
@@ -29,7 +32,9 @@ test.describe('UC-3.6 Auftraggeber erfassen', () => {
     await resetDb();
   });
 
-  test('Szenario 1: Firma anlegen (AC-AG-01)', async ({ page }) => {
+  test('Szenario 1: Firma anlegen mit Abteilung und Rechnungskopf-Text (AC-AG-01, AC-AG-04, AC-AG-05)', async ({
+    page,
+  }) => {
     const listPage = new AuftraggeberListPage(page);
     await listPage.goto();
     await expect(listPage.emptyState).toBeVisible();
@@ -56,13 +61,48 @@ test.describe('UC-3.6 Auftraggeber erfassen', () => {
     expect(created.plz).toBe('51103');
     expect(created.stadt).toBe('Köln');
     expect(created.stundensatzCents).toBe(4500);
+    expect(created.abteilung).toBe('Wirtschaftliche Jugendhilfe');
+    expect(created.rechnungskopfText).toBe(
+      'Mein Honorar für die Teilmaßnahme Lerntherapie betrug im Monat April 2026:',
+    );
 
     await expect(listPage.firmennameCellFor(created.id)).toHaveText('Jugendamt Köln');
 
     await listPage.editLinkFor(created.id).click();
     await expect(formPage.input('firmenname')).toHaveValue('Jugendamt Köln');
+    await expect(formPage.input('abteilung')).toHaveValue('Wirtschaftliche Jugendhilfe');
+    await expect(formPage.input('rechnungskopfText')).toHaveValue(
+      'Mein Honorar für die Teilmaßnahme Lerntherapie betrug im Monat April 2026:',
+    );
     await expect(page.getByTestId('auftraggeber-form-vorname')).toHaveCount(0);
     await expect(page.getByTestId('auftraggeber-form-nachname')).toHaveCount(0);
+  });
+
+  test('Szenario: Auftraggeber ohne Rechnungskopf-Text wird nicht gespeichert (AC-AG-05)', async ({
+    page,
+  }) => {
+    const listPage = new AuftraggeberListPage(page);
+    await listPage.goto();
+
+    const formPage = new AuftraggeberFormPage(page);
+    await listPage.newLink.click();
+
+    await formPage.chooseTyp('firma');
+    await formPage.input('firmenname').fill('Jugendamt Köln');
+    await formPage.input('strasse').fill('Kalker Hauptstr.');
+    await formPage.input('hausnummer').fill('247-273');
+    await formPage.input('plz').fill('51103');
+    await formPage.input('stadt').fill('Köln');
+    await formPage.input('stundensatz').fill('45,00');
+    // Bewusst KEIN rechnungskopfText
+    await formPage.submitAndWait();
+
+    await expect(formPage.errorFor('rechnungskopfText')).toHaveText(
+      'Rechnungskopf-Text ist Pflicht',
+    );
+
+    const rows = await readAuftraggeber();
+    expect(rows).toEqual([]);
   });
 
   test('Szenario Person-Happy: vorname/nachname persistieren, firmenname=null', async ({
@@ -115,6 +155,7 @@ test.describe('UC-3.6 Auftraggeber erfassen', () => {
     await formPage.input('plz').fill('50667');
     await formPage.input('stadt').fill('Köln');
     await formPage.input('stundensatz').fill('45,00');
+    await formPage.input('rechnungskopfText').fill('Mein Honorar …:');
     await formPage.submitAndWait();
 
     await expect(formPage.errorFor('vorname')).toHaveText('Vor- und Nachname Pflicht');

@@ -17,6 +17,8 @@ interface RowValues {
   plz: string;
   stadt: string;
   stundensatzCents: number;
+  abteilung: string | null;
+  rechnungskopfText: string;
 }
 
 function toRowValues(parsed: AuftraggeberInputType): RowValues {
@@ -31,6 +33,8 @@ function toRowValues(parsed: AuftraggeberInputType): RowValues {
       plz: parsed.plz,
       stadt: parsed.stadt,
       stundensatzCents: parsed.stundensatzCents,
+      abteilung: parsed.abteilung,
+      rechnungskopfText: parsed.rechnungskopfText,
     };
   }
   return {
@@ -43,6 +47,8 @@ function toRowValues(parsed: AuftraggeberInputType): RowValues {
     plz: parsed.plz,
     stadt: parsed.stadt,
     stundensatzCents: parsed.stundensatzCents,
+    abteilung: null,
+    rechnungskopfText: parsed.rechnungskopfText,
   };
 }
 

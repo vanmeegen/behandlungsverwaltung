@@ -42,6 +42,8 @@ const jugendamt: Auftraggeber = {
   plz: '51103',
   stadt: 'Köln',
   stundensatzCents: 4500,
+  abteilung: null,
+  rechnungskopfText: 'Mein Honorar …:',
 };
 
 const r1: Rechnung = {

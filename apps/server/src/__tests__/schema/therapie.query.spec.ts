@@ -82,6 +82,7 @@ describe('therapien queries (PRD §3.7)', () => {
         plz: '51103',
         stadt: 'Köln',
         stundensatzCents: 4500,
+        rechnungskopfText: 'Mein Honorar …:',
       })
       .returning()
       .all();
@@ -96,6 +97,7 @@ describe('therapien queries (PRD §3.7)', () => {
         plz: '10000',
         stadt: 'Berlin',
         stundensatzCents: 5000,
+        rechnungskopfText: 'Mein Honorar …:',
       })
       .returning()
       .all();

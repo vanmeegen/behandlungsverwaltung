@@ -16,6 +16,8 @@ const firma: Auftraggeber = {
   plz: '51103',
   stadt: 'Köln',
   stundensatzCents: 4500,
+  abteilung: null,
+  rechnungskopfText: 'Mein Honorar …:',
 };
 
 const person: Auftraggeber = {
@@ -29,6 +31,8 @@ const person: Auftraggeber = {
   plz: '50667',
   stadt: 'Köln',
   stundensatzCents: 6000,
+  abteilung: null,
+  rechnungskopfText: 'Mein Honorar …:',
 };
 
 function renderList(store: AuftraggeberStore): ReturnType<typeof render> {

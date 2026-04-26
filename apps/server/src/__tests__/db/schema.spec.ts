@@ -76,12 +76,14 @@ describe('db/schema — auftraggeber (PRD §2.2)', () => {
   it('has the expected columns', () => {
     expect(columnNames(auftraggeber)).toEqual(
       [
+        'abteilung',
         'created_at',
         'firmenname',
         'hausnummer',
         'id',
         'nachname',
         'plz',
+        'rechnungskopf_text',
         'stadt',
         'strasse',
         'stundensatz_cents',

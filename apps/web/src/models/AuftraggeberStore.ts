@@ -23,6 +23,8 @@ export interface Auftraggeber {
   plz: string;
   stadt: string;
   stundensatzCents: number;
+  abteilung: string | null;
+  rechnungskopfText: string;
 }
 
 export interface AuftraggeberFormInput {
@@ -35,6 +37,8 @@ export interface AuftraggeberFormInput {
   plz: string;
   stadt: string;
   stundensatzCents: number;
+  abteilung: string | null;
+  rechnungskopfText: string;
 }
 
 const AUFTRAGGEBER_QUERY = /* GraphQL */ `
@@ -50,6 +54,8 @@ const AUFTRAGGEBER_QUERY = /* GraphQL */ `
       plz
       stadt
       stundensatzCents
+      abteilung
+      rechnungskopfText
     }
   }
 `;
@@ -67,6 +73,8 @@ const CREATE_AUFTRAGGEBER = /* GraphQL */ `
       plz
       stadt
       stundensatzCents
+      abteilung
+      rechnungskopfText
     }
   }
 `;
@@ -84,6 +92,8 @@ const UPDATE_AUFTRAGGEBER = /* GraphQL */ `
       plz
       stadt
       stundensatzCents
+      abteilung
+      rechnungskopfText
     }
   }
 `;
@@ -111,6 +121,8 @@ export class AuftraggeberDraft {
   plz = '';
   stadt = '';
   stundensatz = '';
+  abteilung = '';
+  rechnungskopfText = '';
   errors: AuftraggeberFieldErrors = {};
 
   constructor() {
@@ -126,15 +138,18 @@ export class AuftraggeberDraft {
       plz: this.plz,
       stadt: this.stadt,
       stundensatzCents: stundensatzCents ?? 0,
+      rechnungskopfText: this.rechnungskopfText,
     };
     if (this.typ === 'firma') {
       draftInput.firmenname = this.firmenname;
       draftInput.vorname = null;
       draftInput.nachname = null;
+      draftInput.abteilung = this.abteilung;
     } else {
       draftInput.firmenname = null;
       draftInput.vorname = this.vorname;
       draftInput.nachname = this.nachname;
+      draftInput.abteilung = null;
     }
 
     const result = auftraggeberSchema.safeParse(draftInput);
@@ -155,6 +170,8 @@ export class AuftraggeberDraft {
       return null;
     }
     this.errors = {};
+    const trimmedAbteilung =
+      this.typ === 'firma' && this.abteilung.trim().length > 0 ? this.abteilung.trim() : null;
     return {
       typ: this.typ,
       firmenname: this.typ === 'firma' ? this.firmenname : null,
@@ -165,6 +182,8 @@ export class AuftraggeberDraft {
       plz: this.plz,
       stadt: this.stadt,
       stundensatzCents: stundensatzCents!,
+      abteilung: trimmedAbteilung,
+      rechnungskopfText: this.rechnungskopfText.trim(),
     };
   }
 
@@ -195,6 +214,12 @@ export class AuftraggeberDraft {
   setStundensatz(v: string): void {
     this.stundensatz = v;
   }
+  setAbteilung(v: string): void {
+    this.abteilung = v;
+  }
+  setRechnungskopfText(v: string): void {
+    this.rechnungskopfText = v;
+  }
 
   loadFrom(ag: Auftraggeber): void {
     this.editingId = ag.id;
@@ -207,6 +232,8 @@ export class AuftraggeberDraft {
     this.plz = ag.plz;
     this.stadt = ag.stadt;
     this.stundensatz = formatCentsAsEuroInput(ag.stundensatzCents);
+    this.abteilung = ag.abteilung ?? '';
+    this.rechnungskopfText = ag.rechnungskopfText;
     this.errors = {};
   }
 
@@ -221,6 +248,8 @@ export class AuftraggeberDraft {
     this.plz = '';
     this.stadt = '';
     this.stundensatz = '';
+    this.abteilung = '';
+    this.rechnungskopfText = '';
     this.errors = {};
   }
 }

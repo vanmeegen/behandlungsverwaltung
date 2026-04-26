@@ -14,6 +14,8 @@ export const AuftraggeberRef = builder.objectRef<Auftraggeber>('Auftraggeber').i
     plz: t.exposeString('plz'),
     stadt: t.exposeString('stadt'),
     stundensatzCents: t.exposeInt('stundensatzCents'),
+    abteilung: t.exposeString('abteilung', { nullable: true }),
+    rechnungskopfText: t.exposeString('rechnungskopfText'),
     createdAt: t.string({ resolve: (a) => a.createdAt.toISOString() }),
     updatedAt: t.string({ resolve: (a) => a.updatedAt.toISOString() }),
   }),

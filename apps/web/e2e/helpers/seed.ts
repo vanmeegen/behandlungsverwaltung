@@ -78,6 +78,8 @@ export interface SeededAuftraggeber {
   plz: string;
   stadt: string;
   stundensatzCents: number;
+  abteilung: string | null;
+  rechnungskopfText: string;
 }
 
 const AUFTRAGGEBER_COLUMNS = /* GraphQL */ `
@@ -91,6 +93,8 @@ const AUFTRAGGEBER_COLUMNS = /* GraphQL */ `
   plz
   stadt
   stundensatzCents
+  abteilung
+  rechnungskopfText
 `;
 
 export async function readAuftraggeber(): Promise<SeededAuftraggeber[]> {
@@ -100,12 +104,39 @@ export async function readAuftraggeber(): Promise<SeededAuftraggeber[]> {
   return data.auftraggeber;
 }
 
-export async function seedAuftraggeber(
-  input: Omit<SeededAuftraggeber, 'id'>,
-): Promise<SeededAuftraggeber> {
+export interface SeedAuftraggeberInput {
+  typ: SeededAuftraggeberTyp;
+  firmenname?: string | null;
+  vorname?: string | null;
+  nachname?: string | null;
+  strasse: string;
+  hausnummer: string;
+  plz: string;
+  stadt: string;
+  stundensatzCents: number;
+  abteilung?: string | null;
+  rechnungskopfText?: string;
+}
+
+const DEFAULT_RECHNUNGSKOPF = 'Test Rechnungskopf';
+
+export async function seedAuftraggeber(input: SeedAuftraggeberInput): Promise<SeededAuftraggeber> {
+  const payload = {
+    firmenname: input.firmenname ?? null,
+    vorname: input.vorname ?? null,
+    nachname: input.nachname ?? null,
+    abteilung: input.abteilung ?? null,
+    rechnungskopfText: input.rechnungskopfText ?? DEFAULT_RECHNUNGSKOPF,
+    typ: input.typ,
+    strasse: input.strasse,
+    hausnummer: input.hausnummer,
+    plz: input.plz,
+    stadt: input.stadt,
+    stundensatzCents: input.stundensatzCents,
+  };
   const data = await gql<{ createAuftraggeber: SeededAuftraggeber }>(
     /* GraphQL */ `mutation Seed($input: AuftraggeberInput!) { createAuftraggeber(input: $input) { ${AUFTRAGGEBER_COLUMNS} } }`,
-    { input },
+    { input: payload },
   );
   return data.createAuftraggeber;
 }

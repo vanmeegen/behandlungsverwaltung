@@ -50,6 +50,7 @@ describe('createTherapie mutation (PRD §2.3, AC-TH-01)', () => {
         plz: '51103',
         stadt: 'Köln',
         stundensatzCents: 4500,
+        rechnungskopfText: 'Mein Honorar …:',
       })
       .returning()
       .all();

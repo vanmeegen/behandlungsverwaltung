@@ -52,7 +52,7 @@ export const AuftraggeberForm = observer(
 
     const makeHandler =
       (setter: (value: string) => void) =>
-      (event: ChangeEvent<HTMLInputElement>): void => {
+      (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
         setter(event.target.value);
       };
 
@@ -96,13 +96,21 @@ export const AuftraggeberForm = observer(
           </FormControl>
 
           {draft.typ === 'firma' && (
-            <TextField
-              label="Firmenname"
-              value={draft.firmenname}
-              onChange={makeHandler(draft.setFirmenname)}
-              inputProps={{ 'data-testselector': 'auftraggeber-form-firmenname' }}
-              {...errorProps(draft.errors, 'firmenname')}
-            />
+            <>
+              <TextField
+                label="Firmenname"
+                value={draft.firmenname}
+                onChange={makeHandler(draft.setFirmenname)}
+                inputProps={{ 'data-testselector': 'auftraggeber-form-firmenname' }}
+                {...errorProps(draft.errors, 'firmenname')}
+              />
+              <TextField
+                label="Abteilung"
+                value={draft.abteilung}
+                onChange={makeHandler(draft.setAbteilung)}
+                inputProps={{ 'data-testselector': 'auftraggeber-form-abteilung' }}
+              />
+            </>
           )}
 
           {draft.typ === 'person' && (
@@ -165,6 +173,16 @@ export const AuftraggeberForm = observer(
               inputMode: 'decimal',
             }}
             {...errorProps(draft.errors, 'stundensatzCents')}
+          />
+
+          <TextField
+            label="Rechnungskopf-Text"
+            value={draft.rechnungskopfText}
+            onChange={makeHandler(draft.setRechnungskopfText)}
+            multiline
+            minRows={3}
+            inputProps={{ 'data-testselector': 'auftraggeber-form-rechnungskopf' }}
+            {...errorProps(draft.errors, 'rechnungskopfText')}
           />
 
           <Button type="submit" data-testselector="auftraggeber-form-submit">
