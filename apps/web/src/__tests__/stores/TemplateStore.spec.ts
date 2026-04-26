@@ -49,3 +49,43 @@ describe('TemplateStore.upload', () => {
     expect(store.error).toBe('Datei ist keine PDF');
   });
 });
+
+describe('TemplateStore.remove (Bug 3)', () => {
+  it('dispatches deleteTemplate with kind + auftraggeberId and removes the row from items', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ deleteTemplate: true });
+    const store = new TemplateStore(fetcher as unknown as GraphQLFetcher);
+    store.items = [
+      { id: '1', kind: 'rechnung', auftraggeberId: '5', filename: 'a.pdf' },
+      { id: '2', kind: 'rechnung', auftraggeberId: null, filename: 'b.pdf' },
+    ];
+    const ok = await store.remove({ kind: 'rechnung', auftraggeberId: '5' });
+    expect(ok).toBe(true);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const [query, variables] = fetcher.mock.calls[0] as [string, Record<string, unknown>];
+    expect(query).toContain('deleteTemplate');
+    expect(variables).toEqual({ kind: 'rechnung', auftraggeberId: '5' });
+    expect(store.items).toHaveLength(1);
+    expect(store.items[0]!.id).toBe('2');
+  });
+
+  it('removes the global row when auftraggeberId is null', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ deleteTemplate: true });
+    const store = new TemplateStore(fetcher as unknown as GraphQLFetcher);
+    store.items = [
+      { id: '1', kind: 'rechnung', auftraggeberId: '5', filename: 'a.pdf' },
+      { id: '2', kind: 'rechnung', auftraggeberId: null, filename: 'b.pdf' },
+    ];
+    await store.remove({ kind: 'rechnung', auftraggeberId: null });
+    const [, variables] = fetcher.mock.calls[0] as [string, Record<string, unknown>];
+    expect(variables).toEqual({ kind: 'rechnung', auftraggeberId: null });
+    expect(store.items.map((t) => t.id)).toEqual(['1']);
+  });
+
+  it('surfaces fetcher errors on store.error', async () => {
+    const fetcher = vi.fn().mockRejectedValue(new Error('Vorlage nicht gefunden'));
+    const store = new TemplateStore(fetcher as unknown as GraphQLFetcher);
+    const ok = await store.remove({ kind: 'rechnung', auftraggeberId: '5' });
+    expect(ok).toBe(false);
+    expect(store.error).toBe('Vorlage nicht gefunden');
+  });
+});

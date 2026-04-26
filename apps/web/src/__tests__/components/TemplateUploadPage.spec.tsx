@@ -81,3 +81,50 @@ describe('<TemplateUploadPage /> — Auto-Upload (AC-TPL-04)', () => {
     expect(input.base64).toBe(base64FromArrayLike(pdfBytes));
   });
 });
+
+describe('<TemplateUploadPage /> — Vorlage löschen (Bug 3)', () => {
+  it('dispatches deleteTemplate with the row data when "Entfernen" is clicked', async () => {
+    const fetcher = vi.fn(async (query: string) => {
+      if (query.includes('templateFiles {')) return { templateFiles: [] };
+      return { deleteTemplate: true };
+    });
+    const templateStore = new TemplateStore(fetcher as unknown as GraphQLFetcher);
+    templateStore.items = [{ id: '1', kind: 'rechnung', auftraggeberId: '20', filename: 'r.pdf' }];
+    const aStore = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    aStore.items = [jugendamt];
+    render(
+      <MemoryRouter>
+        <TemplateUploadPage templateStore={templateStore} auftraggeberStore={aStore} />
+      </MemoryRouter>,
+    );
+    const btn = screen.getByRole('button', { name: 'Entfernen' });
+    fireEvent.click(btn);
+    await new Promise((r) => setTimeout(r, 20));
+    const deleteCall = fetcher.mock.calls.find(([q]) => (q as string).includes('deleteTemplate'));
+    expect(deleteCall).toBeDefined();
+    expect(deleteCall![1]).toEqual({ kind: 'rechnung', auftraggeberId: '20' });
+  });
+
+  it('passes auftraggeberId=null for global template removal', async () => {
+    const fetcher = vi.fn(async (query: string) => {
+      if (query.includes('templateFiles {')) return { templateFiles: [] };
+      return { deleteTemplate: true };
+    });
+    const templateStore = new TemplateStore(fetcher as unknown as GraphQLFetcher);
+    templateStore.items = [
+      { id: '2', kind: 'rechnung', auftraggeberId: null, filename: 'global.pdf' },
+    ];
+    const aStore = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    render(
+      <MemoryRouter>
+        <TemplateUploadPage templateStore={templateStore} auftraggeberStore={aStore} />
+      </MemoryRouter>,
+    );
+    const btn = screen.getByRole('button', { name: 'Entfernen' });
+    fireEvent.click(btn);
+    await new Promise((r) => setTimeout(r, 20));
+    const deleteCall = fetcher.mock.calls.find(([q]) => (q as string).includes('deleteTemplate'));
+    expect(deleteCall).toBeDefined();
+    expect(deleteCall![1]).toEqual({ kind: 'rechnung', auftraggeberId: null });
+  });
+});

@@ -39,6 +39,12 @@ const TEMPLATE_FILES_QUERY = /* GraphQL */ `
   }
 `;
 
+const DELETE_TEMPLATE = /* GraphQL */ `
+  mutation DeleteTemplate($kind: TemplateKind!, $auftraggeberId: ID) {
+    deleteTemplate(kind: $kind, auftraggeberId: $auftraggeberId)
+  }
+`;
+
 export class TemplateStore {
   items: TemplateFileRow[] = [];
   error: string | null = null;
@@ -64,6 +70,27 @@ export class TemplateStore {
       runInAction(() => {
         this.loading = false;
       });
+    }
+  }
+
+  async remove(args: { kind: TemplateKindValue; auftraggeberId: string | null }): Promise<boolean> {
+    this.error = null;
+    try {
+      await this.fetcher<{ deleteTemplate: boolean }>(DELETE_TEMPLATE, {
+        kind: args.kind,
+        auftraggeberId: args.auftraggeberId,
+      });
+      runInAction(() => {
+        this.items = this.items.filter(
+          (t) => !(t.kind === args.kind && t.auftraggeberId === args.auftraggeberId),
+        );
+      });
+      return true;
+    } catch (err) {
+      runInAction(() => {
+        this.error = err instanceof Error ? err.message : String(err);
+      });
+      return false;
     }
   }
 

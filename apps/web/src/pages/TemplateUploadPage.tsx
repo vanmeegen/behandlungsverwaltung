@@ -228,7 +228,10 @@ export const TemplateUploadPage = observer(
                           size="small"
                           color="error"
                           onClick={(): void => {
-                            void templateStore.load();
+                            void templateStore.remove({
+                              kind: tpl.kind,
+                              auftraggeberId: tpl.auftraggeberId,
+                            });
                           }}
                         >
                           Entfernen
