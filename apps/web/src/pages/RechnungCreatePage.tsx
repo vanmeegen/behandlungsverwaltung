@@ -169,7 +169,15 @@ export const RechnungCreatePage = observer(
             data-testselector="rechnung-create-success"
             sx={{ mt: 2 }}
           >
-            {`Rechnung erstellt: ${rechnungStore.lastCreated.nummer}`}
+            {`Rechnung erstellt: ${rechnungStore.lastCreated.nummer} — `}
+            <a
+              href={`/bills/${rechnungStore.lastCreated.dateiname}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testselector="rechnung-create-success-link"
+            >
+              Rechnung öffnen
+            </a>
           </Alert>
         )}
 

@@ -61,6 +61,41 @@ function renderPage(fetcher: GraphQLFetcher, year = 2026, month = 4): Stores {
   return { rechnungStore, kindStore, auftraggeberStore: aStore };
 }
 
+describe('<RechnungCreatePage /> Direktlink „Rechnung öffnen" (AC-RECH-19)', () => {
+  it('shows a "Rechnung öffnen" link after successful creation', async () => {
+    const fetcher = vi.fn().mockImplementation((q: string) => {
+      if (q.includes('nextFreeRechnungsLfdNummer'))
+        return Promise.resolve({ nextFreeRechnungsLfdNummer: 1 });
+      return Promise.resolve({
+        createMonatsrechnung: {
+          id: '1',
+          nummer: 'RE-2026-04-0001',
+          jahr: 2026,
+          monat: 4,
+          kindId: '10',
+          auftraggeberId: '20',
+          stundensatzCentsSnapshot: 4500,
+          gesamtCents: 27000,
+          dateiname: 'RE-2026-04-0001-Anna_Musterfrau.pdf',
+          downloadedAt: null,
+          rechnungsdatum: '2026-05-02',
+        },
+      });
+    });
+    const { rechnungStore } = renderPage(fetcher as unknown as GraphQLFetcher);
+    rechnungStore.draftRechnung.setKindId('10');
+    rechnungStore.draftRechnung.setAuftraggeberId('20');
+    await rechnungStore.saveDraft();
+    await waitFor(() => {
+      expect(screen.getByTestId('rechnung-create-success-link')).toBeInTheDocument();
+    });
+    const link = screen.getByTestId('rechnung-create-success-link');
+    expect(link).toHaveAttribute('href', '/bills/RE-2026-04-0001-Anna_Musterfrau.pdf');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveTextContent('Rechnung öffnen');
+  });
+});
+
 describe('<RechnungCreatePage /> NNNN editing (PRD §3.2 / AC-RECH-15)', () => {
   it('renders the read-only RE-YYYY-MM- prefix and a four-digit NNNN field', async () => {
     const fetcher = vi.fn().mockResolvedValue({ nextFreeRechnungsLfdNummer: 1 });
