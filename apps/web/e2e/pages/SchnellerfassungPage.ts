@@ -9,6 +9,7 @@ export class SchnellerfassungPage {
   readonly beMinus: Locator;
   readonly datum: Locator;
   readonly taetigkeit: Locator;
+  readonly gruppentherapie: Locator;
   readonly submit: Locator;
 
   constructor(page: Page) {
@@ -20,6 +21,7 @@ export class SchnellerfassungPage {
     this.beMinus = page.getByTestId('schnellerfassung-be-minus');
     this.datum = page.getByTestId('schnellerfassung-datum');
     this.taetigkeit = page.getByTestId('schnellerfassung-taetigkeit');
+    this.gruppentherapie = page.getByTestId('behandlung-form-gruppentherapie');
     this.submit = page.getByTestId('schnellerfassung-submit');
   }
 

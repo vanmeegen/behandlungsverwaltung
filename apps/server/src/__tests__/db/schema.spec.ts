@@ -161,7 +161,16 @@ describe('db/schema — therapien (PRD §2.3)', () => {
 describe('db/schema — behandlungen (PRD §2.4)', () => {
   it('has the expected columns', () => {
     expect(columnNames(behandlungen)).toEqual(
-      ['taetigkeit', 'be', 'created_at', 'datum', 'id', 'therapie_id', 'updated_at'].sort(),
+      [
+        'taetigkeit',
+        'be',
+        'created_at',
+        'datum',
+        'gruppentherapie',
+        'id',
+        'therapie_id',
+        'updated_at',
+      ].sort(),
     );
   });
 

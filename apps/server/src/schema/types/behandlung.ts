@@ -13,6 +13,7 @@ export const BehandlungRef = builder.objectRef<Behandlung>('Behandlung').impleme
       nullable: true,
       resolve: (b) => b.taetigkeit,
     }),
+    gruppentherapie: t.exposeBoolean('gruppentherapie'),
     createdAt: t.string({ resolve: (b) => b.createdAt.toISOString() }),
     updatedAt: t.string({ resolve: (b) => b.updatedAt.toISOString() }),
   }),

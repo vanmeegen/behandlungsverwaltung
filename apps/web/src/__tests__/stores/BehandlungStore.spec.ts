@@ -51,10 +51,34 @@ describe('BehandlungStore.draftBehandlung', () => {
     expect(store.draftBehandlung.therapieId).toBe('');
     expect(store.draftBehandlung.taetigkeit).toBe('');
   });
+
+  it('setTherapie pre-fills gruppentherapie from default when untouched (AC-BEH-06)', () => {
+    store.draftBehandlung.setTherapie('7', 'lerntherapie', true);
+    expect(store.draftBehandlung.gruppentherapie).toBe(true);
+    store.draftBehandlung.setTherapie('8', 'foerderplan', false);
+    expect(store.draftBehandlung.gruppentherapie).toBe(false);
+  });
+
+  it('setGruppentherapie marks the field as touched and setTherapie stops overwriting', () => {
+    store.draftBehandlung.setTherapie('7', 'lerntherapie', false);
+    store.draftBehandlung.setGruppentherapie(true);
+    store.draftBehandlung.setTherapie('8', 'foerderplan', false);
+    expect(store.draftBehandlung.gruppentherapie).toBe(true);
+  });
+
+  it('setKindId resets gruppentherapie touched flag', () => {
+    store.draftBehandlung.setTherapie('7', 'lerntherapie', false);
+    store.draftBehandlung.setGruppentherapie(true);
+    store.draftBehandlung.setKindId('42');
+    expect(store.draftBehandlung.gruppentherapie).toBe(false);
+    // After Kind changes, picking a Therapie again pre-fills again.
+    store.draftBehandlung.setTherapie('9', 'lerntherapie', true);
+    expect(store.draftBehandlung.gruppentherapie).toBe(true);
+  });
 });
 
 describe('BehandlungStore.saveDraft', () => {
-  it('dispatches createBehandlung with the draft input (taetigkeit from Vorbelegung)', async () => {
+  it('dispatches createBehandlung with the draft input (taetigkeit + gruppentherapie from Vorbelegung)', async () => {
     const fetcher = vi.fn().mockResolvedValue({
       createBehandlung: {
         id: '1',
@@ -62,11 +86,12 @@ describe('BehandlungStore.saveDraft', () => {
         datum: '2026-04-20T00:00:00.000Z',
         be: 2,
         taetigkeit: 'lerntherapie',
+        gruppentherapie: true,
       },
     });
     const store = new BehandlungStore(fetcher as unknown as GraphQLFetcher);
     store.draftBehandlung.setKindId('1');
-    store.draftBehandlung.setTherapie('7', 'lerntherapie');
+    store.draftBehandlung.setTherapie('7', 'lerntherapie', true);
     store.draftBehandlung.setDatum('2026-04-20');
     store.draftBehandlung.setBe(2);
 
@@ -80,6 +105,7 @@ describe('BehandlungStore.saveDraft', () => {
         datum: '2026-04-20',
         be: 2,
         taetigkeit: 'lerntherapie',
+        gruppentherapie: true,
       },
     });
   });
@@ -102,10 +128,11 @@ describe('BehandlungStore.saveDraft', () => {
         datum: '2026-04-20T00:00:00.000Z',
         be: 1,
         taetigkeit: null,
+        gruppentherapie: false,
       },
     });
     const store = new BehandlungStore(fetcher as unknown as GraphQLFetcher);
-    store.draftBehandlung.setTherapie('7', null);
+    store.draftBehandlung.setTherapie('7', null, false);
     store.draftBehandlung.setDatum('2026-04-20');
     await store.saveDraft();
     const [, variables] = fetcher.mock.calls[0] as [string, Record<string, unknown>];
@@ -115,6 +142,7 @@ describe('BehandlungStore.saveDraft', () => {
         datum: '2026-04-20',
         be: 1,
         taetigkeit: null,
+        gruppentherapie: false,
       },
     });
   });
@@ -130,11 +158,27 @@ describe('BehandlungStore.loadByTherapie', () => {
           datum: '2026-04-20T00:00:00.000Z',
           be: 2,
           taetigkeit: 'X',
+          gruppentherapie: false,
         },
       ],
     });
     const store = new BehandlungStore(fetcher as unknown as GraphQLFetcher);
     await store.loadByTherapie('7');
     expect(store.byTherapie['7']).toHaveLength(1);
+  });
+});
+
+describe('BehandlungStore.loadTherapieGruppentherapieMap', () => {
+  it('fetches the gruppentherapie value per Therapie id', async () => {
+    const fetcher = vi.fn().mockResolvedValue({
+      therapien: [
+        { id: '1', gruppentherapie: true },
+        { id: '2', gruppentherapie: false },
+      ],
+    });
+    const store = new BehandlungStore(fetcher as unknown as GraphQLFetcher);
+    await store.loadTherapieGruppentherapieMap();
+    expect(store.therapieGruppentherapieById['1']).toBe(true);
+    expect(store.therapieGruppentherapieById['2']).toBe(false);
   });
 });

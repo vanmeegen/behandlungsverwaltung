@@ -6,13 +6,15 @@ import {
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
-import { useEffect, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, type ChangeEvent, type FormEvent, type InputHTMLAttributes } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BeStepper } from '../components/BeStepper';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
@@ -46,7 +48,11 @@ export const SchnellerfassungPage = observer(
       void kindStore.load();
       void auftraggeberStore.load();
       void therapieStore.load();
-    }, [kindStore, auftraggeberStore, therapieStore]);
+      // Phase C: Vorbelegung der Gruppentherapie-Checkbox basiert auf einer
+      // separaten Mini-Query (TherapieStore selbst kennt das Feld in dieser
+      // Phase noch nicht — Phase B ergänzt es).
+      void behandlungStore.loadTherapieGruppentherapieMap();
+    }, [kindStore, auftraggeberStore, therapieStore, behandlungStore]);
 
     const therapienForKind = draft.kindId
       ? therapieStore.items.filter((t) => t.kindId === draft.kindId)
@@ -54,7 +60,8 @@ export const SchnellerfassungPage = observer(
 
     const onTherapieChange = (id: string): void => {
       const t = therapieStore.items.find((tx) => tx.id === id);
-      draft.setTherapie(id, t?.taetigkeit ?? null);
+      const defaultGruppentherapie = behandlungStore.therapieGruppentherapieById[id] ?? false;
+      draft.setTherapie(id, t?.taetigkeit ?? null, defaultGruppentherapie);
     };
 
     const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
@@ -65,7 +72,9 @@ export const SchnellerfassungPage = observer(
         // Therapie. Kind/Therapie bleiben, Datum/BE zurückgesetzt,
         // Tätigkeit erneut aus der Therapie vorbelegt.
         const therapie = therapieStore.items.find((t) => t.id === draft.therapieId);
-        draft.resetForNextEntry(therapie?.taetigkeit ?? null);
+        const defaultGruppentherapie =
+          behandlungStore.therapieGruppentherapieById[draft.therapieId] ?? false;
+        draft.resetForNextEntry(therapie?.taetigkeit ?? null, defaultGruppentherapie);
         behandlungStore.showSuccess();
       }
     };
@@ -188,6 +197,22 @@ export const SchnellerfassungPage = observer(
                 </MenuItem>
               ))}
             </TextField>
+
+            <FormControlLabel
+              label="Gruppentherapie"
+              control={
+                <Checkbox
+                  checked={draft.gruppentherapie}
+                  onChange={(e): void => draft.setGruppentherapie(e.target.checked)}
+                  inputProps={
+                    {
+                      'data-testselector': 'behandlung-form-gruppentherapie',
+                      'aria-label': 'Gruppentherapie',
+                    } as InputHTMLAttributes<HTMLInputElement>
+                  }
+                />
+              }
+            />
 
             <Stack direction="row" spacing={1}>
               <Button type="submit" data-testselector="schnellerfassung-submit">

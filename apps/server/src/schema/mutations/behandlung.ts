@@ -1,11 +1,25 @@
 import { behandlungSchema } from '@behandlungsverwaltung/shared';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
+import type { Db } from '../../db/client';
 import { behandlungen, rechnungBehandlungen, therapien } from '../../db/schema';
 import { validateOrThrow } from '../../services/validate';
 import { builder } from '../builder';
 import { BehandlungRef } from '../types/behandlung';
 import { BehandlungInputRef } from '../types/behandlungInput';
+
+// PRD §2.4 / AC-BEH-06: `gruppentherapie` ist auf Behandlung-Ebene optional;
+// fehlt der Input-Wert, wird er aus der zugehörigen Therapie gezogen.
+// Phase B (sibling worktree) ergänzt `therapien.gruppentherapie` im Drizzle-
+// Schema offiziell; bis dahin lesen wir den Wert via raw SQL, damit dieser
+// Worktree ohne Phase-B-Schemaänderung lauffähig bleibt.
+function readTherapieGruppentherapie(db: Db, therapieId: number): boolean {
+  const rows = db.all<{ gruppentherapie: number }>(
+    sql`SELECT gruppentherapie FROM therapien WHERE id = ${therapieId}`,
+  );
+  const first = rows[0];
+  return first ? Boolean(first.gruppentherapie) : false;
+}
 
 builder.mutationField('createBehandlung', (t) =>
   t.field({
@@ -29,6 +43,11 @@ builder.mutationField('createBehandlung', (t) =>
       }
       // PRD §2.4: Tätigkeit aus Input; Fallback = Tätigkeit der Therapie.
       const effectiveTaetigkeit = parsed.taetigkeit ?? therapie.taetigkeit ?? null;
+      // PRD §2.4 / AC-BEH-06: gruppentherapie aus Input; Fallback = Therapie.
+      const effectiveGruppentherapie =
+        parsed.gruppentherapie === null || parsed.gruppentherapie === undefined
+          ? readTherapieGruppentherapie(db, therapieId)
+          : parsed.gruppentherapie;
       const datum = new Date(`${parsed.datum}T00:00:00.000Z`);
       const [row] = db
         .insert(behandlungen)
@@ -37,6 +56,7 @@ builder.mutationField('createBehandlung', (t) =>
           datum,
           be: parsed.be,
           taetigkeit: effectiveTaetigkeit,
+          gruppentherapie: effectiveGruppentherapie,
         })
         .returning()
         .all();
@@ -70,6 +90,10 @@ builder.mutationField('updateBehandlung', (t) =>
         throw new GraphQLError('Therapie nicht gefunden', { extensions: { code: 'NOT_FOUND' } });
       }
       const effectiveTaetigkeit = parsed.taetigkeit ?? therapie.taetigkeit ?? null;
+      const effectiveGruppentherapie =
+        parsed.gruppentherapie === null || parsed.gruppentherapie === undefined
+          ? readTherapieGruppentherapie(db, therapieId)
+          : parsed.gruppentherapie;
       const datum = new Date(`${parsed.datum}T00:00:00.000Z`);
       const [row] = db
         .update(behandlungen)
@@ -78,6 +102,7 @@ builder.mutationField('updateBehandlung', (t) =>
           datum,
           be: parsed.be,
           taetigkeit: effectiveTaetigkeit,
+          gruppentherapie: effectiveGruppentherapie,
           updatedAt: new Date(),
         })
         .where(eq(behandlungen.id, numericId))

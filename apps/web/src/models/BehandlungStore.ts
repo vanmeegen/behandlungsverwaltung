@@ -3,7 +3,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import type { GraphQLFetcher } from '../api/graphqlClient';
 
 export type BehandlungFieldErrors = Partial<
-  Record<'therapieId' | 'datum' | 'be' | 'taetigkeit', string>
+  Record<'therapieId' | 'datum' | 'be' | 'taetigkeit' | 'gruppentherapie', string>
 >;
 
 export interface Behandlung {
@@ -12,6 +12,7 @@ export interface Behandlung {
   datum: string;
   be: number;
   taetigkeit: TaetigkeitValue | null;
+  gruppentherapie: boolean;
 }
 
 export interface BehandlungFormInput {
@@ -19,6 +20,7 @@ export interface BehandlungFormInput {
   datum: string;
   be: number;
   taetigkeit: TaetigkeitValue | null;
+  gruppentherapie: boolean;
 }
 
 function todayIso(): string {
@@ -35,6 +37,19 @@ const BEHANDLUNG_COLUMNS = /* GraphQL */ `
   datum
   be
   taetigkeit
+  gruppentherapie
+`;
+
+// Phase C: Eigene minimale Therapie-Selection nur für die Vorbelegung der
+// Gruppentherapie-Checkbox, damit wir TherapieStore nicht anfassen müssen
+// (Phase B erweitert ihn separat).
+const THERAPIE_GRUPPENTHERAPIE_QUERY = /* GraphQL */ `
+  query TherapieGruppentherapie {
+    therapien {
+      id
+      gruppentherapie
+    }
+  }
 `;
 
 const CREATE_BEHANDLUNG = /* GraphQL */ `
@@ -60,6 +75,8 @@ export class BehandlungDraft {
   be = 1;
   taetigkeit: TaetigkeitValue | '' = '';
   taetigkeitTouched = false;
+  gruppentherapie = false;
+  gruppentherapieTouched = false;
   errors: BehandlungFieldErrors = {};
 
   constructor() {
@@ -71,18 +88,32 @@ export class BehandlungDraft {
     this.therapieId = '';
     this.taetigkeit = '';
     this.taetigkeitTouched = false;
+    this.gruppentherapie = false;
+    this.gruppentherapieTouched = false;
   }
 
-  setTherapie(id: string, defaultTaetigkeit: TaetigkeitValue | null): void {
+  setTherapie(
+    id: string,
+    defaultTaetigkeit: TaetigkeitValue | null,
+    defaultGruppentherapie: boolean = false,
+  ): void {
     this.therapieId = id;
     if (!this.taetigkeitTouched) {
       this.taetigkeit = defaultTaetigkeit ?? '';
+    }
+    if (!this.gruppentherapieTouched) {
+      this.gruppentherapie = defaultGruppentherapie;
     }
   }
 
   setTaetigkeit(v: TaetigkeitValue | ''): void {
     this.taetigkeit = v;
     this.taetigkeitTouched = true;
+  }
+
+  setGruppentherapie(v: boolean): void {
+    this.gruppentherapie = v;
+    this.gruppentherapieTouched = true;
   }
 
   setDatum(v: string): void {
@@ -108,6 +139,8 @@ export class BehandlungDraft {
     this.be = 1;
     this.taetigkeit = '';
     this.taetigkeitTouched = false;
+    this.gruppentherapie = false;
+    this.gruppentherapieTouched = false;
     this.errors = {};
   }
 
@@ -116,11 +149,16 @@ export class BehandlungDraft {
   // Therapie. Kind/Therapie bleiben gesetzt, Datum und BE werden auf die
   // Defaults zurückgesetzt, die Tätigkeit wird erneut aus der Therapie
   // vorbelegt (durch den Caller via setTherapie aktualisiert).
-  resetForNextEntry(defaultTaetigkeit: TaetigkeitValue | null): void {
+  resetForNextEntry(
+    defaultTaetigkeit: TaetigkeitValue | null,
+    defaultGruppentherapie: boolean = false,
+  ): void {
     this.datum = todayIso();
     this.be = 1;
     this.taetigkeit = defaultTaetigkeit ?? '';
     this.taetigkeitTouched = false;
+    this.gruppentherapie = defaultGruppentherapie;
+    this.gruppentherapieTouched = false;
     this.errors = {};
   }
 
@@ -130,6 +168,7 @@ export class BehandlungDraft {
       datum: this.datum,
       be: this.be,
       taetigkeit: this.taetigkeit === '' ? null : this.taetigkeit,
+      gruppentherapie: this.gruppentherapie,
     });
     if (!parsed.success) {
       const next: BehandlungFieldErrors = {};
@@ -148,12 +187,17 @@ export class BehandlungDraft {
       datum: parsed.data.datum,
       be: parsed.data.be,
       taetigkeit: parsed.data.taetigkeit,
+      gruppentherapie: parsed.data.gruppentherapie ?? false,
     };
   }
 }
 
 export class BehandlungStore {
   byTherapie: Record<string, Behandlung[]> = {};
+  // Phase C: lokale Map id → gruppentherapie der Therapien, gespeist über
+  // eine eigene minimale Query. Damit kann die Schnellerfassung die Checkbox
+  // beim Wechsel der Therapie vorbelegen, ohne TherapieStore anzufassen.
+  therapieGruppentherapieById: Record<string, boolean> = {};
   error: string | null = null;
   successOpen = false;
   draftBehandlung = new BehandlungDraft();
@@ -168,6 +212,25 @@ export class BehandlungStore {
 
   dismissSuccess(): void {
     this.successOpen = false;
+  }
+
+  async loadTherapieGruppentherapieMap(): Promise<Record<string, boolean>> {
+    try {
+      const data = await this.fetcher<{
+        therapien: Array<{ id: string; gruppentherapie: boolean }>;
+      }>(THERAPIE_GRUPPENTHERAPIE_QUERY);
+      const map: Record<string, boolean> = {};
+      for (const t of data.therapien ?? []) map[t.id] = t.gruppentherapie;
+      runInAction(() => {
+        this.therapieGruppentherapieById = map;
+      });
+      return map;
+    } catch (err) {
+      runInAction(() => {
+        this.error = err instanceof Error ? err.message : String(err);
+      });
+      return {};
+    }
   }
 
   async loadByTherapie(therapieId: string): Promise<Behandlung[]> {

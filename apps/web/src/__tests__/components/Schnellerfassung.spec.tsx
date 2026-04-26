@@ -154,6 +154,56 @@ describe('<SchnellerfassungPage /> — Tätigkeit Vorbelegung (AC-BEH-03)', () =
   });
 });
 
+describe('<SchnellerfassungPage /> — Gruppentherapie Vorbelegung (AC-BEH-06)', () => {
+  it('renders the Gruppentherapie checkbox', () => {
+    renderPage();
+    expect(screen.getByTestId('behandlung-form-gruppentherapie')).toBeInTheDocument();
+  });
+
+  it('pre-fills gruppentherapie from BehandlungStore.therapieGruppentherapieById', () => {
+    const { behandlungStore } = renderPage();
+    act(() => {
+      behandlungStore.therapieGruppentherapieById = { '7': true, '8': false };
+      behandlungStore.draftBehandlung.setKindId('10');
+    });
+    fireEvent.change(screen.getByTestId('schnellerfassung-therapieId'), {
+      target: { value: '7' },
+    });
+    const checkbox = screen.getByTestId('behandlung-form-gruppentherapie') as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+  });
+
+  it('keeps the user-toggled gruppentherapie when Therapie changes after manual edit', () => {
+    const { behandlungStore } = renderPage();
+    act(() => {
+      behandlungStore.therapieGruppentherapieById = { '7': false, '8': true };
+      behandlungStore.draftBehandlung.setKindId('10');
+    });
+    fireEvent.change(screen.getByTestId('schnellerfassung-therapieId'), {
+      target: { value: '7' },
+    });
+    fireEvent.click(screen.getByTestId('behandlung-form-gruppentherapie'));
+    // User has now manually checked the box
+    fireEvent.change(screen.getByTestId('schnellerfassung-therapieId'), {
+      target: { value: '8' },
+    });
+    const checkbox = screen.getByTestId('behandlung-form-gruppentherapie') as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+  });
+
+  it('defaults gruppentherapie to false when no map entry exists', () => {
+    const { behandlungStore } = renderPage();
+    act(() => {
+      behandlungStore.draftBehandlung.setKindId('10');
+    });
+    fireEvent.change(screen.getByTestId('schnellerfassung-therapieId'), {
+      target: { value: '7' },
+    });
+    const checkbox = screen.getByTestId('behandlung-form-gruppentherapie') as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
+  });
+});
+
 describe('<SchnellerfassungPage /> — BE stepper', () => {
   it('starts at 1 and goes to 2 on plus', () => {
     renderPage();
@@ -172,14 +222,21 @@ describe('<SchnellerfassungPage /> — BE stepper', () => {
 
 describe('<SchnellerfassungPage /> — submit', () => {
   it('calls createBehandlung with Vorbelegung on leave-as-is submit (AC-BEH-03)', async () => {
-    const fetcher = vi.fn().mockResolvedValue({
-      createBehandlung: {
-        id: '1',
-        therapieId: '7',
-        datum: '2026-04-20T00:00:00.000Z',
-        be: 2,
-        taetigkeit: 'lerntherapie',
-      },
+    const fetcher = vi.fn().mockImplementation(async (query: string) => {
+      if (query.includes('createBehandlung')) {
+        return {
+          createBehandlung: {
+            id: '1',
+            therapieId: '7',
+            datum: '2026-04-20T00:00:00.000Z',
+            be: 2,
+            taetigkeit: 'lerntherapie',
+            gruppentherapie: false,
+          },
+        };
+      }
+      // TherapieGruppentherapie query
+      return { therapien: [{ id: '7', gruppentherapie: false }] };
     });
     const kindStore = new KindStore(vi.fn() as unknown as GraphQLFetcher);
     const auftraggeberStore = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
@@ -209,14 +266,18 @@ describe('<SchnellerfassungPage /> — submit', () => {
     fireEvent.click(screen.getByTestId('schnellerfassung-submit'));
     await Promise.resolve();
     await Promise.resolve();
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    const [, variables] = fetcher.mock.calls[0] as [string, Record<string, unknown>];
+    const createCall = fetcher.mock.calls.find(
+      ([q]) => typeof q === 'string' && q.includes('createBehandlung'),
+    );
+    expect(createCall).toBeDefined();
+    const variables = createCall?.[1] as Record<string, unknown>;
     expect(variables).toEqual({
       input: {
         therapieId: '7',
         datum: '2026-04-20',
         be: 2,
         taetigkeit: 'lerntherapie',
+        gruppentherapie: false,
       },
     });
   });

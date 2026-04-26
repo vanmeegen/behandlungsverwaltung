@@ -37,6 +37,9 @@ export const behandlungSchema = z.object({
     .refine(isValidIsoDate, { error: 'Datum ist ungültig' }),
   be: z.number({ error: 'BE muss ≥ 1 sein' }).int('BE muss ≥ 1 sein').min(1, 'BE muss ≥ 1 sein'),
   taetigkeit: taetigkeitInputSchema,
+  // PRD §2.4 / AC-BEH-06: optional im Input. Wenn nicht gesetzt, übernimmt
+  // der Resolver den Wert aus der zugehörigen Therapie (analog `taetigkeit`).
+  gruppentherapie: z.boolean().nullish(),
 });
 
 export type BehandlungInputType = z.infer<typeof behandlungSchema>;

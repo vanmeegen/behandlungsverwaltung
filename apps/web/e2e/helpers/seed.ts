@@ -209,6 +209,7 @@ export interface SeededBehandlung {
   datum: string;
   be: number;
   taetigkeit: SeededTaetigkeit | null;
+  gruppentherapie: boolean;
 }
 
 const BEHANDLUNG_COLUMNS = /* GraphQL */ `
@@ -217,6 +218,7 @@ const BEHANDLUNG_COLUMNS = /* GraphQL */ `
   datum
   be
   taetigkeit
+  gruppentherapie
 `;
 
 export async function readBehandlungenByTherapie(therapieId: string): Promise<SeededBehandlung[]> {
@@ -232,6 +234,7 @@ export async function seedBehandlung(input: {
   datum: string;
   be: number;
   taetigkeit?: SeededTaetigkeit;
+  gruppentherapie?: boolean;
 }): Promise<SeededBehandlung> {
   const data = await gql<{ createBehandlung: SeededBehandlung }>(
     /* GraphQL */ `mutation Seed($input: BehandlungInput!) { createBehandlung(input: $input) { ${BEHANDLUNG_COLUMNS} } }`,

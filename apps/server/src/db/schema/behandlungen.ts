@@ -9,6 +9,7 @@ export const behandlungen = sqliteTable('behandlungen', {
   datum: integer('datum', { mode: 'timestamp' }).notNull(),
   be: integer('be').notNull(),
   taetigkeit: text('taetigkeit', { enum: TAETIGKEIT }),
+  gruppentherapie: integer('gruppentherapie', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .$defaultFn(() => new Date()),

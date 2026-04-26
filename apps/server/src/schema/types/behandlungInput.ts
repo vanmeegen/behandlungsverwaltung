@@ -7,5 +7,6 @@ export const BehandlungInputRef = builder.inputType('BehandlungInput', {
     datum: t.string({ required: true }),
     be: t.int({ required: true }),
     taetigkeit: t.field({ type: TaetigkeitEnum, required: false }),
+    gruppentherapie: t.boolean({ required: false }),
   }),
 });

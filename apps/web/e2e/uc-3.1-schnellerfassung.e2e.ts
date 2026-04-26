@@ -8,7 +8,7 @@ import {
 } from './helpers/seed';
 import { SchnellerfassungPage } from './pages/SchnellerfassungPage';
 
-async function seedScenario(): Promise<{
+async function seedScenario(opts: { gruppentherapie?: boolean } = {}): Promise<{
   kindId: string;
   therapieId: string;
 }> {
@@ -40,6 +40,7 @@ async function seedScenario(): Promise<{
     kommentar: null,
     bewilligteBe: 60,
     taetigkeit: 'lerntherapie',
+    gruppentherapie: opts.gruppentherapie ?? false,
   });
   return { kindId: kind.id, therapieId: therapie.id };
 }
@@ -102,5 +103,37 @@ test.describe('UC-3.1 Schnellerfassung', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]!.taetigkeit).toBe('dyskalkulie');
     expect(rows[0]!.be).toBe(1);
+  });
+
+  test('Gruppentherapie ist mit Wert der Therapie vorbelegt (AC-BEH-06)', async ({ page }) => {
+    const { kindId, therapieId } = await seedScenario({ gruppentherapie: true });
+
+    const formPage = new SchnellerfassungPage(page);
+    await formPage.goto();
+    await formPage.chooseKind(kindId);
+    await formPage.chooseTherapie(therapieId);
+    await expect(formPage.gruppentherapie).toBeChecked();
+
+    await formPage.submitAndWait();
+    const rows = await readBehandlungenByTherapie(therapieId);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.gruppentherapie).toBe(true);
+  });
+
+  test('Gruppentherapie kann pro Behandlung überschrieben werden (AC-BEH-06)', async ({ page }) => {
+    const { kindId, therapieId } = await seedScenario({ gruppentherapie: false });
+
+    const formPage = new SchnellerfassungPage(page);
+    await formPage.goto();
+    await formPage.chooseKind(kindId);
+    await formPage.chooseTherapie(therapieId);
+    await expect(formPage.gruppentherapie).not.toBeChecked();
+    await formPage.gruppentherapie.click();
+    await expect(formPage.gruppentherapie).toBeChecked();
+
+    await formPage.submitAndWait();
+    const rows = await readBehandlungenByTherapie(therapieId);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.gruppentherapie).toBe(true);
   });
 });

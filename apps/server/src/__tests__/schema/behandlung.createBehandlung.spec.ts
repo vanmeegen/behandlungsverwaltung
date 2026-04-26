@@ -1,8 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { sql } from 'drizzle-orm';
 import { graphql } from 'graphql';
 import { auftraggeber, behandlungen, kinder, therapien } from '../../db/schema';
 import { schema } from '../../schema';
 import { createTestDb, type TestDb } from '../helpers/testDb';
+
+// PHASE C TEMP: Phase B (sibling worktree) wird `therapien.gruppentherapie`
+// im Drizzle-Schema verankern. Solange das hier nicht passiert ist, setzen
+// wir den Wert pro Test via raw SQL. Die Spalte selbst legt die temporäre
+// Migration `0005_phase_c_temp_therapien_gruppentherapie.sql` an.
+function setTherapieGruppentherapie(ctx: TestDb, therapieId: number, value: boolean): void {
+  ctx.db.run(sql`UPDATE therapien SET gruppentherapie = ${value ? 1 : 0} WHERE id = ${therapieId}`);
+}
 
 const CREATE_BEHANDLUNG = /* GraphQL */ `
   mutation CreateBehandlung($input: BehandlungInput!) {
@@ -12,6 +21,7 @@ const CREATE_BEHANDLUNG = /* GraphQL */ `
       datum
       be
       taetigkeit
+      gruppentherapie
     }
   }
 `;
@@ -193,5 +203,63 @@ describe('createBehandlung mutation (PRD §2.4, AC-BEH-02, AC-BEH-03)', () => {
       be: 1,
     });
     expect(result.errors).toBeDefined();
+  });
+
+  it('inherits gruppentherapie from Therapie when input is absent (AC-BEH-06)', async () => {
+    setTherapieGruppentherapie(ctx, seeded.therapieWithThemaId, true);
+    const result = await run({
+      therapieId: String(seeded.therapieWithThemaId),
+      datum: '2026-04-15',
+      be: 1,
+    });
+    expect(result.errors).toBeUndefined();
+    expect(
+      (result.data as { createBehandlung: { gruppentherapie: boolean } }).createBehandlung
+        .gruppentherapie,
+    ).toBe(true);
+  });
+
+  it('inherits gruppentherapie=false from Therapie when input is absent', async () => {
+    setTherapieGruppentherapie(ctx, seeded.therapieWithThemaId, false);
+    const result = await run({
+      therapieId: String(seeded.therapieWithThemaId),
+      datum: '2026-04-15',
+      be: 1,
+    });
+    expect(result.errors).toBeUndefined();
+    expect(
+      (result.data as { createBehandlung: { gruppentherapie: boolean } }).createBehandlung
+        .gruppentherapie,
+    ).toBe(false);
+  });
+
+  it('uses override when gruppentherapie is explicitly true (AC-BEH-06)', async () => {
+    setTherapieGruppentherapie(ctx, seeded.therapieWithThemaId, false);
+    const result = await run({
+      therapieId: String(seeded.therapieWithThemaId),
+      datum: '2026-04-15',
+      be: 1,
+      gruppentherapie: true,
+    });
+    expect(result.errors).toBeUndefined();
+    expect(
+      (result.data as { createBehandlung: { gruppentherapie: boolean } }).createBehandlung
+        .gruppentherapie,
+    ).toBe(true);
+  });
+
+  it('uses override when gruppentherapie is explicitly false (AC-BEH-06)', async () => {
+    setTherapieGruppentherapie(ctx, seeded.therapieWithThemaId, true);
+    const result = await run({
+      therapieId: String(seeded.therapieWithThemaId),
+      datum: '2026-04-15',
+      be: 1,
+      gruppentherapie: false,
+    });
+    expect(result.errors).toBeUndefined();
+    expect(
+      (result.data as { createBehandlung: { gruppentherapie: boolean } }).createBehandlung
+        .gruppentherapie,
+    ).toBe(false);
   });
 });

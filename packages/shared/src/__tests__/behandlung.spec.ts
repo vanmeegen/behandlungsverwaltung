@@ -50,4 +50,41 @@ describe('behandlungSchema (PRD §2.4, AC-BEH-02)', () => {
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.taetigkeit).toBeNull();
   });
+
+  it('accepts gruppentherapie as boolean true', () => {
+    const result = behandlungSchema.safeParse({ ...base, gruppentherapie: true });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.gruppentherapie).toBe(true);
+  });
+
+  it('accepts gruppentherapie as boolean false', () => {
+    const result = behandlungSchema.safeParse({ ...base, gruppentherapie: false });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.gruppentherapie).toBe(false);
+  });
+
+  it('accepts gruppentherapie omitted (undefined → resolver fills from Therapie)', () => {
+    const result = behandlungSchema.safeParse(base);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(
+        result.data.gruppentherapie === null || result.data.gruppentherapie === undefined,
+      ).toBe(true);
+    }
+  });
+
+  it('accepts gruppentherapie explicitly null', () => {
+    const result = behandlungSchema.safeParse({ ...base, gruppentherapie: null });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(
+        result.data.gruppentherapie === null || result.data.gruppentherapie === undefined,
+      ).toBe(true);
+    }
+  });
+
+  it('rejects gruppentherapie as a non-boolean string', () => {
+    const result = behandlungSchema.safeParse({ ...base, gruppentherapie: 'yes' as unknown });
+    expect(result.success).toBe(false);
+  });
 });
