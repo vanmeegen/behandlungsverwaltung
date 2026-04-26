@@ -25,8 +25,16 @@ Auftraggeber. Die PLZ darf in keinem Fall leer gespeichert werden.
 
 - Typ: **Firma** oder **Person**
 - Firmenname (bei Firma) _oder_ Vorname + Nachname (bei Person)
+- **Abteilung** (nur bei Firma, **optional**) — wird im
+  Anschriftsblock der Rechnung zusätzlich zum Firmennamen ausgegeben
 - Adresse: Straße, Hausnummer, **PLZ (Pflicht)**, Stadt
 - Stundensatz (Euro pro Behandlungseinheit)
+- **Rechnungskopf-Text** (mehrzeilig, Pflicht) — frei formulierbarer
+  Einleitungstext der Rechnung pro Auftraggeber. Ersetzt den bisher
+  fest verdrahteten Satz („Mein Honorar für die Teilmaßnahme …")
+  **vollständig**; die Therapeutin formuliert den Text exakt so,
+  wie er auf der Rechnung erscheinen soll. Es gibt **keine
+  Platzhalter** — der Text wird unverändert übernommen.
 
 ### 2.3 Therapie (Zuordnung Kind ↔ Auftraggeber)
 
@@ -37,6 +45,9 @@ Auftraggeber. Die PLZ darf in keinem Fall leer gespeichert werden.
   **Sonstiges**
 - Kommentarfeld (nur bei „Sonstiges", dann Pflicht)
 - Gesamtzahl bewilligter Behandlungseinheiten
+- **Gruppentherapie** (Checkbox, Default: **false**) — kennzeichnet
+  die Therapie als Gruppentherapie und dient als **Vorbelegung** für
+  jede daraus erfasste Behandlung (§2.4).
 - Tätigkeit (optional): dient als **Vorbelegung** für die
   Tätigkeit jeder daraus erfassten Behandlung (§2.4). Auswahlwerte
   sind **alle Therapieformen** (oben) **plus** Elterngespräch ·
@@ -51,6 +62,10 @@ Auftraggeber. Die PLZ darf in keinem Fall leer gespeichert werden.
   wird pro Behandlung **gespeichert** und in der Eingabemaske aus der
   Tätigkeit der Therapie **vorbelegt**; die Therapeutin kann den Wert
   pro Behandlung überschreiben.
+- **Gruppentherapie** (Checkbox): wird pro Behandlung
+  **gespeichert** und in der Eingabemaske aus dem entsprechenden
+  Wert der Therapie (§2.3) **vorbelegt**; die Therapeutin kann den
+  Wert pro Behandlung überschreiben.
 
 ## 3. Kernabläufe
 
@@ -67,7 +82,12 @@ zurückgesetzt.
 ### 3.2 Monatsrechnung erstellen
 
 Therapeutin wählt Monat, Kind, Auftraggeber und **Rechnungsdatum**
-(Vorbelegung: heute). Das System
+(Vorbelegung: heute). Zusätzlich kann sie die **laufende Nummer
+`NNNN` der Rechnungsnummer** prüfen und ggf. anpassen: das
+Eingabefeld ist mit der **nächsten freien `NNNN`** des Jahres
+gemäß §4 vorbelegt; der vorangestellte Teil `RE-YYYY-MM-` wird vom
+System aus Rechnungsjahr und Abrechnungsmonat abgeleitet und ist
+**nicht editierbar**. Das System
 
 - sammelt alle Behandlungen dieses Kinds für diesen Auftraggeber im Monat,
 - erzeugt **eine Rechnung** mit einer Zeile pro Behandlung. Die
@@ -186,9 +206,18 @@ Beispiele (Jahr 2026):
 - Nächste Rechnung (erste im Mai 2026) → `RE-2026-05-0003`
 - Nächste Rechnung (reset bei neuem Jahr) → `RE-2027-01-0001`
 
-Die Nummer wird beim Erzeugen der Rechnung fest vergeben und bleibt
-unveränderlich — auch bei einer nachträglichen Korrektur (§3.2)
-bleibt die Rechnungsnummer gleich, die PDF-Datei wird neu erzeugt.
+Beim Erzeugen schlägt das System die **nächste freie Nummer** vor.
+Die Therapeutin kann im Erzeugen-Dialog **ausschließlich die
+fortlaufende Nummer `NNNN`** überschreiben (z. B. um eine Lücke
+aufzufüllen). Die übrigen Bestandteile **Präfix `RE-`**, **Jahr
+`YYYY`** und **Abrechnungsmonat `MM`** sind im Dialog fest und
+nicht editierbar — sie ergeben sich aus Rechnungsdatum bzw.
+gewähltem Abrechnungsmonat und werden vom System gesetzt. Eine
+manuell vergebene `NNNN` muss vierstellig (mit führenden Nullen)
+und im Jahr **eindeutig** sein. Sobald die Rechnung erzeugt ist,
+ist die Nummer **fest** und bleibt unverändert — auch bei einer
+nachträglichen Korrektur (§3.2) bleibt die Rechnungsnummer gleich,
+die PDF-Datei wird neu erzeugt.
 
 Der zugehörige Stundennachweis übernimmt dieselbe Rechnungsnummer
 (Jahr/Monat/laufende Nummer), ersetzt im Dateinamen aber das Präfix
@@ -214,16 +243,16 @@ auf, sodass das erzeugte PDF in jedem Viewer gleich aussieht.
 
 **Feld-Inventar** (Groß-/Kleinschreibung exakt):
 
-| Feldname            | Typ              | Zweck                                                     |
-| ------------------- | ---------------- | --------------------------------------------------------- |
-| `empfaengerAdresse` | Text (multiline) | Anschriftsblock (3–4 Zeilen)                              |
-| `rechnungsnummer`   | Text             | `RE-YYYY-MM-NNNN`; darf in der Vorlage mehrfach vorkommen |
-| `rechnungsdatum`    | Text             | Ausstellungsdatum `DD.MM.YYYY`                            |
-| `leistungszeitraum` | Text             | z. B. `01.04.2026 – 30.04.2026`                           |
-| `einleitungstext`   | Text (multiline) | Satz mit der Therapieform aus `therapien.form`            |
-| `kindTitel`         | Text             | `Vorname Nachname · Aktenzeichen · im <Monat> <Jahr>`     |
-| `gesamtsumme`       | Text             | formatierter Gesamtbetrag, z. B. `189,78 €`               |
-| `unterschriftName`  | Text (optional)  | Kindesname im Unterschriftsblock                          |
+| Feldname            | Typ              | Zweck                                                                                                                                |
+| ------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `empfaengerAdresse` | Text (multiline) | Anschriftsblock; bei Firma mit hinterlegter **Abteilung** (§2.2) wird diese als zweite Zeile direkt unter dem Firmennamen ausgegeben |
+| `rechnungsnummer`   | Text             | `RE-YYYY-MM-NNNN`; darf in der Vorlage mehrfach vorkommen                                                                            |
+| `rechnungsdatum`    | Text             | Ausstellungsdatum `DD.MM.YYYY`                                                                                                       |
+| `leistungszeitraum` | Text             | z. B. `01.04.2026 – 30.04.2026`                                                                                                      |
+| `einleitungstext`   | Text (multiline) | **Rechnungskopf-Text** aus dem Auftraggeber-Stammdatensatz (§2.2), unverändert übernommen                                            |
+| `kindTitel`         | Text             | `Vorname Nachname · geb. <DD.MM.YYYY> · Aktenzeichen · im <Monat> <Jahr>`                                                            |
+| `gesamtsumme`       | Text             | formatierter Gesamtbetrag, z. B. `189,78 €`                                                                                          |
+| `unterschriftName`  | Text (optional)  | Kindesname im Unterschriftsblock                                                                                                     |
 
 Fehlende optionale Felder werden still ignoriert, sodass die
 Therapeutin die Vorlage iterativ erweitern kann.
@@ -302,6 +331,13 @@ Testgrundlage (TDD).
   Nachname gespeichert, Then Validierungsfehler.
 - **AC-AG-03** `[unit]` Given ein Auftraggeber ohne PLZ, Then
   Validierungsfehler „PLZ ist Pflicht".
+- **AC-AG-04** `[unit]` Given Typ = Firma, Then ist das Feld
+  **Abteilung** verfügbar und **optional**; bei Typ = Person ist
+  das Feld nicht verfügbar.
+- **AC-AG-05** `[unit]` Given das „Neu"-Formular für einen
+  Auftraggeber, Then ist der **Rechnungskopf-Text** (mehrzeilig,
+  §2.2) ein Pflichtfeld; ohne Wert kommt der Validierungsfehler
+  „Rechnungskopf-Text ist Pflicht".
 
 ### Therapie
 
@@ -314,6 +350,10 @@ Testgrundlage (TDD).
 - **AC-TH-03** `[unit]` Given die Therapieform-Auswahl, Then enthält
   sie genau: Dyskalkulietherapie, Lerntherapie, **LRS-Therapie**,
   **Resilienztraining**, Heilpädagogik, Elternberatung, Sonstiges.
+- **AC-TH-04** `[unit]` Given das „Neu"-Formular für eine Therapie,
+  Then ist die Checkbox **Gruppentherapie** verfügbar und mit
+  **false** vorbelegt; der gespeicherte Wert ist persistiert und
+  steht den abhängigen Behandlungen als Vorbelegung zur Verfügung.
 
 ### Behandlung
 
@@ -339,6 +379,13 @@ Testgrundlage (TDD).
   Maske anschließend **sofort für die nächste Behandlung desselben
   Kinds/derselben Therapie bereit** (Kind/Therapie bleiben
   vorausgewählt, Datum/BE werden zurückgesetzt).
+- **AC-BEH-06** `[unit]` Given eine Therapie hat
+  `gruppentherapie = true` (bzw. `false`), When eine neue
+  Behandlung für diese Therapie erfasst wird, Then ist die
+  Checkbox **Gruppentherapie** im Erfassungsformular mit dem Wert
+  der Therapie **vorbelegt** und kann von der Therapeutin pro
+  Behandlung überschrieben werden; der Wert wird pro Behandlung
+  persistiert.
 
 ### Rechnung
 
@@ -396,6 +443,31 @@ Testgrundlage (TDD).
 - **AC-RECH-14** `[unit]` Given eine Rechnung mit N Behandlungen im
   Monat, Then enthält das PDF genau N Tabellenzeilen (eine pro
   Behandlung), leere Pflichtzeilen werden **nicht** erzeugt.
+- **AC-RECH-15** `[e2e]` Given die Therapeutin öffnet den Dialog
+  „Rechnung erzeugen", Then ist das Feld **Rechnungsnummer**
+  zerlegt in einen **fixen Teil `RE-YYYY-MM-`** (read-only,
+  abgeleitet aus Rechnungsjahr und Abrechnungsmonat) und ein
+  **editierbares Eingabefeld für `NNNN`**, das mit der **nächsten
+  freien laufenden Nummer** des Jahres gemäß §4 vorbelegt ist; die
+  Therapeutin kann ausschließlich diese vierstellige Nummer ändern,
+  und nach dem Erzeugen wird die Rechnung mit `RE-YYYY-MM-NNNN`
+  unter Verwendung der bestätigten `NNNN` gespeichert. Eine bereits
+  im selben Jahr vergebene `NNNN` wird mit Fehler abgewiesen.
+- **AC-RECH-16** `[unit]` Given eine erzeugte Rechnung, Then enthält
+  das AcroForm-Feld `kindTitel` Vorname, Nachname, **Geburtsdatum
+  (`geb. DD.MM.YYYY`)**, Aktenzeichen und den Abrechnungsmonat in
+  dieser Reihenfolge.
+- **AC-RECH-17** `[unit]` Given Auftraggeber A hat den
+  Rechnungskopf-Text „Mein Honorar für die Lerntherapie von …"
+  hinterlegt, When eine Rechnung für A erzeugt wird, Then steht
+  dieser Text **wortgetreu** im AcroForm-Feld `einleitungstext` der
+  PDF (kein code-generierter Satz aus der Therapieform).
+- **AC-RECH-18** `[unit]` Given Auftraggeber A vom Typ Firma hat
+  die Abteilung „Wirtschaftliche Jugendhilfe" hinterlegt, When eine
+  Rechnung für A erzeugt wird, Then enthält das AcroForm-Feld
+  `empfaengerAdresse` direkt unter dem Firmennamen die Zeile
+  „Wirtschaftliche Jugendhilfe"; ohne hinterlegte Abteilung
+  entfällt diese Zeile ersatzlos.
 
 ### Stundennachweis
 
@@ -470,6 +542,7 @@ Feature: Behandlung per Handy-Schnellerfassung aufzeichnen
     And ich BE auf 2 setze
     And ich das vorbelegte Datum (heute) unverändert lasse
     And ich die aus der Therapie vorbelegte Tätigkeit unverändert lasse
+    And die Checkbox „Gruppentherapie" ist mit dem Wert der Therapie vorbelegt
     And ich „Speichern" antippe
     Then sehe ich die Bestätigung „Behandlung gespeichert"
     And die Behandlungsliste der Therapie „Lerntherapie" enthält einen Eintrag mit heutigem Datum, „2 BE" und der Tätigkeit „Lerntherapie"
@@ -505,12 +578,26 @@ Feature: Monatsrechnung als PDF erzeugen
     When ich Monat „April 2026" wähle
     And ich Kind „Anna Musterfrau" wähle
     And ich Auftraggeber „Jugendamt Köln" wähle
+    Then ist das Feld „Rechnungsnummer" mit „RE-2026-04-0001" vorbelegt
+    When ich die vorbelegte Rechnungsnummer unverändert lasse
     And ich „Rechnung erzeugen" antippe
     Then sehe ich die Bestätigung „Rechnung erstellt: RE-2026-04-0001"
     And die Datei „RE-2026-04-0001-Anna_Musterfrau.pdf" liegt im Ordner „bills/"
     And die Rechnungsübersicht zeigt eine Zeile mit Nummer „RE-2026-04-0001" und Gesamtsumme „270,00 €"
     And die Rechnungszeilen haben die Spalten „Bezeichnung · Menge · Einheit · Einzel € · Gesamt €" in dieser Reihenfolge
     And die Spalte „Einheit" enthält in jeder Zeile den Text „BE"
+
+  Scenario: Nur die laufende Nummer NNNN ist editierbar
+    Given ich öffne die Seite „Rechnung erstellen"
+    When ich Monat „April 2026" wähle
+    And ich Kind „Anna Musterfrau" wähle
+    And ich Auftraggeber „Jugendamt Köln" wähle
+    Then sehe ich vor dem Eingabefeld der laufenden Nummer den fixen Präfix „RE-2026-04-" als read-only
+    And das Eingabefeld für „NNNN" ist mit „0001" vorbelegt
+    When ich „NNNN" auf „0007" ändere
+    And ich „Rechnung erzeugen" antippe
+    Then sehe ich die Bestätigung „Rechnung erstellt: RE-2026-04-0007"
+    And die Datei „RE-2026-04-0007-Anna_Musterfrau.pdf" liegt im Ordner „bills/"
 
   Scenario: Bestätigungsdialog bei bereits existierender Rechnung — Abbrechen
     Given für April 2026, Kind „Anna Musterfrau", Auftraggeber „Jugendamt Köln" existiert bereits die Rechnung „RE-2026-04-0001"
@@ -639,13 +726,24 @@ Feature: Einen neuen Auftraggeber anlegen
     When ich auf „Neu" tippe
     And ich Typ „Firma" wähle
     And ich Firmenname „Jugendamt Köln" eingebe
+    And ich Abteilung „Wirtschaftliche Jugendhilfe" eingebe
     And ich Straße „Kalker Hauptstr." und Hausnummer „247-273" eingebe
     And ich PLZ „51103" und Stadt „Köln" eingebe
     And ich Stundensatz „45,00" eingebe
+    And ich Rechnungskopf-Text „Mein Honorar für die Lerntherapie von <Kind> berechne ich Ihnen wie folgt:" eingebe
     And ich auf „Speichern" tippe
     Then sehe ich die Bestätigung „Auftraggeber gespeichert"
     And die Auftraggeberliste enthält eine Zeile mit Firmenname „Jugendamt Köln"
+    And die Detailansicht zeigt Abteilung „Wirtschaftliche Jugendhilfe"
     And in der Detailansicht sind Vorname und Nachname nicht befüllt
+
+  Scenario: Auftraggeber ohne Rechnungskopf-Text wird nicht gespeichert
+    Given ich bin im „Neu"-Formular für einen Auftraggeber vom Typ Firma
+    When ich Firmenname, Adresse und Stundensatz vollständig ausfülle
+    And ich das Feld „Rechnungskopf-Text" leer lasse
+    And ich auf „Speichern" tippe
+    Then sehe ich die Fehlermeldung „Rechnungskopf-Text ist Pflicht"
+    And die Auftraggeberliste bleibt leer
 
   Scenario: Person ohne Namen wird nicht gespeichert
     Given ich bin im „Neu"-Formular für einen Auftraggeber
@@ -700,10 +798,24 @@ Feature: Eine Therapie zwischen Kind und Auftraggeber anlegen
     And ich Auftraggeber „Jugendamt Köln" wähle
     And ich Therapieform „Lerntherapie" wähle
     And ich 60 als Gesamtzahl bewilligter Behandlungseinheiten eingebe
+    And die Checkbox „Gruppentherapie" ist standardmäßig nicht angehakt
     And ich auf „Speichern" tippe
     Then sehe ich die Bestätigung „Therapie gespeichert"
     And die Therapie erscheint in der Detailansicht von „Anna Musterfrau"
     And die Therapie erscheint in der Detailansicht von „Jugendamt Köln"
+    And die Detailansicht der Therapie zeigt „Gruppentherapie: Nein"
+
+  Scenario: Therapie als Gruppentherapie anlegen
+    Given ich öffne die Therapieliste
+    When ich auf „Neu" tippe
+    And ich Kind „Anna Musterfrau" wähle
+    And ich Auftraggeber „Jugendamt Köln" wähle
+    And ich Therapieform „Resilienztraining" wähle
+    And ich 30 als Gesamtzahl bewilligter Behandlungseinheiten eingebe
+    And ich die Checkbox „Gruppentherapie" anhake
+    And ich auf „Speichern" tippe
+    Then sehe ich die Bestätigung „Therapie gespeichert"
+    And die Detailansicht der Therapie zeigt „Gruppentherapie: Ja"
 
   Scenario: Therapieform „Sonstiges" ohne Kommentar wird abgelehnt
     Given ich bin im „Neu"-Formular für eine Therapie
