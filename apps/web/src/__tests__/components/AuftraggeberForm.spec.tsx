@@ -182,6 +182,14 @@ describe('<AuftraggeberForm /> — validation', () => {
         stundensatzCents: 4500,
         abteilung: null,
         rechnungskopfText: 'Mein Honorar …:',
+        gruppe1Prozent: null,
+        gruppe1StundensatzCents: null,
+        gruppe2Prozent: null,
+        gruppe2StundensatzCents: null,
+        gruppe3Prozent: null,
+        gruppe3StundensatzCents: null,
+        gruppe4Prozent: null,
+        gruppe4StundensatzCents: null,
       },
     });
   });
@@ -256,5 +264,76 @@ describe('<AuftraggeberForm /> — Abteilung & Rechnungskopf-Text (AC-AG-04, AC-
       target: { value: 'Multi\nLine\nText' },
     });
     expect(store.draftAuftraggeber.rechnungskopfText).toBe('Multi\nLine\nText');
+  });
+});
+
+describe('<AuftraggeberForm /> — Gruppentherapie-Stundensätze (AC-AG-06)', () => {
+  it('shows Gruppentherapie-Stundensätze section only when typ=firma', () => {
+    const store = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    act(() => {
+      store.draftAuftraggeber.setTyp('firma');
+    });
+    renderForm(store);
+    expect(screen.getByTestId('auftraggeber-form-gruppe1-prozent')).toBeInTheDocument();
+    expect(screen.getByTestId('auftraggeber-form-gruppe1-stundensatz')).toBeInTheDocument();
+    expect(screen.getByTestId('auftraggeber-form-gruppe4-prozent')).toBeInTheDocument();
+    expect(screen.getByTestId('auftraggeber-form-gruppe4-stundensatz')).toBeInTheDocument();
+  });
+
+  it('hides Gruppentherapie-Stundensätze section when typ=person', () => {
+    const store = new AuftraggeberStore(vi.fn() as unknown as GraphQLFetcher);
+    act(() => {
+      store.draftAuftraggeber.setTyp('person');
+    });
+    renderForm(store);
+    expect(screen.queryByTestId('auftraggeber-form-gruppe1-prozent')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('auftraggeber-form-gruppe1-stundensatz')).not.toBeInTheDocument();
+  });
+
+  it('saves gruppe1Prozent=80 and others remain null in mutation payload', async () => {
+    const fetcher = vi.fn().mockResolvedValue({
+      createAuftraggeber: {
+        id: '1',
+        typ: 'firma',
+        firmenname: 'Jugendamt Köln',
+        vorname: null,
+        nachname: null,
+        strasse: 'Kalker Hauptstr.',
+        hausnummer: '247-273',
+        plz: '51103',
+        stadt: 'Köln',
+        stundensatzCents: 4500,
+        abteilung: null,
+        rechnungskopfText: 'Mein Honorar …:',
+        gruppe1Prozent: 80,
+        gruppe1StundensatzCents: null,
+        gruppe2Prozent: null,
+        gruppe2StundensatzCents: null,
+        gruppe3Prozent: null,
+        gruppe3StundensatzCents: null,
+        gruppe4Prozent: null,
+        gruppe4StundensatzCents: null,
+      },
+    });
+    const store = new AuftraggeberStore(fetcher as unknown as GraphQLFetcher);
+    act(() => {
+      store.draftAuftraggeber.setTyp('firma');
+      store.draftAuftraggeber.setFirmenname('Jugendamt Köln');
+      store.draftAuftraggeber.setStrasse('Kalker Hauptstr.');
+      store.draftAuftraggeber.setHausnummer('247-273');
+      store.draftAuftraggeber.setPlz('51103');
+      store.draftAuftraggeber.setStadt('Köln');
+      store.draftAuftraggeber.setStundensatz('45,00');
+      store.draftAuftraggeber.setRechnungskopfText('Mein Honorar …:');
+      store.draftAuftraggeber.setGruppe1Prozent('80');
+    });
+    renderForm(store);
+    fireEvent.click(screen.getByTestId('auftraggeber-form-submit'));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const variables = (fetcher.mock.calls[0] as [string, Record<string, unknown>])[1];
+    expect((variables?.input as Record<string, unknown>)?.gruppe1Prozent).toBe(80);
+    expect((variables?.input as Record<string, unknown>)?.gruppe2Prozent).toBeNull();
   });
 });

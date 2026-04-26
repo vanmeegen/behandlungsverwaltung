@@ -25,6 +25,14 @@ export interface Auftraggeber {
   stundensatzCents: number;
   abteilung: string | null;
   rechnungskopfText: string;
+  gruppe1Prozent?: number | null;
+  gruppe1StundensatzCents?: number | null;
+  gruppe2Prozent?: number | null;
+  gruppe2StundensatzCents?: number | null;
+  gruppe3Prozent?: number | null;
+  gruppe3StundensatzCents?: number | null;
+  gruppe4Prozent?: number | null;
+  gruppe4StundensatzCents?: number | null;
 }
 
 export interface AuftraggeberFormInput {
@@ -39,6 +47,14 @@ export interface AuftraggeberFormInput {
   stundensatzCents: number;
   abteilung: string | null;
   rechnungskopfText: string;
+  gruppe1Prozent?: number | null;
+  gruppe1StundensatzCents?: number | null;
+  gruppe2Prozent?: number | null;
+  gruppe2StundensatzCents?: number | null;
+  gruppe3Prozent?: number | null;
+  gruppe3StundensatzCents?: number | null;
+  gruppe4Prozent?: number | null;
+  gruppe4StundensatzCents?: number | null;
 }
 
 const AUFTRAGGEBER_QUERY = /* GraphQL */ `
@@ -56,6 +72,14 @@ const AUFTRAGGEBER_QUERY = /* GraphQL */ `
       stundensatzCents
       abteilung
       rechnungskopfText
+      gruppe1Prozent
+      gruppe1StundensatzCents
+      gruppe2Prozent
+      gruppe2StundensatzCents
+      gruppe3Prozent
+      gruppe3StundensatzCents
+      gruppe4Prozent
+      gruppe4StundensatzCents
     }
   }
 `;
@@ -75,6 +99,14 @@ const CREATE_AUFTRAGGEBER = /* GraphQL */ `
       stundensatzCents
       abteilung
       rechnungskopfText
+      gruppe1Prozent
+      gruppe1StundensatzCents
+      gruppe2Prozent
+      gruppe2StundensatzCents
+      gruppe3Prozent
+      gruppe3StundensatzCents
+      gruppe4Prozent
+      gruppe4StundensatzCents
     }
   }
 `;
@@ -94,6 +126,14 @@ const UPDATE_AUFTRAGGEBER = /* GraphQL */ `
       stundensatzCents
       abteilung
       rechnungskopfText
+      gruppe1Prozent
+      gruppe1StundensatzCents
+      gruppe2Prozent
+      gruppe2StundensatzCents
+      gruppe3Prozent
+      gruppe3StundensatzCents
+      gruppe4Prozent
+      gruppe4StundensatzCents
     }
   }
 `;
@@ -123,6 +163,14 @@ export class AuftraggeberDraft {
   stundensatz = '';
   abteilung = '';
   rechnungskopfText = '';
+  gruppe1Prozent = '';
+  gruppe1Stundensatz = '';
+  gruppe2Prozent = '';
+  gruppe2Stundensatz = '';
+  gruppe3Prozent = '';
+  gruppe3Stundensatz = '';
+  gruppe4Prozent = '';
+  gruppe4Stundensatz = '';
   errors: AuftraggeberFieldErrors = {};
 
   constructor() {
@@ -172,6 +220,16 @@ export class AuftraggeberDraft {
     this.errors = {};
     const trimmedAbteilung =
       this.typ === 'firma' && this.abteilung.trim().length > 0 ? this.abteilung.trim() : null;
+
+    const parseOptionalInt = (v: string): number | null => {
+      const n = parseInt(v, 10);
+      return isNaN(n) ? null : n;
+    };
+    const parseOptionalCents = (v: string): number | null => {
+      const cents = parseEuroToCents(v);
+      return cents === null || cents < 0 ? null : cents;
+    };
+
     return {
       typ: this.typ,
       firmenname: this.typ === 'firma' ? this.firmenname : null,
@@ -184,6 +242,18 @@ export class AuftraggeberDraft {
       stundensatzCents: stundensatzCents!,
       abteilung: trimmedAbteilung,
       rechnungskopfText: this.rechnungskopfText.trim(),
+      gruppe1Prozent: this.typ === 'firma' ? parseOptionalInt(this.gruppe1Prozent) : null,
+      gruppe1StundensatzCents:
+        this.typ === 'firma' ? parseOptionalCents(this.gruppe1Stundensatz) : null,
+      gruppe2Prozent: this.typ === 'firma' ? parseOptionalInt(this.gruppe2Prozent) : null,
+      gruppe2StundensatzCents:
+        this.typ === 'firma' ? parseOptionalCents(this.gruppe2Stundensatz) : null,
+      gruppe3Prozent: this.typ === 'firma' ? parseOptionalInt(this.gruppe3Prozent) : null,
+      gruppe3StundensatzCents:
+        this.typ === 'firma' ? parseOptionalCents(this.gruppe3Stundensatz) : null,
+      gruppe4Prozent: this.typ === 'firma' ? parseOptionalInt(this.gruppe4Prozent) : null,
+      gruppe4StundensatzCents:
+        this.typ === 'firma' ? parseOptionalCents(this.gruppe4Stundensatz) : null,
     };
   }
 
@@ -220,6 +290,30 @@ export class AuftraggeberDraft {
   setRechnungskopfText(v: string): void {
     this.rechnungskopfText = v;
   }
+  setGruppe1Prozent(v: string): void {
+    this.gruppe1Prozent = v;
+  }
+  setGruppe1Stundensatz(v: string): void {
+    this.gruppe1Stundensatz = v;
+  }
+  setGruppe2Prozent(v: string): void {
+    this.gruppe2Prozent = v;
+  }
+  setGruppe2Stundensatz(v: string): void {
+    this.gruppe2Stundensatz = v;
+  }
+  setGruppe3Prozent(v: string): void {
+    this.gruppe3Prozent = v;
+  }
+  setGruppe3Stundensatz(v: string): void {
+    this.gruppe3Stundensatz = v;
+  }
+  setGruppe4Prozent(v: string): void {
+    this.gruppe4Prozent = v;
+  }
+  setGruppe4Stundensatz(v: string): void {
+    this.gruppe4Stundensatz = v;
+  }
 
   loadFrom(ag: Auftraggeber): void {
     this.editingId = ag.id;
@@ -234,6 +328,18 @@ export class AuftraggeberDraft {
     this.stundensatz = formatCentsAsEuroInput(ag.stundensatzCents);
     this.abteilung = ag.abteilung ?? '';
     this.rechnungskopfText = ag.rechnungskopfText;
+    this.gruppe1Prozent = ag.gruppe1Prozent != null ? String(ag.gruppe1Prozent) : '';
+    this.gruppe1Stundensatz =
+      ag.gruppe1StundensatzCents != null ? formatCentsAsEuroInput(ag.gruppe1StundensatzCents) : '';
+    this.gruppe2Prozent = ag.gruppe2Prozent != null ? String(ag.gruppe2Prozent) : '';
+    this.gruppe2Stundensatz =
+      ag.gruppe2StundensatzCents != null ? formatCentsAsEuroInput(ag.gruppe2StundensatzCents) : '';
+    this.gruppe3Prozent = ag.gruppe3Prozent != null ? String(ag.gruppe3Prozent) : '';
+    this.gruppe3Stundensatz =
+      ag.gruppe3StundensatzCents != null ? formatCentsAsEuroInput(ag.gruppe3StundensatzCents) : '';
+    this.gruppe4Prozent = ag.gruppe4Prozent != null ? String(ag.gruppe4Prozent) : '';
+    this.gruppe4Stundensatz =
+      ag.gruppe4StundensatzCents != null ? formatCentsAsEuroInput(ag.gruppe4StundensatzCents) : '';
     this.errors = {};
   }
 
@@ -250,6 +356,14 @@ export class AuftraggeberDraft {
     this.stundensatz = '';
     this.abteilung = '';
     this.rechnungskopfText = '';
+    this.gruppe1Prozent = '';
+    this.gruppe1Stundensatz = '';
+    this.gruppe2Prozent = '';
+    this.gruppe2Stundensatz = '';
+    this.gruppe3Prozent = '';
+    this.gruppe3Stundensatz = '';
+    this.gruppe4Prozent = '';
+    this.gruppe4Stundensatz = '';
     this.errors = {};
   }
 }

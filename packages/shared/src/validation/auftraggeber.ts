@@ -1,6 +1,20 @@
 import { z } from 'zod';
 import { addressSchema } from './address';
 
+const gruppeProzentSchema = z.number().int().min(0).max(100).nullish();
+const gruppeStundensatzCentsSchema = z.number().int().min(0).nullish();
+
+const gruppeFields = {
+  gruppe1Prozent: gruppeProzentSchema,
+  gruppe1StundensatzCents: gruppeStundensatzCentsSchema,
+  gruppe2Prozent: gruppeProzentSchema,
+  gruppe2StundensatzCents: gruppeStundensatzCentsSchema,
+  gruppe3Prozent: gruppeProzentSchema,
+  gruppe3StundensatzCents: gruppeStundensatzCentsSchema,
+  gruppe4Prozent: gruppeProzentSchema,
+  gruppe4StundensatzCents: gruppeStundensatzCentsSchema,
+};
+
 const stundensatzCentsSchema = z
   .number({ error: 'Stundensatz muss > 0 sein' })
   .int('Stundensatz muss > 0 sein')
@@ -36,6 +50,7 @@ const firmaSchema = z.object({
   stundensatzCents: stundensatzCentsSchema,
   abteilung: abteilungOptionalSchema,
   rechnungskopfText: rechnungskopfTextSchema,
+  ...gruppeFields,
 });
 
 const personSchema = z.object({
@@ -50,6 +65,7 @@ const personSchema = z.object({
     .or(z.undefined())
     .transform(() => null),
   rechnungskopfText: rechnungskopfTextSchema,
+  ...gruppeFields,
 });
 
 export const auftraggeberSchema = z.discriminatedUnion('typ', [firmaSchema, personSchema]);

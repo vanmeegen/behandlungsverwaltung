@@ -8,6 +8,7 @@ import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -110,6 +111,37 @@ export const AuftraggeberForm = observer(
                 onChange={makeHandler(draft.setAbteilung)}
                 inputProps={{ 'data-testselector': 'auftraggeber-form-abteilung' }}
               />
+              <Typography variant="subtitle1" sx={{ mt: 1 }}>
+                Gruppentherapie-Stundensätze
+              </Typography>
+              {([1, 2, 3, 4] as const).map((n) => (
+                <Box key={n} sx={{ display: 'flex', gap: 2 }}>
+                  <TextField
+                    label={`Gruppe ${n} Anteil (%)`}
+                    type="number"
+                    value={draft[`gruppe${n}Prozent` as `gruppe${typeof n}Prozent`]}
+                    onChange={makeHandler(
+                      draft[`setGruppe${n}Prozent` as `setGruppe${typeof n}Prozent`],
+                    )}
+                    inputProps={{
+                      'data-testselector': `auftraggeber-form-gruppe${n}-prozent`,
+                      min: 0,
+                      max: 100,
+                    }}
+                  />
+                  <TextField
+                    label={`Gruppe ${n} Stundensatz (€)`}
+                    value={draft[`gruppe${n}Stundensatz` as `gruppe${typeof n}Stundensatz`]}
+                    onChange={makeHandler(
+                      draft[`setGruppe${n}Stundensatz` as `setGruppe${typeof n}Stundensatz`],
+                    )}
+                    inputProps={{
+                      'data-testselector': `auftraggeber-form-gruppe${n}-stundensatz`,
+                      inputMode: 'decimal',
+                    }}
+                  />
+                </Box>
+              ))}
             </>
           )}
 

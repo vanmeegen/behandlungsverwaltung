@@ -43,6 +43,13 @@
       "when": 1777200100721,
       "tag": "0005_dazzling_vulture",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1777214059552,
+      "tag": "0006_bent_speed",
+      "breakpoints": true
     }
   ]
 }

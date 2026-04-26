@@ -134,6 +134,14 @@ describe('AuftraggeberStore.saveDraft — Firma', () => {
         stundensatzCents: 4500,
         abteilung: null,
         rechnungskopfText: 'Mein Honorar …:',
+        gruppe1Prozent: null,
+        gruppe1StundensatzCents: null,
+        gruppe2Prozent: null,
+        gruppe2StundensatzCents: null,
+        gruppe3Prozent: null,
+        gruppe3StundensatzCents: null,
+        gruppe4Prozent: null,
+        gruppe4StundensatzCents: null,
       },
     });
     expect(store.items).toContainEqual(firma);
@@ -178,6 +186,14 @@ describe('AuftraggeberStore.saveDraft — Person', () => {
         stundensatzCents: 6000,
         abteilung: null,
         rechnungskopfText: 'Mein Honorar …:',
+        gruppe1Prozent: null,
+        gruppe1StundensatzCents: null,
+        gruppe2Prozent: null,
+        gruppe2StundensatzCents: null,
+        gruppe3Prozent: null,
+        gruppe3StundensatzCents: null,
+        gruppe4Prozent: null,
+        gruppe4StundensatzCents: null,
       },
     });
   });

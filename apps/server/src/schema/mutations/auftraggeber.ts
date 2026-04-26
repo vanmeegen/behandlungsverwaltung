@@ -19,9 +19,27 @@ interface RowValues {
   stundensatzCents: number;
   abteilung: string | null;
   rechnungskopfText: string;
+  gruppe1Prozent?: number | null;
+  gruppe1StundensatzCents?: number | null;
+  gruppe2Prozent?: number | null;
+  gruppe2StundensatzCents?: number | null;
+  gruppe3Prozent?: number | null;
+  gruppe3StundensatzCents?: number | null;
+  gruppe4Prozent?: number | null;
+  gruppe4StundensatzCents?: number | null;
 }
 
 function toRowValues(parsed: AuftraggeberInputType): RowValues {
+  const gruppeFields = {
+    gruppe1Prozent: parsed.gruppe1Prozent ?? null,
+    gruppe1StundensatzCents: parsed.gruppe1StundensatzCents ?? null,
+    gruppe2Prozent: parsed.gruppe2Prozent ?? null,
+    gruppe2StundensatzCents: parsed.gruppe2StundensatzCents ?? null,
+    gruppe3Prozent: parsed.gruppe3Prozent ?? null,
+    gruppe3StundensatzCents: parsed.gruppe3StundensatzCents ?? null,
+    gruppe4Prozent: parsed.gruppe4Prozent ?? null,
+    gruppe4StundensatzCents: parsed.gruppe4StundensatzCents ?? null,
+  };
   if (parsed.typ === 'firma') {
     return {
       typ: 'firma',
@@ -35,6 +53,7 @@ function toRowValues(parsed: AuftraggeberInputType): RowValues {
       stundensatzCents: parsed.stundensatzCents,
       abteilung: parsed.abteilung,
       rechnungskopfText: parsed.rechnungskopfText,
+      ...gruppeFields,
     };
   }
   return {
@@ -49,6 +68,7 @@ function toRowValues(parsed: AuftraggeberInputType): RowValues {
     stundensatzCents: parsed.stundensatzCents,
     abteilung: null,
     rechnungskopfText: parsed.rechnungskopfText,
+    ...gruppeFields,
   };
 }
 

@@ -14,5 +14,13 @@ export const AuftraggeberInputRef = builder.inputType('AuftraggeberInput', {
     stundensatzCents: t.int({ required: true }),
     abteilung: t.string({ required: false }),
     rechnungskopfText: t.string({ required: true }),
+    gruppe1Prozent: t.int({ required: false }),
+    gruppe1StundensatzCents: t.int({ required: false }),
+    gruppe2Prozent: t.int({ required: false }),
+    gruppe2StundensatzCents: t.int({ required: false }),
+    gruppe3Prozent: t.int({ required: false }),
+    gruppe3StundensatzCents: t.int({ required: false }),
+    gruppe4Prozent: t.int({ required: false }),
+    gruppe4StundensatzCents: t.int({ required: false }),
   }),
 });

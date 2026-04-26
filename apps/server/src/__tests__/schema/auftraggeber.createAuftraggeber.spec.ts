@@ -19,6 +19,14 @@ const CREATE_AUFTRAGGEBER = /* GraphQL */ `
       stundensatzCents
       abteilung
       rechnungskopfText
+      gruppe1Prozent
+      gruppe1StundensatzCents
+      gruppe2Prozent
+      gruppe2StundensatzCents
+      gruppe3Prozent
+      gruppe3StundensatzCents
+      gruppe4Prozent
+      gruppe4StundensatzCents
     }
   }
 `;
@@ -233,6 +241,41 @@ describe('createAuftraggeber mutation (PRD §2.2, AC-AG-01/02/03)', () => {
       expect(row?.plz).toBe('50667');
       expect(row?.stadt).toBe('Köln');
       expect(row?.stundensatzCents).toBe(6000);
+    });
+
+    it('round-trips all 8 Gruppen-Stundensatz fields (AC-AG-06)', async () => {
+      const result = await run({
+        ...validFirma,
+        gruppe1Prozent: 80,
+        gruppe1StundensatzCents: 3600,
+        gruppe2Prozent: 75,
+        gruppe2StundensatzCents: 3375,
+        gruppe3Prozent: 70,
+        gruppe3StundensatzCents: 3150,
+        gruppe4Prozent: 60,
+        gruppe4StundensatzCents: 2700,
+      });
+      expect(result.errors).toBeUndefined();
+      const created = (result.data as { createAuftraggeber: Record<string, unknown> } | null)
+        ?.createAuftraggeber;
+      expect(created?.gruppe1Prozent).toBe(80);
+      expect(created?.gruppe1StundensatzCents).toBe(3600);
+      expect(created?.gruppe2Prozent).toBe(75);
+      expect(created?.gruppe2StundensatzCents).toBe(3375);
+      expect(created?.gruppe3Prozent).toBe(70);
+      expect(created?.gruppe3StundensatzCents).toBe(3150);
+      expect(created?.gruppe4Prozent).toBe(60);
+      expect(created?.gruppe4StundensatzCents).toBe(2700);
+    });
+
+    it('all 8 Gruppe fields default to null when omitted (AC-AG-06)', async () => {
+      const result = await run(validFirma);
+      expect(result.errors).toBeUndefined();
+      const created = (result.data as { createAuftraggeber: Record<string, unknown> } | null)
+        ?.createAuftraggeber;
+      expect(created?.gruppe1Prozent).toBeNull();
+      expect(created?.gruppe1StundensatzCents).toBeNull();
+      expect(created?.gruppe4StundensatzCents).toBeNull();
     });
   });
 });

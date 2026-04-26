@@ -190,6 +190,55 @@ describe('auftraggeberSchema — abteilung (PRD §2.2, AC-AG-04)', () => {
   });
 });
 
+describe('auftraggeberSchema — Gruppentherapie-Stundensätze (AC-AG-06)', () => {
+  it('accepts Firma with gruppe1Prozent=80', () => {
+    const result = auftraggeberSchema.safeParse({ ...validFirma, gruppe1Prozent: 80 });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts Firma with gruppe2StundensatzCents=3600', () => {
+    const result = auftraggeberSchema.safeParse({ ...validFirma, gruppe2StundensatzCents: 3600 });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects gruppe1Prozent=-5 (< 0)', () => {
+    const result = auftraggeberSchema.safeParse({ ...validFirma, gruppe1Prozent: -5 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path.includes('gruppe1Prozent'));
+      expect(issue).toBeDefined();
+    }
+  });
+
+  it('rejects gruppe1Prozent=150 (> 100)', () => {
+    const result = auftraggeberSchema.safeParse({ ...validFirma, gruppe1Prozent: 150 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path.includes('gruppe1Prozent'));
+      expect(issue).toBeDefined();
+    }
+  });
+
+  it('rejects gruppe1StundensatzCents=-1 (< 0)', () => {
+    const result = auftraggeberSchema.safeParse({ ...validFirma, gruppe1StundensatzCents: -1 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path.includes('gruppe1StundensatzCents'));
+      expect(issue).toBeDefined();
+    }
+  });
+
+  it('accepts Firma without any group fields (all optional)', () => {
+    const result = auftraggeberSchema.safeParse(validFirma);
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts Person without any group fields', () => {
+    const result = auftraggeberSchema.safeParse(validPerson);
+    expect(result.success).toBe(true);
+  });
+});
+
 describe('auftraggeberSchema — rechnungskopfText (PRD §2.2, AC-AG-05)', () => {
   it('rejects an empty rechnungskopfText with "Rechnungskopf-Text ist Pflicht"', () => {
     const result = auftraggeberSchema.safeParse({ ...validFirma, rechnungskopfText: '' });
