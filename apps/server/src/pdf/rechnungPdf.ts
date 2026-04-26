@@ -22,6 +22,7 @@ export interface RechnungPdfLine {
 export interface KindForPdf {
   vorname: string;
   nachname: string;
+  geburtsdatum: Date;
   aktenzeichen: string;
   strasse: string;
   hausnummer: string;
@@ -32,6 +33,7 @@ export interface KindForPdf {
 export interface AuftraggeberForPdf {
   typ: 'firma' | 'person';
   firmenname: string | null;
+  abteilung: string | null;
   vorname: string | null;
   nachname: string | null;
   strasse: string;
@@ -48,6 +50,8 @@ export interface RechnungPdfInput {
   month: number;
   kind: KindForPdf;
   auftraggeber: AuftraggeberForPdf;
+  /** Wortgetreuer Einleitungstext aus dem Auftraggeber-Stammdatensatz (PRD §2.2 / AC-RECH-17). */
+  auftraggeberRechnungskopfText: string;
   therapieForm: TherapieFormValue;
   stundensatzCents: number;
   lines: RechnungPdfLine[];
@@ -73,6 +77,9 @@ function auftraggeberAdresse(ag: AuftraggeberForPdf): string {
   const lines: string[] = [];
   if (ag.typ === 'firma') {
     if (ag.firmenname) lines.push(ag.firmenname);
+    // PRD §2.2 / AC-RECH-18: Abteilung als zweite Zeile direkt unter dem
+    // Firmennamen, sofern hinterlegt. Person-Adressen haben keine Abteilung.
+    if (ag.abteilung) lines.push(ag.abteilung);
   } else {
     const name = `${ag.vorname ?? ''} ${ag.nachname ?? ''}`.trim();
     if (name) lines.push(name);
@@ -97,14 +104,15 @@ function setField(form: PDFForm, name: string, value: string, multiline = false)
   }
 }
 
-function einleitungstext(input: RechnungPdfInput, monat: string): string {
-  const therapieLabel = THERAPIE_FORM_LABELS[input.therapieForm];
-  return `Mein Honorar für die Teilmaßnahme ${therapieLabel} betrug im Monat ${monat} ${input.year}:`;
+function einleitungstext(input: RechnungPdfInput): string {
+  // PRD §2.2 / AC-RECH-17: wortgetreu aus dem Auftraggeber-Rechnungskopf-Text.
+  return input.auftraggeberRechnungskopfText;
 }
 
 function kindTitel(input: RechnungPdfInput, monat: string): string {
-  const { vorname, nachname, aktenzeichen } = input.kind;
-  return `${vorname} ${nachname} · ${aktenzeichen} · im ${monat} ${input.year}`;
+  const { vorname, nachname, geburtsdatum, aktenzeichen } = input.kind;
+  // AC-RECH-16: Geburtsdatum direkt nach dem Namen.
+  return `${vorname} ${nachname} · geb. ${formatDateDe(geburtsdatum)} · ${aktenzeichen} · im ${monat} ${input.year}`;
 }
 
 export async function renderRechnungPdf(input: RechnungPdfInput): Promise<Uint8Array> {
@@ -127,7 +135,7 @@ export async function renderRechnungPdf(input: RechnungPdfInput): Promise<Uint8A
   setField(form, 'rechnungsnummer', input.nummer);
   setField(form, 'rechnungsdatum', formatDateDe(input.rechnungsdatum));
   setField(form, 'leistungszeitraum', formatLeistungszeitraum(input.year, input.month));
-  setField(form, 'einleitungstext', einleitungstext(input, monat), true);
+  setField(form, 'einleitungstext', einleitungstext(input), true);
   setField(form, 'kindTitel', kindTitel(input, monat));
   setField(form, 'gesamtsumme', formatEuroPlain(input.gesamtCents));
   setField(form, 'unterschriftName', `${input.kind.vorname} ${input.kind.nachname}`);

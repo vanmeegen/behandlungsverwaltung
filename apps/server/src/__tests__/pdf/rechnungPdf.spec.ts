@@ -48,6 +48,7 @@ const BASE_INPUT: Omit<RechnungPdfInput, 'templateBytes'> = {
   kind: {
     vorname: 'Anna',
     nachname: 'Musterfrau',
+    geburtsdatum: new Date(Date.UTC(2018, 2, 14)),
     aktenzeichen: 'K-2026-001',
     strasse: 'Hauptstr.',
     hausnummer: '12',
@@ -57,6 +58,7 @@ const BASE_INPUT: Omit<RechnungPdfInput, 'templateBytes'> = {
   auftraggeber: {
     typ: 'firma',
     firmenname: 'Jugendamt Köln',
+    abteilung: null,
     vorname: null,
     nachname: null,
     strasse: 'Kalker Hauptstr.',
@@ -64,6 +66,8 @@ const BASE_INPUT: Omit<RechnungPdfInput, 'templateBytes'> = {
     plz: '51103',
     stadt: 'Köln',
   },
+  auftraggeberRechnungskopfText:
+    'Mein Honorar für die Lerntherapie von Anna berechne ich Ihnen wie folgt:',
   therapieForm: 'lerntherapie',
   stundensatzCents: 4500,
   lines: [
@@ -119,21 +123,53 @@ describe('renderRechnungPdf (AcroForm pipeline)', () => {
     expect(text).toContain('01.04.2026 – 30.04.2026');
   });
 
-  it('writes the Kindesname + Aktenzeichen titel above the table', async () => {
+  it('writes Kindesname, Geburtsdatum and Aktenzeichen titel above the table (AC-RECH-16)', async () => {
     const { text } = await renderAndExtract();
     expect(text).toContain('Anna Musterfrau');
+    expect(text).toContain('geb. 14.03.2018');
     expect(text).toContain('K-2026-001');
     expect(text).toContain('April 2026');
   });
 
-  it('builds the Einleitungstext with the therapy form label', async () => {
-    const { text } = await renderAndExtract();
-    // AcroForm multiline may wrap the text in pdf-parse output; check
-    // presence of salient substrings instead of the full sentence.
-    expect(text).toContain('Mein Honorar');
-    expect(text).toContain('Teilmaßnahme');
-    expect(text).toContain('Lerntherapie');
-    expect(text).toContain('April 2026');
+  it('writes the Auftraggeber-Rechnungskopf-Text wortgetreu in einleitungstext (AC-RECH-17)', async () => {
+    // Marker-Wörter lassen sich auch nach dem AcroForm-Word-Wrap im
+    // pdf-parse-Output zuverlässig per `toContain` nachweisen.
+    const custom = 'KOPFMARKER beim Auftraggeber gesetzt.';
+    const { text } = await renderAndExtract({ auftraggeberRechnungskopfText: custom });
+    expect(text).toContain('KOPFMARKER');
+    expect(text).toContain('Auftraggeber');
+    expect(text).toContain('gesetzt');
+    // Sicherstellen, dass NICHT mehr der alte fest verdrahtete Satz gerendert wird.
+    expect(text).not.toContain('Teilmaßnahme');
+    expect(text).not.toContain('betrug im Monat');
+  });
+
+  it('renders Abteilung as second line under Firmenname when set (AC-RECH-18)', async () => {
+    const { text } = await renderAndExtract({
+      auftraggeber: {
+        ...BASE_INPUT.auftraggeber,
+        abteilung: 'WJH-Abt',
+      },
+    });
+    expect(text).toContain('Jugendamt Köln');
+    expect(text).toContain('WJH-Abt');
+    // Anschriftsblock-Reihenfolge: Firmenname → Abteilung → Straße → PLZ Stadt.
+    const firmennameIdx = text.indexOf('Jugendamt Köln');
+    const abteilungIdx = text.indexOf('WJH-Abt');
+    const strasseIdx = text.indexOf('Kalker');
+    expect(firmennameIdx).toBeLessThan(abteilungIdx);
+    expect(abteilungIdx).toBeLessThan(strasseIdx);
+  });
+
+  it('omits the Abteilung line when not set', async () => {
+    const { text } = await renderAndExtract({
+      auftraggeber: {
+        ...BASE_INPUT.auftraggeber,
+        abteilung: null,
+      },
+    });
+    expect(text).toContain('Jugendamt Köln');
+    expect(text).not.toContain('WJH-Abt');
   });
 
   it('renders one table row per Behandlung with date and Taetigkeit label (AC-RECH-10)', async () => {

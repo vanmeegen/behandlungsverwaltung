@@ -158,6 +158,7 @@ export async function createMonatsrechnung(
     kind: {
       vorname: kind.vorname,
       nachname: kind.nachname,
+      geburtsdatum: kind.geburtsdatum,
       aktenzeichen: kind.aktenzeichen,
       strasse: kind.strasse,
       hausnummer: kind.hausnummer,
@@ -167,6 +168,7 @@ export async function createMonatsrechnung(
     auftraggeber: {
       typ: ag.typ,
       firmenname: ag.firmenname,
+      abteilung: ag.abteilung,
       vorname: ag.vorname,
       nachname: ag.nachname,
       strasse: ag.strasse,
@@ -174,6 +176,7 @@ export async function createMonatsrechnung(
       plz: ag.plz,
       stadt: ag.stadt,
     },
+    auftraggeberRechnungskopfText: ag.rechnungskopfText,
     therapieForm: therapie.form as TherapieFormValue,
     stundensatzCents: ag.stundensatzCents,
     lines: behandlungenRows.map((b, i) => ({
