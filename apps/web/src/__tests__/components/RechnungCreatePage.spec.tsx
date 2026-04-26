@@ -122,6 +122,19 @@ describe('<RechnungCreatePage /> NNNN editing (PRD §3.2 / AC-RECH-15)', () => {
     expect((screen.getByTestId('rechnung-create-lfd') as HTMLInputElement).value).toBe('0007');
   });
 
+  it('appended digit replaces the leftmost zero (Bug 4)', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ nextFreeRechnungsLfdNummer: 1 });
+    const { rechnungStore } = renderPage(fetcher as unknown as GraphQLFetcher, 2026, 4);
+
+    const input = screen.getByTestId('rechnung-create-lfd') as HTMLInputElement;
+    await waitFor(() => expect(input.value).toBe('0001'));
+
+    // User cursor at end of "0001", types "9" → DOM event reports value "00019"
+    fireEvent.change(input, { target: { value: '00019' } });
+    expect(rechnungStore.draftRechnung.lfdNummer).toBe(19);
+    expect((screen.getByTestId('rechnung-create-lfd') as HTMLInputElement).value).toBe('0019');
+  });
+
   it('renders a red Alert for DUPLICATE_RECHNUNGSNUMMER', async () => {
     const fetcher = vi.fn().mockImplementation((query: string) => {
       if (query.includes('nextFreeRechnungsLfdNummer')) {

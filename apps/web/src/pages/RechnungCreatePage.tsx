@@ -63,7 +63,9 @@ export const RechnungCreatePage = observer(
     const lfdValue = String(draft.lfdNummer).padStart(4, '0');
 
     const onLfdChange = (event: ChangeEvent<HTMLInputElement>): void => {
-      const raw = event.target.value.replace(/\D+/g, '').slice(0, 4);
+      // Rechte vier Ziffern behalten, damit angefügte Tasten nicht durch
+      // den Slice abgeschnitten werden (Bug 4): "0001" + "9" → "00019" → "0019".
+      const raw = event.target.value.replace(/\D+/g, '').slice(-4);
       const parsed = raw.length === 0 ? 0 : Number.parseInt(raw, 10);
       draft.setLfdNummer(parsed);
     };
