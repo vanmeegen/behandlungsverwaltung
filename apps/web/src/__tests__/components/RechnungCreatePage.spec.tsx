@@ -155,3 +155,90 @@ describe('<RechnungCreatePage /> NNNN editing (PRD §3.2 / AC-RECH-15)', () => {
     });
   });
 });
+
+describe('<RechnungCreatePage /> Fehler-Rückmeldung im Submit-Pfad (Bug 8)', () => {
+  it('shows the KEINE_BEHANDLUNGEN alert with the actual server message format', async () => {
+    const fetcher = vi.fn().mockImplementation((query: string) => {
+      if (query.includes('nextFreeRechnungsLfdNummer'))
+        return Promise.resolve({ nextFreeRechnungsLfdNummer: 1 });
+      // Server-tatsächlicher Text aus rechnungAggregation.KeineBehandlungenError:
+      return Promise.reject(new Error('Für 2026-04 liegen keine Behandlungen vor'));
+    });
+    const { rechnungStore } = renderPage(fetcher as unknown as GraphQLFetcher, 2026, 4);
+    rechnungStore.draftRechnung.setKindId('10');
+    rechnungStore.draftRechnung.setAuftraggeberId('20');
+    await rechnungStore.saveDraft();
+    await waitFor(() => {
+      expect(screen.getByTestId('keine-behandlungen')).toBeInTheDocument();
+    });
+  });
+
+  it('shows a generic error alert for an unknown server error', async () => {
+    const fetcher = vi.fn().mockImplementation((query: string) => {
+      if (query.includes('nextFreeRechnungsLfdNummer'))
+        return Promise.resolve({ nextFreeRechnungsLfdNummer: 1 });
+      return Promise.reject(new Error('Boom — irgendein Backend-Crash'));
+    });
+    const { rechnungStore } = renderPage(fetcher as unknown as GraphQLFetcher, 2026, 4);
+    rechnungStore.draftRechnung.setKindId('10');
+    rechnungStore.draftRechnung.setAuftraggeberId('20');
+    await rechnungStore.saveDraft();
+    await waitFor(() => {
+      expect(screen.getByTestId('rechnung-create-error')).toHaveTextContent(
+        'Boom — irgendein Backend-Crash',
+      );
+    });
+  });
+
+  it('shows a validation alert when the form is incomplete (no kindId)', async () => {
+    const fetcher = vi.fn().mockResolvedValue({ nextFreeRechnungsLfdNummer: 1 });
+    const { rechnungStore } = renderPage(fetcher as unknown as GraphQLFetcher, 2026, 4);
+    // No kindId set → valid() is false
+    rechnungStore.draftRechnung.setAuftraggeberId('20');
+    await rechnungStore.saveDraft();
+    await waitFor(() => {
+      expect(screen.getByTestId('rechnung-create-error')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('rechnung-create-error').textContent).toMatch(/Pflicht|fehlen|aus/i);
+  });
+
+  it('clears the success alert when a subsequent save fails', async () => {
+    let call = 0;
+    const fetcher = vi.fn().mockImplementation((query: string) => {
+      if (query.includes('nextFreeRechnungsLfdNummer'))
+        return Promise.resolve({ nextFreeRechnungsLfdNummer: 1 });
+      call += 1;
+      if (call === 1) {
+        return Promise.resolve({
+          createMonatsrechnung: {
+            id: '1',
+            nummer: 'RE-2026-04-0001',
+            jahr: 2026,
+            monat: 4,
+            kindId: '10',
+            auftraggeberId: '20',
+            stundensatzCentsSnapshot: 4500,
+            gesamtCents: 27000,
+            dateiname: 'RE-2026-04-0001-Anna_Musterfrau.pdf',
+            downloadedAt: null,
+            rechnungsdatum: '2026-05-02',
+          },
+        });
+      }
+      return Promise.reject(new Error('Für 2026-04 liegen keine Behandlungen vor'));
+    });
+    const { rechnungStore } = renderPage(fetcher as unknown as GraphQLFetcher, 2026, 4);
+    rechnungStore.draftRechnung.setKindId('10');
+    rechnungStore.draftRechnung.setAuftraggeberId('20');
+    await rechnungStore.saveDraft();
+    await waitFor(() => {
+      expect(screen.getByTestId('rechnung-create-success-link')).toBeInTheDocument();
+    });
+    // Zweiter Submit scheitert → Erfolgs-Meldung muss verschwinden
+    await rechnungStore.saveDraft();
+    await waitFor(() => {
+      expect(screen.queryByTestId('rechnung-create-success-link')).not.toBeInTheDocument();
+    });
+    expect(screen.getByTestId('keine-behandlungen')).toBeInTheDocument();
+  });
+});

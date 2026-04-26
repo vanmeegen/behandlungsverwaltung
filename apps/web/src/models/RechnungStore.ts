@@ -266,10 +266,19 @@ function parseErrorCode(err: unknown): { code: RechnungErrorCode; message: strin
       message: `Diese Nummer ist im Jahr ${yr} bereits vergeben.`,
     };
   }
-  if (msg.includes('Für den gewählten Monat liegen keine Behandlungen vor')) {
+  // Server liefert "Für YYYY-MM liegen keine Behandlungen vor" (rechnungAggregation.ts);
+  // wir matchen flexibel auf das Kernstück, damit beide Varianten greifen.
+  if (/keine Behandlungen vor/.test(msg)) {
     return {
       code: 'KEINE_BEHANDLUNGEN',
       message: 'Für den gewählten Monat liegen keine Behandlungen vor.',
+    };
+  }
+  if (/keine Therapie angelegt/.test(msg)) {
+    return {
+      code: 'UNKNOWN',
+      message:
+        'Für die Kombination aus Kind und Auftraggeber ist keine Therapie hinterlegt — bitte zuerst eine Therapie anlegen.',
     };
   }
   if (msg.includes('Keine Rechnungsvorlage hinterlegt')) {
@@ -340,7 +349,16 @@ export class RechnungStore {
   }
 
   async saveDraft(options: { force?: boolean } = {}): Promise<Rechnung | null> {
-    if (!this.draftRechnung.valid()) return null;
+    if (!this.draftRechnung.valid()) {
+      runInAction(() => {
+        this.error = {
+          code: 'UNKNOWN',
+          message: 'Bitte alle Pflichtfelder ausfüllen, bevor die Rechnung erstellt wird.',
+        };
+        this.lastCreated = null;
+      });
+      return null;
+    }
     return this.create({
       year: this.draftRechnung.year,
       month: this.draftRechnung.month,
