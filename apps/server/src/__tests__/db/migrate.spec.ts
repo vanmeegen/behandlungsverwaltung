@@ -8,6 +8,7 @@ import { createAndMigrateDb } from '../../db/migrate';
 const EXPECTED_TABLES = [
   'auftraggeber',
   'behandlungen',
+  'erziehungsberechtigte',
   'kinder',
   'rechnung_behandlungen',
   'rechnungen',

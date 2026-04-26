@@ -9,3 +9,4 @@ export * from './auftraggeber';
 export * from './taetigkeit';
 export * from './therapie';
 export * from './behandlung';
+export * from './erziehungsberechtigte';

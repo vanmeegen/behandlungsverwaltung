@@ -2,6 +2,7 @@ import './kind';
 import './auftraggeber';
 import './therapie';
 import './behandlung';
+import './erziehungsberechtigte';
 import './templates';
 import './rechnung';
 import './stundennachweis';

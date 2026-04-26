@@ -1,4 +1,6 @@
 export * from './enums';
+export * from './erziehungsberechtigterType';
+export * from './erziehungsberechtigterInput';
 export * from './kind';
 export * from './kindInput';
 export * from './auftraggeber';
