@@ -70,6 +70,7 @@ function seed(ctx: TestDb): Seeded {
       form: 'lerntherapie',
       bewilligteBe: 60,
       taetigkeit: 'lerntherapie',
+      startdatum: new Date('2026-01-01'),
     })
     .returning()
     .all();
@@ -81,6 +82,7 @@ function seed(ctx: TestDb): Seeded {
       form: 'heilpaedagogik',
       bewilligteBe: 40,
       taetigkeit: null,
+      startdatum: new Date('2026-01-01'),
     })
     .returning()
     .all();
@@ -261,5 +263,98 @@ describe('createBehandlung mutation (PRD §2.4, AC-BEH-02, AC-BEH-03)', () => {
       (result.data as { createBehandlung: { gruppentherapie: boolean } }).createBehandlung
         .gruppentherapie,
     ).toBe(false);
+  });
+});
+
+describe('createBehandlung — Startdatum-Validierung (AC-BEH-07)', () => {
+  let ctx: TestDb;
+  let therapieId: number;
+
+  beforeEach(() => {
+    ctx = createTestDb();
+    const [k] = ctx.db
+      .insert(kinder)
+      .values({
+        vorname: 'Anna',
+        nachname: 'Musterfrau',
+        geburtsdatum: new Date('2018-03-14'),
+        strasse: 'Hauptstr.',
+        hausnummer: '12',
+        plz: '50667',
+        stadt: 'Köln',
+        aktenzeichen: 'K-2026-001',
+      })
+      .returning()
+      .all();
+    const [a] = ctx.db
+      .insert(auftraggeber)
+      .values({
+        typ: 'firma',
+        firmenname: 'Jugendamt Köln',
+        strasse: 'Kalker Hauptstr.',
+        hausnummer: '247-273',
+        plz: '51103',
+        stadt: 'Köln',
+        stundensatzCents: 4500,
+        rechnungskopfText: 'Mein Honorar …:',
+      })
+      .returning()
+      .all();
+    const [t] = ctx.db
+      .insert(therapien)
+      .values({
+        kindId: k!.id,
+        auftraggeberId: a!.id,
+        form: 'lerntherapie',
+        bewilligteBe: 60,
+        startdatum: new Date('2026-04-01'),
+      })
+      .returning()
+      .all();
+    therapieId = t!.id;
+  });
+
+  afterEach(() => {
+    ctx.cleanup();
+  });
+
+  async function run(input: Record<string, unknown>): Promise<Awaited<ReturnType<typeof graphql>>> {
+    return graphql({
+      schema,
+      source: CREATE_BEHANDLUNG,
+      variableValues: { input },
+      contextValue: { db: ctx.db, requestId: 'test' },
+    });
+  }
+
+  it('rejects datum before startdatum with BEHANDLUNG_VOR_STARTDATUM', async () => {
+    const result = await run({
+      therapieId: String(therapieId),
+      datum: '2026-03-31',
+      be: 2,
+    });
+    expect(result.errors).toBeDefined();
+    expect(result.errors?.[0]?.message).toBe('Datum liegt vor dem Startdatum der Therapie');
+    expect(result.errors?.[0]?.extensions?.code).toBe('BEHANDLUNG_VOR_STARTDATUM');
+    expect(ctx.db.select().from(behandlungen).all()).toHaveLength(0);
+  });
+
+  it('accepts datum equal to startdatum', async () => {
+    const result = await run({
+      therapieId: String(therapieId),
+      datum: '2026-04-01',
+      be: 2,
+    });
+    expect(result.errors).toBeUndefined();
+    expect(ctx.db.select().from(behandlungen).all()).toHaveLength(1);
+  });
+
+  it('accepts datum after startdatum', async () => {
+    const result = await run({
+      therapieId: String(therapieId),
+      datum: '2026-04-15',
+      be: 2,
+    });
+    expect(result.errors).toBeUndefined();
   });
 });

@@ -58,6 +58,7 @@ describe('<TherapieForm /> — inputs', () => {
       'therapie-form-kindId',
       'therapie-form-auftraggeberId',
       'therapie-form-form',
+      'therapie-form-startdatum',
       'therapie-form-bewilligteBe',
       'therapie-form-taetigkeit',
       'therapie-form-gruppentherapie',
@@ -160,6 +161,21 @@ describe('<TherapieForm /> — validation', () => {
     );
   });
 
+  it('shows Startdatum validation error when startdatum is empty on submit (AC-TH-05)', () => {
+    const fetcher = vi.fn();
+    const { kStore, aStore, tStore } = ready();
+    tStore.draftTherapie.setKindId('10');
+    tStore.draftTherapie.setAuftraggeberId('20');
+    tStore.draftTherapie.setForm('lerntherapie');
+    tStore.draftTherapie.setBewilligteBe(60);
+    renderForm(tStore, kStore, aStore);
+    fireEvent.click(screen.getByTestId('therapie-form-submit'));
+    expect(screen.getByTestId('therapie-form-startdatum-error')).toHaveTextContent(
+      'Startdatum ist Pflicht',
+    );
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it('submits with null kommentar and null taetigkeit when left empty', async () => {
     const fetcher = vi.fn().mockResolvedValue({
       createTherapie: {
@@ -168,6 +184,7 @@ describe('<TherapieForm /> — validation', () => {
         auftraggeberId: '20',
         form: 'lerntherapie',
         kommentar: null,
+        startdatum: '2026-04-01',
         bewilligteBe: 60,
         taetigkeit: null,
         gruppentherapie: false,
@@ -181,6 +198,7 @@ describe('<TherapieForm /> — validation', () => {
     tStore.draftTherapie.setKindId('10');
     tStore.draftTherapie.setAuftraggeberId('20');
     tStore.draftTherapie.setForm('lerntherapie');
+    tStore.draftTherapie.setStartdatum('2026-04-01');
     tStore.draftTherapie.setBewilligteBe(60);
     renderForm(tStore, kStore, aStore);
     fireEvent.click(screen.getByTestId('therapie-form-submit'));
@@ -194,6 +212,7 @@ describe('<TherapieForm /> — validation', () => {
         auftraggeberId: '20',
         form: 'lerntherapie',
         kommentar: null,
+        startdatum: '2026-04-01',
         bewilligteBe: 60,
         taetigkeit: null,
         gruppentherapie: false,

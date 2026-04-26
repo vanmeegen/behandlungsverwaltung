@@ -164,6 +164,7 @@ export interface SeededTherapie {
   auftraggeberId: string;
   form: SeededTherapieForm;
   kommentar: string | null;
+  startdatum: string;
   bewilligteBe: number;
   taetigkeit: SeededTaetigkeit | null;
   gruppentherapie: boolean;
@@ -175,6 +176,7 @@ const THERAPIE_COLUMNS = /* GraphQL */ `
   auftraggeberId
   form
   kommentar
+  startdatum
   bewilligteBe
   taetigkeit
   gruppentherapie

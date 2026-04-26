@@ -8,6 +8,7 @@ const lerntherapie: Therapie = {
   auftraggeberId: '20',
   form: 'lerntherapie',
   kommentar: null,
+  startdatum: '2026-01-01',
   bewilligteBe: 60,
   taetigkeit: 'lerntherapie',
   gruppentherapie: false,
@@ -60,6 +61,7 @@ describe('TherapieStore.saveDraft', () => {
     store.draftTherapie.setKindId('10');
     store.draftTherapie.setAuftraggeberId('20');
     store.draftTherapie.setForm('lerntherapie');
+    store.draftTherapie.setStartdatum('2026-01-01');
     store.draftTherapie.setBewilligteBe(60);
     store.draftTherapie.setTaetigkeit('lerntherapie');
   });
@@ -76,6 +78,7 @@ describe('TherapieStore.saveDraft', () => {
         auftraggeberId: '20',
         form: 'lerntherapie',
         kommentar: null,
+        startdatum: '2026-01-01',
         bewilligteBe: 60,
         taetigkeit: 'lerntherapie',
         gruppentherapie: false,

@@ -12,6 +12,7 @@ interface RowValues {
   auftraggeberId: number;
   form: TherapieInputType['form'];
   kommentar: string | null;
+  startdatum: Date;
   bewilligteBe: number;
   taetigkeit: TherapieInputType['taetigkeit'];
   gruppentherapie: boolean;
@@ -23,6 +24,7 @@ function toRowValues(parsed: TherapieInputType): RowValues {
     auftraggeberId: Number(parsed.auftraggeberId),
     form: parsed.form,
     kommentar: parsed.kommentar,
+    startdatum: parsed.startdatum,
     bewilligteBe: parsed.bewilligteBe,
     taetigkeit: parsed.taetigkeit,
     gruppentherapie: parsed.gruppentherapie,

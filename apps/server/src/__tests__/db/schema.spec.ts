@@ -137,6 +137,7 @@ describe('db/schema — therapien (PRD §2.3)', () => {
         'id',
         'kind_id',
         'kommentar',
+        'startdatum',
         'updated_at',
       ].sort(),
     );

@@ -11,6 +11,7 @@ export interface TherapieFormFields {
   kindId: string;
   auftraggeberId: string;
   form: TherapieFormValue;
+  startdatum?: string;
   bewilligteBe: number;
   kommentar?: string;
   taetigkeit?: string;
@@ -22,6 +23,7 @@ export class TherapieFormPage {
   readonly kindSelect: Locator;
   readonly auftraggeberSelect: Locator;
   readonly formSelect: Locator;
+  readonly startdatum: Locator;
   readonly kommentar: Locator;
   readonly bewilligteBe: Locator;
   readonly taetigkeit: Locator;
@@ -33,6 +35,7 @@ export class TherapieFormPage {
     this.kindSelect = page.getByTestId('therapie-form-kindId');
     this.auftraggeberSelect = page.getByTestId('therapie-form-auftraggeberId');
     this.formSelect = page.getByTestId('therapie-form-form');
+    this.startdatum = page.getByTestId('therapie-form-startdatum');
     this.kommentar = page.getByTestId('therapie-form-kommentar');
     this.bewilligteBe = page.getByTestId('therapie-form-bewilligteBe');
     this.taetigkeit = page.getByTestId('therapie-form-taetigkeit');
@@ -52,6 +55,7 @@ export class TherapieFormPage {
     await this.kindSelect.selectOption(fields.kindId);
     await this.auftraggeberSelect.selectOption(fields.auftraggeberId);
     await this.formSelect.selectOption(fields.form);
+    await this.startdatum.fill(fields.startdatum ?? '2026-01-01');
     await this.bewilligteBe.fill(String(fields.bewilligteBe));
     if (fields.taetigkeit !== undefined) {
       await this.taetigkeit.fill(fields.taetigkeit);

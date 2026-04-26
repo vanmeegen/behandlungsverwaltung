@@ -54,6 +54,7 @@ async function seedHappyPath(): Promise<{
     auftraggeberId: ag.id,
     form: 'lerntherapie',
     kommentar: null,
+    startdatum: '2026-01-01',
     bewilligteBe: 60,
     taetigkeit: 'lerntherapie',
   });
@@ -214,6 +215,7 @@ test.describe('UC-3.2 Monatsrechnung erzeugen', () => {
       auftraggeberId: otherAg.id,
       form: 'lerntherapie',
       kommentar: null,
+      startdatum: '2026-01-01',
       bewilligteBe: 60,
       taetigkeit: 'lerntherapie',
     });

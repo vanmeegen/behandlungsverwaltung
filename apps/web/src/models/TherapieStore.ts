@@ -14,6 +14,7 @@ export type TherapieFieldErrors = Partial<
     | 'auftraggeberId'
     | 'form'
     | 'kommentar'
+    | 'startdatum'
     | 'bewilligteBe'
     | 'taetigkeit'
     | 'gruppentherapie',
@@ -27,6 +28,7 @@ export interface Therapie {
   auftraggeberId: string;
   form: TherapieFormValue;
   kommentar: string | null;
+  startdatum: string;
   bewilligteBe: number;
   taetigkeit: TaetigkeitValue | null;
   gruppentherapie: boolean;
@@ -37,6 +39,7 @@ export interface TherapieFormInput {
   auftraggeberId: string;
   form: TherapieFormValue;
   kommentar: string | null;
+  startdatum: string;
   bewilligteBe: number;
   taetigkeit: TaetigkeitValue | null;
   gruppentherapie: boolean;
@@ -48,6 +51,7 @@ const THERAPIE_COLUMNS = /* GraphQL */ `
   auftraggeberId
   form
   kommentar
+  startdatum
   bewilligteBe
   taetigkeit
   gruppentherapie
@@ -105,6 +109,7 @@ export class TherapieDraft {
   auftraggeberId = '';
   form: TherapieFormValue = 'lerntherapie';
   kommentar = '';
+  startdatum = '';
   bewilligteBe = 0;
   taetigkeit: TaetigkeitValue | '' = '';
   gruppentherapie = false;
@@ -126,6 +131,9 @@ export class TherapieDraft {
   setKommentar(v: string): void {
     this.kommentar = v;
   }
+  setStartdatum(v: string): void {
+    this.startdatum = v;
+  }
   setBewilligteBe(v: number): void {
     this.bewilligteBe = v;
   }
@@ -142,6 +150,7 @@ export class TherapieDraft {
     this.auftraggeberId = t.auftraggeberId;
     this.form = t.form;
     this.kommentar = t.kommentar ?? '';
+    this.startdatum = t.startdatum ?? '';
     this.bewilligteBe = t.bewilligteBe;
     this.taetigkeit = t.taetigkeit ?? '';
     this.gruppentherapie = t.gruppentherapie;
@@ -154,6 +163,7 @@ export class TherapieDraft {
     this.auftraggeberId = '';
     this.form = 'lerntherapie';
     this.kommentar = '';
+    this.startdatum = '';
     this.bewilligteBe = 0;
     this.taetigkeit = '';
     this.gruppentherapie = false;
@@ -166,6 +176,7 @@ export class TherapieDraft {
       auftraggeberId: this.auftraggeberId,
       form: this.form,
       kommentar: this.kommentar,
+      startdatum: this.startdatum,
       bewilligteBe: this.bewilligteBe,
       taetigkeit: this.taetigkeit === '' ? null : this.taetigkeit,
       gruppentherapie: this.gruppentherapie,
@@ -187,6 +198,7 @@ export class TherapieDraft {
       auftraggeberId: parsed.data.auftraggeberId,
       form: parsed.data.form,
       kommentar: parsed.data.kommentar,
+      startdatum: parsed.data.startdatum.toISOString().slice(0, 10),
       bewilligteBe: parsed.data.bewilligteBe,
       taetigkeit: parsed.data.taetigkeit,
       gruppentherapie: parsed.data.gruppentherapie,

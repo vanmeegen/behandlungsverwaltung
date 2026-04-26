@@ -40,6 +40,10 @@ export const therapieSchema = z
       error: 'Therapieform ist ungültig',
     }),
     kommentar: kommentarSchema,
+    startdatum: z
+      .string({ error: 'Startdatum ist Pflicht' })
+      .min(1, 'Startdatum ist Pflicht')
+      .pipe(z.coerce.date()),
     bewilligteBe: z
       .number({ error: 'Bewilligte Behandlungseinheiten müssen > 0 sein' })
       .int('Bewilligte Behandlungseinheiten müssen > 0 sein')

@@ -151,6 +151,16 @@ export const TherapieForm = observer(
           )}
 
           <TextField
+            label="Startdatum"
+            type="date"
+            value={draft.startdatum}
+            onChange={(e): void => draft.setStartdatum(e.target.value)}
+            inputProps={{ 'data-testselector': 'therapie-form-startdatum' }}
+            InputLabelProps={{ shrink: true }}
+            {...errorProps(draft.errors, 'startdatum')}
+          />
+
+          <TextField
             label="Bewilligte Behandlungseinheiten"
             type="number"
             value={draft.bewilligteBe === 0 ? '' : draft.bewilligteBe}

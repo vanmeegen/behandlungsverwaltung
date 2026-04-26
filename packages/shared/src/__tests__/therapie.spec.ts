@@ -8,6 +8,7 @@ const baseValid = {
   kommentar: null,
   bewilligteBe: 60,
   taetigkeit: null,
+  startdatum: '2026-04-01',
 };
 
 describe('therapieSchema (PRD §2.3, AC-TH-01)', () => {
@@ -137,6 +138,33 @@ describe('therapieSchema (PRD §2.3, AC-TH-01)', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.gruppentherapie).toBe(false);
+    }
+  });
+});
+
+describe('therapieSchema — startdatum (AC-TH-05)', () => {
+  it('rejects Therapie without startdatum with "Startdatum ist Pflicht"', () => {
+    const rest: Record<string, unknown> = { ...baseValid };
+    delete rest.startdatum;
+    const result = therapieSchema.safeParse(rest);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path.includes('startdatum'));
+      expect(issue?.message).toBe('Startdatum ist Pflicht');
+    }
+  });
+
+  it('accepts startdatum="2026-04-01" (valid ISO)', () => {
+    const result = therapieSchema.safeParse({ ...baseValid, startdatum: '2026-04-01' });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects empty startdatum string', () => {
+    const result = therapieSchema.safeParse({ ...baseValid, startdatum: '' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path.includes('startdatum'));
+      expect(issue?.message).toBe('Startdatum ist Pflicht');
     }
   });
 });

@@ -1,4 +1,8 @@
-import { behandlungSchema } from '@behandlungsverwaltung/shared';
+import {
+  assertDatumGeStartdatum,
+  BehandlungVorStartdatumError,
+  behandlungSchema,
+} from '@behandlungsverwaltung/shared';
 import { eq } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
 import { behandlungen, rechnungBehandlungen, therapien } from '../../db/schema';
@@ -32,6 +36,16 @@ builder.mutationField('createBehandlung', (t) =>
       // PRD §2.4 / AC-BEH-06: gruppentherapie aus Input; Fallback = Therapie.
       const effectiveGruppentherapie = parsed.gruppentherapie ?? therapie.gruppentherapie;
       const datum = new Date(`${parsed.datum}T00:00:00.000Z`);
+      try {
+        assertDatumGeStartdatum(datum, therapie.startdatum);
+      } catch (err) {
+        if (err instanceof BehandlungVorStartdatumError) {
+          throw new GraphQLError(err.message, {
+            extensions: { code: 'BEHANDLUNG_VOR_STARTDATUM' },
+          });
+        }
+        throw err;
+      }
       const [row] = db
         .insert(behandlungen)
         .values({
@@ -75,6 +89,16 @@ builder.mutationField('updateBehandlung', (t) =>
       const effectiveTaetigkeit = parsed.taetigkeit ?? therapie.taetigkeit ?? null;
       const effectiveGruppentherapie = parsed.gruppentherapie ?? therapie.gruppentherapie;
       const datum = new Date(`${parsed.datum}T00:00:00.000Z`);
+      try {
+        assertDatumGeStartdatum(datum, therapie.startdatum);
+      } catch (err) {
+        if (err instanceof BehandlungVorStartdatumError) {
+          throw new GraphQLError(err.message, {
+            extensions: { code: 'BEHANDLUNG_VOR_STARTDATUM' },
+          });
+        }
+        throw err;
+      }
       const [row] = db
         .update(behandlungen)
         .set({

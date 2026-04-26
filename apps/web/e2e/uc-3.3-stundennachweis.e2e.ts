@@ -55,6 +55,7 @@ async function seedHappyPath(): Promise<{
     auftraggeberId: ag.id,
     form: 'lerntherapie',
     kommentar: null,
+    startdatum: '2026-01-01',
     bewilligteBe: 60,
     taetigkeit: 'lerntherapie',
   });

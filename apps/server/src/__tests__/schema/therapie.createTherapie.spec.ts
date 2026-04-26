@@ -77,6 +77,7 @@ describe('createTherapie mutation (PRD §2.3, AC-TH-01)', () => {
       auftraggeberId: String(auftraggeberId),
       form: 'lerntherapie',
       kommentar: null,
+      startdatum: '2026-01-01',
       bewilligteBe: 60,
       taetigkeit: 'lerntherapie',
       ...override,

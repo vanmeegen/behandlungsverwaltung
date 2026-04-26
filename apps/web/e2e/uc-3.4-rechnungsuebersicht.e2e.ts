@@ -80,6 +80,7 @@ test.describe('UC-3.4 Rechnungsübersicht', () => {
       auftraggeberId: ag.id,
       form: 'lerntherapie',
       kommentar: null,
+      startdatum: '2026-01-01',
       bewilligteBe: 60,
       taetigkeit: 'lerntherapie',
     });
@@ -110,6 +111,7 @@ test.describe('UC-3.4 Rechnungsübersicht', () => {
       auftraggeberId: ag.id,
       form: 'lerntherapie',
       kommentar: null,
+      startdatum: '2026-01-01',
       bewilligteBe: 60,
       taetigkeit: 'lerntherapie',
     });

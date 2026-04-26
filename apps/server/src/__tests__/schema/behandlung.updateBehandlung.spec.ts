@@ -68,6 +68,7 @@ function seed(ctx: TestDb): Seeded {
       form: 'lerntherapie',
       bewilligteBe: 60,
       taetigkeit: 'lerntherapie',
+      startdatum: new Date('2026-01-01'),
     })
     .returning()
     .all();

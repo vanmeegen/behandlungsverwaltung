@@ -9,6 +9,7 @@ export const TherapieRef = builder.objectRef<Therapie>('Therapie').implement({
     auftraggeberId: t.exposeID('auftraggeberId'),
     form: t.field({ type: TherapieFormEnum, resolve: (r) => r.form }),
     kommentar: t.exposeString('kommentar', { nullable: true }),
+    startdatum: t.string({ resolve: (r) => r.startdatum.toISOString().slice(0, 10) }),
     bewilligteBe: t.exposeInt('bewilligteBe'),
     taetigkeit: t.field({
       type: TaetigkeitEnum,

@@ -92,6 +92,7 @@ describe('updateTherapie mutation (PRD §2.3)', () => {
       auftraggeberId: String(auftraggeberId),
       form: 'lerntherapie',
       kommentar: null,
+      startdatum: '2026-01-01',
       bewilligteBe: 80,
       taetigkeit: 'dyskalkulie',
     });
@@ -106,6 +107,7 @@ describe('updateTherapie mutation (PRD §2.3)', () => {
       kindId: String(kindId),
       auftraggeberId: String(auftraggeberId),
       form: 'lerntherapie',
+      startdatum: '2026-01-01',
       bewilligteBe: 60,
     });
     expect(result.errors?.[0]?.extensions?.code).toBe('NOT_FOUND');
@@ -117,6 +119,7 @@ describe('updateTherapie mutation (PRD §2.3)', () => {
       auftraggeberId: String(auftraggeberId),
       form: 'lerntherapie',
       kommentar: null,
+      startdatum: '2026-01-01',
       bewilligteBe: 60,
       taetigkeit: 'lerntherapie',
       gruppentherapie: true,
