@@ -154,17 +154,24 @@ export const SchnellerfassungPage = observer(
               })}
             </TextField>
 
-            <Box>
-              <Typography component="span" sx={{ mr: 2 }}>
-                Behandlungseinheiten
-              </Typography>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Typography component="span">Behandlungseinheiten</Typography>
               <BeStepper
                 value={draft.be}
                 onIncrement={draft.incrementBe}
                 onDecrement={draft.decrementBe}
                 testPrefix="schnellerfassung-be"
               />
-            </Box>
+              {selectedTherapie && (
+                <Typography
+                  component="span"
+                  data-testselector="schnellerfassung-noch-verfuegbar"
+                  sx={{ ml: 'auto' }}
+                >
+                  noch verfügbar: {selectedTherapie.verfuegbareBe ?? 0} BE
+                </Typography>
+              )}
+            </Stack>
 
             <TextField
               label="Datum"

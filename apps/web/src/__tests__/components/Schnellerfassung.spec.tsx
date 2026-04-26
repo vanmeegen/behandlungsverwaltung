@@ -138,6 +138,28 @@ describe('<SchnellerfassungPage /> — Kind → Therapie cascade', () => {
   });
 });
 
+describe('<SchnellerfassungPage /> — „noch verfügbar" im Formular (Bug 6)', () => {
+  it('shows verfuegbareBe next to BE stepper after Therapie selection', () => {
+    const { behandlungStore, therapieStore } = renderPage();
+    therapieStore.items = [{ ...lern, verfuegbareBe: 60 }];
+    act(() => {
+      behandlungStore.draftBehandlung.setKindId('10');
+    });
+    fireEvent.change(screen.getByTestId('schnellerfassung-therapieId'), {
+      target: { value: '7' },
+    });
+    const indicator = screen.getByTestId('schnellerfassung-noch-verfuegbar');
+    expect(indicator).toBeInTheDocument();
+    expect(indicator.textContent).toContain('60');
+    expect(indicator.textContent).toMatch(/BE/);
+  });
+
+  it('does not render the indicator before a Therapie is chosen', () => {
+    renderPage();
+    expect(screen.queryByTestId('schnellerfassung-noch-verfuegbar')).not.toBeInTheDocument();
+  });
+});
+
 describe('<SchnellerfassungPage /> — Tätigkeit Vorbelegung (AC-BEH-03)', () => {
   it('pre-fills taetigkeit with Therapie.taetigkeit on selection', () => {
     const { behandlungStore } = renderPage();
