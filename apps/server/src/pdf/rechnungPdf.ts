@@ -133,6 +133,10 @@ export async function renderRechnungPdf(input: RechnungPdfInput): Promise<Uint8A
   const form = doc.getForm();
   setField(form, 'empfaengerAdresse', auftraggeberAdresse(input.auftraggeber), true);
   setField(form, 'rechnungsnummer', input.nummer);
+  // rechnungsvorlage.pdf hat zusätzlich ein zweites, prominentes
+  // "Rechnung Nr."-Feld (`rechnungsnummer2`); fehlt es in einer
+  // älteren Vorlage, ignoriert setField das still.
+  setField(form, 'rechnungsnummer2', input.nummer);
   setField(form, 'rechnungsdatum', formatDateDe(input.rechnungsdatum));
   setField(form, 'leistungszeitraum', formatLeistungszeitraum(input.year, input.month));
   setField(form, 'einleitungstext', einleitungstext(input), true);

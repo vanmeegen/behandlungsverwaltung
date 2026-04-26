@@ -20,6 +20,8 @@ Auftraggeber. Die PLZ darf in keinem Fall leer gespeichert werden.
 - Adresse: Straße, Hausnummer, **PLZ (Pflicht)**, Stadt
 - Aktenzeichen (interne Kennung, z. B. für interne Akten;
   **nicht** Teil der Rechnungsnummer)
+- **Erziehungsberechtigte (0 – 2)** — Beziehung zu §2.5; pro Kind
+  können null, ein oder zwei Erziehungsberechtigte hinterlegt werden.
 
 ### 2.2 Auftraggeber
 
@@ -28,7 +30,22 @@ Auftraggeber. Die PLZ darf in keinem Fall leer gespeichert werden.
 - **Abteilung** (nur bei Firma, **optional**) — wird im
   Anschriftsblock der Rechnung zusätzlich zum Firmennamen ausgegeben
 - Adresse: Straße, Hausnummer, **PLZ (Pflicht)**, Stadt
-- Stundensatz (Euro pro Behandlungseinheit)
+- Stundensatz (Euro pro Behandlungseinheit) — Standard-Stundensatz für
+  **Einzeltherapie**
+- **Gruppentherapie-Stundensätze (optional)** — für Gruppen mit 1 bis
+  4 Kindern werden je Gruppengröße zwei Werte erfasst:
+  - **Prozentsatz** (`%`) — Anteil des Stundensatzes, mit dem ein Kind
+    in einer Gruppe dieser Größe berechnet wird
+  - **Stundensatz** (`€/BE`) — alternativ direkt der pro Kind in einer
+    Gruppe dieser Größe abgerechnete Eurobetrag
+
+  Damit ergeben sich **acht Felder** pro Auftraggeber
+  (`gruppe1Prozent`, `gruppe1Stundensatz`, `gruppe2Prozent`,
+  `gruppe2Stundensatz`, `gruppe3Prozent`, `gruppe3Stundensatz`,
+  `gruppe4Prozent`, `gruppe4Stundensatz`), **alle optional**, in der
+  Datenbank **denormalisiert direkt am Auftraggeber** abgelegt (keine
+  separate Tabelle).
+
 - **Rechnungskopf-Text** (mehrzeilig, Pflicht) — frei formulierbarer
   Einleitungstext der Rechnung pro Auftraggeber. Ersetzt den bisher
   fest verdrahteten Satz („Mein Honorar für die Teilmaßnahme …")
@@ -40,10 +57,14 @@ Auftraggeber. Die PLZ darf in keinem Fall leer gespeichert werden.
 
 - Kind, Auftraggeber
 - Therapieform (Auswahl):
-  Dyskalkulietherapie · Lerntherapie · LRS-Therapie ·
+  Dyskalkulie-Therapie · Lern-Therapie · Legasthenie-Therapie ·
   Resilienztraining · Heilpädagogik · Elternberatung ·
   **Sonstiges**
 - Kommentarfeld (nur bei „Sonstiges", dann Pflicht)
+- **Startdatum** (Pflicht) — Datum, ab dem die Therapie läuft. Dient
+  als **Untergrenze** für jede Behandlung dieser Therapie: das Datum
+  einer Behandlung muss **≥ Startdatum** sein, sonst Validierungsfehler
+  (§2.4).
 - Gesamtzahl bewilligter Behandlungseinheiten
 - **Gruppentherapie** (Checkbox, Default: **false**) — kennzeichnet
   die Therapie als Gruppentherapie und dient als **Vorbelegung** für
@@ -52,35 +73,83 @@ Auftraggeber. Die PLZ darf in keinem Fall leer gespeichert werden.
   Tätigkeit jeder daraus erfassten Behandlung (§2.4). Auswahlwerte
   sind **alle Therapieformen** (oben) **plus** Elterngespräch ·
   Lehrergespräch · Bericht · Förderplan · Teamberatung.
-- **Gruppentherapie** (Ja/Nein, Default Nein): kennzeichnet die
-  Therapie als Gruppentherapie. Dient als Vorbelegung für die
-  daraus erfassten Behandlungen (§2.4).
 
 ### 2.4 Behandlung (zuvor „Termin", wird durchgängig **Behandlung** genannt)
 
 - Therapie (daraus ergeben sich Kind und Auftraggeber automatisch)
-- Datum
+- Datum — Validierung: **≥ Startdatum** der zugeordneten Therapie
+  (§2.3); andernfalls Fehler „Datum liegt vor dem Startdatum der
+  Therapie".
 - **Behandlungseinheiten (BE)** — **nie in Stunden**, immer als Anzahl BE
 - **Tätigkeit** (Pflicht, Auswahl aus demselben Enum wie §2.3):
   wird pro Behandlung **gespeichert** und in der Eingabemaske aus der
   Tätigkeit der Therapie **vorbelegt**; die Therapeutin kann den Wert
   pro Behandlung überschreiben.
+- **Sonstiges-Freitext** — wenn die Tätigkeit auf **„Sonstiges"**
+  steht, erscheint in der Eingabemaske **zusätzlich** ein
+  Freitextfeld (**Pflicht**, **max. 35 Zeichen**). Der Inhalt wird
+  pro Behandlung gespeichert und ersetzt in der Rechnungszeile
+  (§3.2 / AC-RECH-10) den Text „Sonstiges" als Tätigkeit-Label.
+  Bei jeder anderen Tätigkeit wird das Feld nicht angezeigt und
+  bleibt leer.
 - **Gruppentherapie** (Checkbox): wird pro Behandlung
   **gespeichert** und in der Eingabemaske aus dem entsprechenden
   Wert der Therapie (§2.3) **vorbelegt**; die Therapeutin kann den
   Wert pro Behandlung überschreiben.
 
+### 2.5 Erziehungsberechtigte (Beziehung zu Kind, 0 – 2)
+
+Eigene Datenbank-Entity. Pro Kind dürfen **null, ein oder zwei**
+Erziehungsberechtigte hinterlegt sein. Felder:
+
+- **Vorname**, **Nachname**
+- Adresse — **vollständige eigene Adresse** (Straße, Hausnummer,
+  PLZ, Stadt). **Falls die Adresse leer bleibt**, wird beim Lesen
+  und beim Drucken die **Adresse des Kindes** als Fallback
+  verwendet (kein automatisches Kopieren in die Felder; die
+  Felder bleiben in der DB leer).
+- **E-Mail 1**, **E-Mail 2** (beide optional)
+- **Telefonnummer 1**, **Telefonnummer 2** (beide optional)
+
+Die Reihenfolge der zwei Einträge am Kind ist stabil
+(„Erziehungsberechtigte 1" / „Erziehungsberechtigte 2") — das
+Kind-Formular zeigt zwei feste Slots (§3.5).
+
 ## 3. Kernabläufe
 
 ### 3.1 Behandlung erfassen (Handy-Schnellerfassung)
 
+Im Hauptmenü heißt der Eintrag, der zu dieser Erfassungsmaske führt,
+**„Behandlungen"** (nicht „Schnellerfassung").
+
 In wenigen Taps: Kind auswählen → Therapie → BE (Stepper) → Datum
 (Vorbelegung: heute) → **Tätigkeit** (vorbelegt aus der Therapie,
-überschreibbar) → Speichern. Nach dem Speichern bleibt die Maske
+überschreibbar; bei „Sonstiges" Pflicht-Freitextfeld bis 35 Zeichen,
+§2.4) → Speichern. Nach dem Speichern bleibt die Maske
 bereit für die **schnelle Erfassung mehrerer Behandlungen in Folge**
 (z. B. beim Nacherfassen eines Tages): Kind/Therapie-Auswahl bleiben
 erhalten, Datum und BE werden für den nächsten Eintrag
 zurückgesetzt.
+
+**Behandlungsliste unterhalb der Erfassung:** Sobald Kind und
+Therapie ausgewählt sind, zeigt die Maske unterhalb der
+Erfassungsfelder eine Liste **aller bereits erfassten Behandlungen**
+dieser Therapie, **sortiert nach Datum absteigend** (neueste zuerst).
+Spalten der Liste:
+
+| Datum | Tätigkeit | BE |
+
+Rechts neben der Spalte **BE** wird zusätzlich der Hinweis
+**„noch verfügbar: X BE"** angezeigt; `X` = Gesamtzahl bewilligter
+BE der Therapie (§2.3) − Summe der BE aller bereits erfassten
+Behandlungen dieser Therapie. Beim Speichern einer neuen Behandlung
+wird der Wert **sofort aktualisiert**.
+
+**Bearbeiten / Löschen:** Jede Listenzeile bietet Aktionen
+**„Bearbeiten"** (öffnet die Behandlung erneut zur Korrektur) und
+**„Löschen"** (mit Bestätigungsdialog „Behandlung wirklich
+löschen?" — „Ja" / „Abbrechen"). Nach Speichern bzw. Löschen
+aktualisieren sich Liste und „noch verfügbar"-Hinweis sofort.
 
 ### 3.2 Monatsrechnung erstellen
 
@@ -101,7 +170,9 @@ System aus Rechnungsjahr und Abrechnungsmonat abgeleitet und ist
   - **Anzahl** = Anzahl **BE** der Behandlung
   - **Einheit** = fest der Text „BE"
   - **Bezeichnung** = `<DD.MM.YYYY> · <Tätigkeit>` der Behandlung
-    (Fallback auf die Therapieform, wenn die Tätigkeit fehlt, §2.4)
+    (Fallback auf die Therapieform, wenn die Tätigkeit fehlt, §2.4).
+    Bei Tätigkeit „Sonstiges" wird stattdessen der pro Behandlung
+    erfasste **Sonstiges-Freitext** (§2.4, max. 35 Zeichen) eingesetzt.
   - **Einzel €** = Stundensatz des Auftraggebers (§2.2)
   - **Gesamt €** = Anzahl × Einzel
 
@@ -111,6 +182,12 @@ System aus Rechnungsjahr und Abrechnungsmonat abgeleitet und ist
   `RE-YYYY-MM-NNNN-<Name Kind>.pdf` ab (Präfix `RE-` plus Jahr, Monat
   und laufende Nummer gemäß Abschnitt 4; Beispiel:
   `RE-2026-04-0001-Anna_Musterfrau.pdf`).
+
+**Direktlink nach der Erzeugung:** Sobald die Rechnung erfolgreich
+erstellt ist, zeigt die Erfolgsmeldung **zusätzlich einen Link auf
+die soeben erzeugte Rechnungs-PDF** an („Rechnung öffnen"), so dass
+die Therapeutin sie ohne Umweg über die Rechnungsübersicht direkt
+ansehen oder herunterladen kann.
 
 **Duplikat-Schutz:** Existiert für den gewählten Monat, das Kind und
 den Auftraggeber bereits eine Rechnung, so erscheint beim Start der
@@ -155,6 +232,16 @@ Therapeutin öffnet die Kinderliste und legt über „Neu" ein Kind an
 Aktenzeichen). Nach dem Speichern erscheint das Kind in der Liste und
 steht als Auswahl in Therapie- und Behandlungserfassung zur Verfügung.
 
+**Erziehungsberechtigte im Kind-Formular:** Das Formular zeigt
+**zwei feste Slots** „Erziehungsberechtigte 1" und
+„Erziehungsberechtigte 2". Pro Slot wird **der Nachname** angezeigt
+(oder der Slot bleibt **leer**, wenn nichts erfasst ist). Neben jedem
+Slot steht ein **„Bearbeiten"-Button**: er öffnet das
+Erziehungsberechtigten-Formular (Vorname, Nachname, vollständige
+Adresse, E-Mail 1/2, Telefon 1/2 — alle optional bis auf den Namen).
+Nach „Speichern" oder „Abbrechen" kehrt die UI zur Kind-Maske zurück
+und zeigt im jeweiligen Slot den aktualisierten Nachnamen.
+
 ### 3.6 Auftraggeber erfassen
 
 Therapeutin öffnet die Auftraggeberliste und legt über „Neu" einen
@@ -169,10 +256,20 @@ und in der Therapie-Zuordnung.
 Therapeutin öffnet die Therapieliste und legt über „Neu" eine
 Therapie an: wählt ein bereits erfasstes Kind und einen bereits
 erfassten Auftraggeber, wählt die Therapieform (bei **Sonstiges** ist
-das Kommentarfeld Pflicht) und erfasst die Gesamtzahl bewilligter
-Behandlungseinheiten. Nach dem Speichern erscheint die Therapie
-sowohl unter der Detailansicht des Kindes als auch unter der des
-Auftraggebers.
+das Kommentarfeld Pflicht), erfasst das **Startdatum** und die
+Gesamtzahl bewilligter Behandlungseinheiten. Nach dem Speichern
+erscheint die Therapie sowohl unter der Detailansicht des Kindes als
+auch unter der des Auftraggebers.
+
+**Tabellenanzeige der Therapieliste** — die Liste der Therapien hat
+folgende Spalten (in dieser Reihenfolge):
+
+| Nachname | Vorname | Geleistete BE | Therapieform |
+
+- **Nachname / Vorname** = des verknüpften Kindes
+- **Geleistete BE** = Summe der BE aller bereits erfassten
+  Behandlungen dieser Therapie (nicht: bewilligte Gesamtzahl)
+- **Therapieform** = Wert aus §2.3 (Klartext-Bezeichnung)
 
 ### 3.8 Rechnungen pro Auftraggeber und Monat herunterladen
 
@@ -249,7 +346,8 @@ auf, sodass das erzeugte PDF in jedem Viewer gleich aussieht.
 | Feldname            | Typ              | Zweck                                                                                                                                |
 | ------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `empfaengerAdresse` | Text (multiline) | Anschriftsblock; bei Firma mit hinterlegter **Abteilung** (§2.2) wird diese als zweite Zeile direkt unter dem Firmennamen ausgegeben |
-| `rechnungsnummer`   | Text             | `RE-YYYY-MM-NNNN`; darf in der Vorlage mehrfach vorkommen                                                                            |
+| `rechnungsnummer`   | Text             | `RE-YYYY-MM-NNNN`; klein gesetztes Feld neben „Rechnungsnummer:" in der Vorlage                                                      |
+| `rechnungsnummer2`  | Text (optional)  | `RE-YYYY-MM-NNNN`; großes „Rechnung Nr."-Feld in der Vorlage. Fehlt es, wird es still ignoriert (kompatibel zu älteren Vorlagen)     |
 | `rechnungsdatum`    | Text             | Ausstellungsdatum `DD.MM.YYYY`                                                                                                       |
 | `leistungszeitraum` | Text             | z. B. `01.04.2026 – 30.04.2026`                                                                                                      |
 | `einleitungstext`   | Text (multiline) | **Rechnungskopf-Text** aus dem Auftraggeber-Stammdatensatz (§2.2), unverändert übernommen                                            |
@@ -269,6 +367,17 @@ enthalten. Leere Zeilen bleiben leer. Phase 1 unterstützt so
 viele Behandlungen, wie in die Zone passen; darüber hinaus wird
 `TooManyBehandlungenError` ausgelöst (Paginierung in Phase 2).
 
+**Optimierte Vorlage:** Die produktive Rechnungsvorlage liegt als
+`rechnungsvorlage.pdf` im Repo-Root und ist die Referenz für die
+Tabellen- und Spaltenkoordinaten in
+`apps/server/src/pdf/layout.ts#LAYOUT.rechnung`. Eckdaten der
+Vorlage (DIN A4, Ursprung unten-links): Tabellenrahmen `x ∈
+[50, 545]`, `y ∈ [183.5, 513.3]`; Header-Höhe 22 pt mit Unterkante
+bei `y = 491.3`; Spaltentrenner bei `x = 50, 96, 136, 176, 415,
+480, 545`. Die Spaltenüberschrift für den Stundensatz lautet in
+der Vorlage **„BE €"** (gleichbedeutend mit „Einzel €" im PRD-
+Wording — der pro Behandlungseinheit abgerechnete Betrag).
+
 USt-Hinweis, Zahlungsziel, Dankestext und Unterschriftsbereich
 sind **statischer Bestandteil der Vorlage** — sie werden nicht
 vom Code gezeichnet.
@@ -277,6 +386,31 @@ vom Code gezeichnet.
 einem Verzeichnis `templates/` **neben der Datenbankdatei** abgelegt
 (nicht in der Datenbank). Die Therapeutin kann die Vorlagen dort
 notfalls auch direkt austauschen.
+
+### Vorlagen-Verwaltung (UI)
+
+Die Vorlagen werden in der UI **analog zu den anderen Stammdaten**
+(Kind, Auftraggeber, Therapie) verwaltet — als eigene Liste mit
+**„Neu"-Button** und einer Tabelle der bereits hinterlegten Vorlagen.
+
+**Listenspalten:**
+
+| Geltungsbereich | Typ | Datei |
+
+- **Geltungsbereich** = entweder **„Global"** (Fallback-Vorlage) oder
+  der **Auftraggebername**, dem die Vorlage zugeordnet ist
+- **Typ** = **Rechnung** oder **Stundennachweis**
+- **Datei** = **PDF-Link** auf die hochgeladene Vorlage (Klick öffnet
+  oder lädt die Vorlage herunter)
+
+**Hochladen einer Vorlage:** Statt der bisherigen zwei Schritte
+(„Datei auswählen" + getrennter „Hochladen"-Button) gibt es einen
+**einzigen kombinierten Button** „**PDF-Datei hochladen**". Ein Klick
+öffnet den Dateidialog; sobald die Therapeutin eine Datei wählt und
+den Dateidialog bestätigt, **startet der Upload automatisch**. Nach
+erfolgreichem Upload erscheint eine **deutliche Bestätigungsmeldung**
+(„Vorlage hochgeladen") und die neue Vorlage erscheint sofort in der
+Liste. Während des Uploads zeigt der Button einen Lade-Indikator.
 
 **Speicherort der erzeugten PDFs:** Fertig erzeugte Rechnungen werden
 im Verzeichnis `bills/`, Stundennachweise im Verzeichnis `timesheets/`
@@ -324,6 +458,28 @@ Testgrundlage (TDD).
   Then kommt Validierungsfehler „PLZ ist Pflicht".
 - **AC-KIND-03** `[e2e]` Given ein Kind existiert, When Therapeutin es
   bearbeitet und speichert, Then werden die Änderungen angezeigt.
+- **AC-KIND-04** `[unit][e2e]` Given das Kind-Formular, Then sind
+  zwei feste Slots **„Erziehungsberechtigte 1"** und
+  **„Erziehungsberechtigte 2"** sichtbar; jeder Slot zeigt den
+  hinterlegten **Nachnamen** an oder bleibt **leer**, wenn keine
+  Erziehungsberechtigte erfasst ist. Neben jedem Slot steht ein
+  **„Bearbeiten"-Button**, der das Erziehungsberechtigten-Formular
+  öffnet und nach „Speichern" / „Abbrechen" zur Kind-Maske
+  zurückkehrt.
+- **AC-KIND-05** `[unit]` Given ein Kind hat eine
+  Erziehungsberechtigte ohne eigene Adresse, Then wird beim Lesen
+  und Drucken die Adresse des Kindes als **Fallback** verwendet;
+  die Adressfelder am Erziehungsberechtigten bleiben in der DB
+  leer.
+
+### Erziehungsberechtigte
+
+- **AC-EZB-01** `[unit]` Given das Erziehungsberechtigten-Formular,
+  Then sind **Vorname** und **Nachname** Pflicht; Adresse, E-Mail 1,
+  E-Mail 2, Telefon 1 und Telefon 2 sind **optional**.
+- **AC-EZB-02** `[unit]` Given ein Kind, Then können **0, 1 oder 2**
+  Erziehungsberechtigte hinterlegt sein; ein dritter Eintrag wird
+  durch das UI-Modell (zwei feste Slots) ausgeschlossen.
 
 ### Auftraggeber
 
@@ -341,6 +497,14 @@ Testgrundlage (TDD).
   Auftraggeber, Then ist der **Rechnungskopf-Text** (mehrzeilig,
   §2.2) ein Pflichtfeld; ohne Wert kommt der Validierungsfehler
   „Rechnungskopf-Text ist Pflicht".
+- **AC-AG-06** `[unit]` Given das Auftraggeber-Formular, Then
+  enthält es für Gruppentherapien **acht optionale Felder**
+  (`gruppe1Prozent`, `gruppe1Stundensatz`, `gruppe2Prozent`,
+  `gruppe2Stundensatz`, `gruppe3Prozent`, `gruppe3Stundensatz`,
+  `gruppe4Prozent`, `gruppe4Stundensatz`) für Gruppen mit 1 – 4
+  Kindern; alle dürfen leer bleiben und werden in der Datenbank
+  **denormalisiert direkt am Auftraggeber** gespeichert (keine
+  separate Tabelle).
 
 ### Therapie
 
@@ -351,7 +515,7 @@ Testgrundlage (TDD).
   Therapeutin eine Therapie anlegt, Then erscheint sie unter beiden
   referenzierten Datensätzen.
 - **AC-TH-03** `[unit]` Given die Therapieform-Auswahl, Then enthält
-  sie genau: Dyskalkulietherapie, Lerntherapie, **LRS-Therapie**,
+  sie genau: Dyskalkulie-Therapie, Lern-Therapie, **Legasthenie-Therapie**,
   **Resilienztraining**, Heilpädagogik, Elternberatung, Sonstiges.
 - **AC-TH-04** `[unit][e2e]` Given das Therapie-Formular, Then ist die
   Checkbox **Gruppentherapie** standardmäßig **nicht angehakt**; When
@@ -359,6 +523,14 @@ Testgrundlage (TDD).
   persistiert, in der Detailansicht als „Gruppentherapie: Ja"
   (sonst „Gruppentherapie: Nein") angezeigt und steht den abhängigen
   Behandlungen als Vorbelegung zur Verfügung (§2.4).
+- **AC-TH-05** `[unit]` Given das Therapie-Formular, Then ist
+  **Startdatum** ein Pflichtfeld; ohne Wert wird mit
+  Validierungsfehler abgelehnt.
+- **AC-TH-06** `[unit][e2e]` Given die Therapieliste, Then hat die
+  Tabelle die Spalten **Nachname · Vorname · Geleistete BE ·
+  Therapieform** in dieser Reihenfolge; **Geleistete BE** zeigt die
+  Summe der bereits erfassten Behandlungs-BE dieser Therapie
+  (nicht: bewilligte Gesamtzahl).
 
 ### Behandlung
 
@@ -375,8 +547,8 @@ Testgrundlage (TDD).
   Therapeutin pro Behandlung überschrieben werden.
 - **AC-BEH-04** `[unit]` Given die Tätigkeit-Auswahl für eine
   Behandlung, Then besteht die Werteliste aus **allen
-  Therapieformen** (Dyskalkulietherapie, Lerntherapie,
-  LRS-Therapie, Resilienztraining, Heilpädagogik, Elternberatung,
+  Therapieformen** (Dyskalkulie-Therapie, Lern-Therapie,
+  Legasthenie-Therapie, Resilienztraining, Heilpädagogik, Elternberatung,
   Sonstiges) **plus** Elterngespräch, Lehrergespräch, Bericht,
   Förderplan, Teamberatung.
 - **AC-BEH-05** `[e2e]` Given die Schnellerfassung ist geöffnet,
@@ -391,6 +563,33 @@ Testgrundlage (TDD).
   der Therapie **vorbelegt** und kann von der Therapeutin pro
   Behandlung überschrieben werden; der Wert wird pro Behandlung
   persistiert.
+- **AC-BEH-07** `[unit]` Given eine Therapie mit Startdatum
+  `2026-04-01`, When eine Behandlung mit Datum `2026-03-31` erfasst
+  wird, Then erscheint der Validierungsfehler „Datum liegt vor dem
+  Startdatum der Therapie" und die Behandlung wird nicht gespeichert.
+- **AC-BEH-08** `[unit][e2e]` Given die Tätigkeit ist auf
+  **„Sonstiges"** gesetzt, Then erscheint zusätzlich ein
+  **Pflicht-Freitextfeld** (max. 35 Zeichen). Ohne Wert kommt der
+  Fehler „Beschreibung Pflicht bei Sonstiges". Bei jeder anderen
+  Tätigkeit wird das Feld nicht angezeigt und nicht gespeichert.
+- **AC-BEH-09** `[unit]` Given eine Behandlung mit Tätigkeit
+  „Sonstiges" und Freitext „Hospitation Schule", Then enthält die
+  Rechnungszeile (§3.2 / AC-RECH-10) im Bezeichnungs-Label genau
+  diesen Freitext **anstelle** des Wortes „Sonstiges"
+  (z. B. `15.04.2026 · Hospitation Schule`).
+- **AC-BEH-10** `[e2e]` Given Kind und Therapie sind in der
+  Behandlungserfassung ausgewählt, Then zeigt die Maske unterhalb
+  der Erfassung eine Liste aller bereits erfassten Behandlungen
+  dieser Therapie, **sortiert nach Datum absteigend**, mit Spalten
+  **Datum · Tätigkeit · BE** und einem Hinweis **„noch verfügbar:
+  X BE"** (X = bewilligte Gesamtzahl − Summe erfasste BE). Beim
+  Speichern einer neuen Behandlung aktualisiert sich `X` sofort.
+- **AC-BEH-11** `[e2e]` Given eine Listenzeile in der
+  Behandlungsliste, Then bietet sie Aktionen **„Bearbeiten"** und
+  **„Löschen"**; „Löschen" zeigt einen Bestätigungsdialog
+  („Behandlung wirklich löschen?") und entfernt die Behandlung
+  erst nach „Ja". Nach beiden Aktionen aktualisiert sich der
+  „noch verfügbar"-Hinweis sofort.
 
 ### Rechnung
 
@@ -430,8 +629,9 @@ Testgrundlage (TDD).
   Zeile genau die Spalten **Pos · Anzahl · Einheit · Bezeichnung ·
   Einzel € · Gesamt €** in dieser Reihenfolge; **Bezeichnung**
   enthält `<DD.MM.YYYY> · <Tätigkeit>` (mit Fallback auf die
-  Therapieform, wenn die Tätigkeit fehlt, §2.4); **Einheit** ist
-  fest „BE".
+  Therapieform, wenn die Tätigkeit fehlt, §2.4; bei Tätigkeit
+  „Sonstiges" steht stattdessen der pro Behandlung erfasste
+  **Sonstiges-Freitext**, AC-BEH-09); **Einheit** ist fest „BE".
 - **AC-RECH-11** `[e2e]` Given eine Rechnung `RE-2026-04-0001`
   existiert, When die Therapeutin sie mit korrigierten Daten **neu
   erstellt** (Dialog „Ja"), Then wird die PDF mit den neuen Daten
@@ -463,7 +663,7 @@ Testgrundlage (TDD).
   (`geb. DD.MM.YYYY`)**, Aktenzeichen und den Abrechnungsmonat in
   dieser Reihenfolge.
 - **AC-RECH-17** `[unit]` Given Auftraggeber A hat den
-  Rechnungskopf-Text „Mein Honorar für die Lerntherapie von …"
+  Rechnungskopf-Text „Mein Honorar für die Lern-Therapie von …"
   hinterlegt, When eine Rechnung für A erzeugt wird, Then steht
   dieser Text **wortgetreu** im AcroForm-Feld `einleitungstext` der
   PDF (kein code-generierter Satz aus der Therapieform).
@@ -473,6 +673,11 @@ Testgrundlage (TDD).
   `empfaengerAdresse` direkt unter dem Firmennamen die Zeile
   „Wirtschaftliche Jugendhilfe"; ohne hinterlegte Abteilung
   entfällt diese Zeile ersatzlos.
+- **AC-RECH-19** `[e2e]` Given die Therapeutin hat eine Rechnung
+  erfolgreich erzeugt, Then zeigt die Erfolgsmeldung **zusätzlich
+  einen Link „Rechnung öffnen"** auf die soeben erzeugte PDF;
+  ein Klick öffnet bzw. lädt die Rechnungs-PDF, ohne dass die
+  Therapeutin in die Rechnungsübersicht wechseln muss.
 
 ### Stundennachweis
 
@@ -500,6 +705,22 @@ Testgrundlage (TDD).
 - **AC-TPL-02** `[unit]` Given ein Vorlagendatei wird manuell im
   `templates/`-Ordner ersetzt, Then verwendet die nächste
   Rechnungserzeugung die neue Datei (keine DB-Kopie).
+- **AC-TPL-03** `[e2e]` Given die Vorlagen-Verwaltung, Then zeigt
+  sie eine Liste mit Spalten **Geltungsbereich · Typ · Datei**;
+  „Geltungsbereich" lautet **„Global"** für die Fallback-Vorlage
+  oder enthält den **Auftraggebernamen**, „Typ" ist **Rechnung**
+  oder **Stundennachweis**, und „Datei" ist ein **PDF-Link**, der
+  beim Klick die hinterlegte Vorlage öffnet bzw. herunterlädt.
+  Über einen **„Neu"-Button** lassen sich neue Vorlagen anlegen
+  (analog zu Kind / Auftraggeber / Therapie).
+- **AC-TPL-04** `[e2e]` Given die „Neu"-Maske der
+  Vorlagen-Verwaltung, Then existiert ein **kombinierter Button**
+  „**PDF-Datei hochladen**". Ein Klick öffnet den Dateidialog;
+  sobald die Therapeutin eine Datei wählt und den Dialog
+  bestätigt, **startet der Upload automatisch** ohne weiteren
+  Klick. Nach erfolgreichem Upload erscheint eine deutliche
+  Bestätigungsmeldung „Vorlage hochgeladen" und die Vorlage
+  erscheint sofort in der Liste.
 
 ### Speicherung
 
@@ -538,29 +759,51 @@ Feature: Behandlung per Handy-Schnellerfassung aufzeichnen
   Background:
     Given ein Kind „Anna Musterfrau" existiert
     And ein Auftraggeber „Jugendamt Köln" existiert
-    And eine Therapie „Lerntherapie" verknüpft „Anna Musterfrau" und „Jugendamt Köln"
+    And eine Therapie „Lern-Therapie" verknüpft „Anna Musterfrau" und „Jugendamt Köln"
 
   Scenario: 2 BE für heute mit der Schnellerfassung speichern
     Given ich öffne die Schnellerfassung auf einem 390×844-Viewport
     When ich „Anna Musterfrau" als Kind auswähle
-    And ich die Therapie „Lerntherapie" auswähle
+    And ich die Therapie „Lern-Therapie" auswähle
     And ich BE auf 2 setze
     And ich das vorbelegte Datum (heute) unverändert lasse
     And ich die aus der Therapie vorbelegte Tätigkeit unverändert lasse
     And die Checkbox „Gruppentherapie" ist mit dem Wert der Therapie vorbelegt
     And ich „Speichern" antippe
     Then sehe ich die Bestätigung „Behandlung gespeichert"
-    And die Behandlungsliste der Therapie „Lerntherapie" enthält einen Eintrag mit heutigem Datum, „2 BE" und der Tätigkeit „Lerntherapie"
+    And die Behandlungsliste der Therapie „Lern-Therapie" enthält einen Eintrag mit heutigem Datum, „2 BE" und der Tätigkeit „Lern-Therapie"
 
   Scenario: Mehrere Behandlungen in Folge schnell erfassen
     Given ich öffne die Schnellerfassung auf einem 390×844-Viewport
-    And Kind „Anna Musterfrau" und Therapie „Lerntherapie" sind ausgewählt
+    And Kind „Anna Musterfrau" und Therapie „Lern-Therapie" sind ausgewählt
     When ich eine Behandlung für „2026-04-20" mit 2 BE speichere
     Then sehe ich die Bestätigung „Behandlung gespeichert"
     And Kind und Therapie sind weiterhin ausgewählt
     And Datum und BE sind für den nächsten Eintrag zurückgesetzt
     When ich eine Behandlung für „2026-04-21" mit 1 BE speichere
-    Then enthält die Behandlungsliste der Therapie „Lerntherapie" beide Einträge
+    Then enthält die Behandlungsliste der Therapie „Lern-Therapie" beide Einträge
+
+  Scenario: Behandlungsliste mit „noch verfügbar"-Hinweis
+    Given die Therapie „Lern-Therapie" hat 60 bewilligte BE
+    And für diese Therapie wurden bereits 8 BE erfasst
+    When ich Kind „Anna Musterfrau" und Therapie „Lern-Therapie" auswähle
+    Then sehe ich unterhalb der Erfassung eine Liste mit Spalten „Datum · Tätigkeit · BE", sortiert nach Datum absteigend
+    And rechts neben der Spalte „BE" steht „noch verfügbar: 52 BE"
+    When ich eine neue Behandlung mit 2 BE speichere
+    Then aktualisiert sich der Hinweis auf „noch verfügbar: 50 BE"
+    And die neue Behandlung erscheint als oberste Zeile der Liste
+
+  Scenario: Tätigkeit „Sonstiges" erfordert einen Pflicht-Freitext (max. 35 Zeichen)
+    Given ich öffne die Schnellerfassung auf einem 390×844-Viewport
+    And Kind „Anna Musterfrau" und Therapie „Lern-Therapie" sind ausgewählt
+    When ich die Tätigkeit auf „Sonstiges" setze
+    Then erscheint zusätzlich ein Pflicht-Freitextfeld mit max. 35 Zeichen
+    When ich das Freitextfeld leer lasse
+    And ich auf „Speichern" tippe
+    Then sehe ich die Fehlermeldung „Beschreibung Pflicht bei Sonstiges"
+    When ich „Hospitation Schule" eingebe und auf „Speichern" tippe
+    Then sehe ich die Bestätigung „Behandlung gespeichert"
+    And eine spätere Rechnungszeile dieser Behandlung enthält im Bezeichnungs-Label „Hospitation Schule" statt „Sonstiges"
 ```
 
 ### UC-3.2 Monatsrechnung als PDF erzeugen
@@ -574,7 +817,7 @@ Feature: Monatsrechnung als PDF erzeugen
   Background:
     Given ein Kind „Anna Musterfrau" existiert
     And ein Auftraggeber „Jugendamt Köln" mit Stundensatz 45,00 € existiert
-    And eine Therapie „Lerntherapie" verknüpft die beiden
+    And eine Therapie „Lern-Therapie" verknüpft die beiden
     And im April 2026 wurden drei Behandlungen mit je 2 BE erfasst
     And eine globale Rechnungsvorlage ist hochgeladen
 
@@ -587,6 +830,7 @@ Feature: Monatsrechnung als PDF erzeugen
     When ich die vorbelegte Rechnungsnummer unverändert lasse
     And ich „Rechnung erzeugen" antippe
     Then sehe ich die Bestätigung „Rechnung erstellt: RE-2026-04-0001"
+    And die Bestätigungsmeldung enthält einen Link „Rechnung öffnen", der die soeben erzeugte PDF öffnet
     And die Datei „RE-2026-04-0001-Anna_Musterfrau.pdf" liegt im Ordner „bills/"
     And die Rechnungsübersicht zeigt eine Zeile mit Nummer „RE-2026-04-0001" und Gesamtsumme „270,00 €"
     And die Rechnungszeilen haben die Spalten „Bezeichnung · Menge · Einheit · Einzel € · Gesamt €" in dieser Reihenfolge
@@ -713,6 +957,20 @@ Feature: Ein neues Kind anlegen
     When ich bei „Musterfrau, Anna" auf „Löschen" tippe
     Then sehe ich die Fehlermeldung „Kind ist mit einer Therapie verknüpft und kann nicht gelöscht werden"
     And „Musterfrau, Anna" bleibt in der Kinderliste
+
+  Scenario: Erziehungsberechtigte über Slot „Erziehungsberechtigte 1" erfassen
+    Given das Kind „Musterfrau, Anna" existiert
+    When ich „Musterfrau, Anna" öffne und auf „Bearbeiten" tippe
+    Then sehe ich die Slots „Erziehungsberechtigte 1" und „Erziehungsberechtigte 2", beide leer
+    When ich neben „Erziehungsberechtigte 1" auf „Bearbeiten" tippe
+    And ich Vorname „Maria" und Nachname „Musterfrau" eingebe
+    And ich E-Mail 1 „maria@example.org" und Telefon 1 „0221-123" eingebe
+    And ich die Adressfelder leer lasse
+    And ich auf „Speichern" tippe
+    Then kehre ich zur Kind-Maske zurück
+    And der Slot „Erziehungsberechtigte 1" zeigt den Nachnamen „Musterfrau"
+    And der Slot „Erziehungsberechtigte 2" bleibt leer
+    And in der Detailansicht der Erziehungsberechtigten wird die Adresse des Kindes als Fallback angezeigt
 ```
 
 ### UC-3.6 Auftraggeber erfassen
@@ -735,7 +993,7 @@ Feature: Einen neuen Auftraggeber anlegen
     And ich Straße „Kalker Hauptstr." und Hausnummer „247-273" eingebe
     And ich PLZ „51103" und Stadt „Köln" eingebe
     And ich Stundensatz „45,00" eingebe
-    And ich Rechnungskopf-Text „Mein Honorar für die Lerntherapie von <Kind> berechne ich Ihnen wie folgt:" eingebe
+    And ich Rechnungskopf-Text „Mein Honorar für die Lern-Therapie von <Kind> berechne ich Ihnen wie folgt:" eingebe
     And ich auf „Speichern" tippe
     Then sehe ich die Bestätigung „Auftraggeber gespeichert"
     And die Auftraggeberliste enthält eine Zeile mit Firmenname „Jugendamt Köln"
@@ -796,13 +1054,14 @@ Feature: Eine Therapie zwischen Kind und Auftraggeber anlegen
     And ein Auftraggeber „Jugendamt Köln" existiert
     And die Therapieliste ist leer
 
-  Scenario: Lerntherapie mit 60 bewilligten BE anlegen
+  Scenario: Lern-Therapie mit 60 bewilligten BE anlegen
     Given ich öffne die Therapieliste
     When ich auf „Neu" tippe
     And die Checkbox „Gruppentherapie" ist standardmäßig nicht angehakt
     And ich Kind „Anna Musterfrau" wähle
     And ich Auftraggeber „Jugendamt Köln" wähle
-    And ich Therapieform „Lerntherapie" wähle
+    And ich Therapieform „Lern-Therapie" wähle
+    And ich Startdatum „2026-04-01" eingebe
     And ich 60 als Gesamtzahl bewilligter Behandlungseinheiten eingebe
     And die Checkbox „Gruppentherapie" ist standardmäßig nicht angehakt
     And ich auf „Speichern" tippe
@@ -810,6 +1069,8 @@ Feature: Eine Therapie zwischen Kind und Auftraggeber anlegen
     And die Therapie erscheint in der Detailansicht von „Anna Musterfrau"
     And die Therapie erscheint in der Detailansicht von „Jugendamt Köln"
     And die Detailansicht der Therapie zeigt „Gruppentherapie: Nein"
+    And die Therapieliste hat die Spalten „Nachname · Vorname · Geleistete BE · Therapieform"
+    And die Zeile zeigt „Musterfrau · Anna · 0 · Lern-Therapie"
 
   Scenario: Therapie als Gruppentherapie anlegen
     Given ich öffne die Therapieliste
@@ -833,7 +1094,7 @@ Feature: Eine Therapie zwischen Kind und Auftraggeber anlegen
     And die Therapieliste bleibt leer
 
   Scenario: Therapie bearbeiten (bewilligte BE erhöhen und Tätigkeit setzen)
-    Given eine Therapie „Lerntherapie" für „Anna Musterfrau" / „Jugendamt Köln" mit 60 bewilligten BE existiert
+    Given eine Therapie „Lern-Therapie" für „Anna Musterfrau" / „Jugendamt Köln" mit 60 bewilligten BE existiert
     When ich die Therapie öffne und auf „Bearbeiten" tippe
     And ich die Gesamtzahl bewilligter BE auf 80 ändere
     And ich die Tätigkeit auf „Elterngespräch" setze
@@ -842,7 +1103,7 @@ Feature: Eine Therapie zwischen Kind und Auftraggeber anlegen
     And die Detailansicht zeigt „80 BE" und Tätigkeit „Elterngespräch"
 
   Scenario: Therapie ohne erfasste Behandlungen löschen
-    Given eine Therapie „Lerntherapie" für „Anna Musterfrau" / „Jugendamt Köln" existiert
+    Given eine Therapie „Lern-Therapie" für „Anna Musterfrau" / „Jugendamt Köln" existiert
     And der Therapie sind keine Behandlungen zugeordnet
     When ich bei der Therapie auf „Löschen" tippe
     And ich den Bestätigungsdialog „Therapie wirklich löschen?" mit „Ja" bestätige
@@ -850,11 +1111,18 @@ Feature: Eine Therapie zwischen Kind und Auftraggeber anlegen
     And sie erscheint nicht mehr in den Detailansichten von „Anna Musterfrau" und „Jugendamt Köln"
 
   Scenario: Therapie mit erfassten Behandlungen kann nicht gelöscht werden
-    Given eine Therapie „Lerntherapie" für „Anna Musterfrau" / „Jugendamt Köln" existiert
+    Given eine Therapie „Lern-Therapie" für „Anna Musterfrau" / „Jugendamt Köln" existiert
     And für diese Therapie wurde mindestens eine Behandlung erfasst
     When ich bei der Therapie auf „Löschen" tippe
     Then sehe ich die Fehlermeldung „Therapie hat erfasste Behandlungen und kann nicht gelöscht werden"
     And die Therapie bleibt in der Therapieliste
+
+  Scenario: Behandlung mit Datum vor dem Startdatum wird abgelehnt
+    Given eine Therapie „Lern-Therapie" mit Startdatum „2026-04-01" existiert
+    When ich für diese Therapie eine Behandlung mit Datum „2026-03-31" erfassen möchte
+    And ich auf „Speichern" tippe
+    Then sehe ich die Fehlermeldung „Datum liegt vor dem Startdatum der Therapie"
+    And die Behandlung wird nicht gespeichert
 ```
 
 ### UC-3.8 Rechnungen pro Auftraggeber und Monat herunterladen
@@ -892,11 +1160,11 @@ Feature: Eine erfasste Behandlung nachträglich korrigieren oder entfernen
   damit ich Tippfehler oder falsch erfasste Einträge korrigieren kann, bevor eine Rechnung erzeugt oder neu erzeugt wird
 
   Background:
-    Given eine Therapie „Lerntherapie" für „Anna Musterfrau" / „Jugendamt Köln" existiert
-    And für diese Therapie ist eine Behandlung vom „2026-04-15" mit 2 BE und Tätigkeit „Lerntherapie" erfasst
+    Given eine Therapie „Lern-Therapie" für „Anna Musterfrau" / „Jugendamt Köln" existiert
+    And für diese Therapie ist eine Behandlung vom „2026-04-15" mit 2 BE und Tätigkeit „Lern-Therapie" erfasst
 
   Scenario: Behandlung bearbeiten (Datum, BE und Tätigkeit ändern)
-    Given ich öffne die Behandlungsliste der Therapie „Lerntherapie"
+    Given ich öffne die Behandlungsliste der Therapie „Lern-Therapie"
     When ich die Behandlung vom „2026-04-15" öffne und auf „Bearbeiten" tippe
     And ich das Datum auf „2026-04-16" ändere
     And ich BE auf 3 setze
@@ -904,19 +1172,19 @@ Feature: Eine erfasste Behandlung nachträglich korrigieren oder entfernen
     And ich auf „Speichern" tippe
     Then sehe ich die Bestätigung „Behandlung gespeichert"
     And die Behandlungsliste enthält einen Eintrag „2026-04-16 · 3 BE · Förderplan"
-    And der ursprüngliche Eintrag „2026-04-15 · 2 BE · Lerntherapie" ist nicht mehr vorhanden
+    And der ursprüngliche Eintrag „2026-04-15 · 2 BE · Lern-Therapie" ist nicht mehr vorhanden
 
   Scenario: Behandlung löschen
-    Given ich öffne die Behandlungsliste der Therapie „Lerntherapie"
+    Given ich öffne die Behandlungsliste der Therapie „Lern-Therapie"
     When ich bei der Behandlung vom „2026-04-15" auf „Löschen" tippe
     And ich den Bestätigungsdialog „Behandlung wirklich löschen?" mit „Ja" bestätige
     Then verschwindet die Behandlung aus der Behandlungsliste der Therapie
 
   Scenario: Abbrechen des Lösch-Dialogs lässt die Behandlung stehen
-    Given ich öffne die Behandlungsliste der Therapie „Lerntherapie"
+    Given ich öffne die Behandlungsliste der Therapie „Lern-Therapie"
     When ich bei der Behandlung vom „2026-04-15" auf „Löschen" tippe
     And ich den Bestätigungsdialog mit „Abbrechen" schließe
-    Then bleibt die Behandlung „2026-04-15 · 2 BE · Lerntherapie" in der Liste
+    Then bleibt die Behandlung „2026-04-15 · 2 BE · Lern-Therapie" in der Liste
 ```
 
 ### UC-3.10 PDF-Vorlage entfernen
@@ -943,18 +1211,18 @@ Feature: Eine auftraggeber-spezifische PDF-Vorlage entfernen
 
 ### Zuordnung UC → Akzeptanzkriterien (Abschnitt 9)
 
-| Use Case | deckt AC                                                   | ergänzt (neu durch UC spezifiziert)                                       |
-| -------- | ---------------------------------------------------------- | ------------------------------------------------------------------------- |
-| UC-3.1   | AC-BEH-01, AC-BEH-03, AC-BEH-05                            | Tätigkeit-Vorbelegung aus Therapie, Schnell-Nacherfassung (§2.4, §3.1)    |
-| UC-3.2   | AC-RECH-01, AC-RECH-05, AC-RECH-09, AC-RECH-10, AC-RECH-11 | Dateiname-Format `RE-…`, Dialog „Ja/Abbrechen", Korrektur-Flow (§3.2, §4) |
-| UC-3.3   | AC-STD-01, AC-STD-02, AC-STD-04                            | Ablage in `timesheets/` statt `bills/`, Dateiname-Format `ST-…` (§3.3)    |
-| UC-3.4   | —                                                          | Filter- und Download-Flow aus §3.4                                        |
-| UC-3.5   | AC-KIND-01, AC-KIND-02, AC-KIND-03                         | Delete-Flow + Referenz-Schutz (Kind mit Therapie)                         |
-| UC-3.6   | AC-AG-01, AC-AG-02                                         | Update-Flow (Stundensatz), Delete-Flow + Referenz-Schutz                  |
-| UC-3.7   | AC-TH-01, AC-TH-02, AC-TH-04                               | Update-Flow (BE, Tätigkeit), Delete-Flow + Referenz-Schutz                |
-| UC-3.8   | AC-RECH-12                                                 | Bündel-Download pro Auftraggeber/Monat, Versand-Vermerk (§3.8)            |
-| UC-3.9   | —                                                          | Behandlung bearbeiten / löschen (Abbrechen-Pfad inkl.)                    |
-| UC-3.10  | AC-TPL-01 (Gegenstück)                                     | Auftraggeber-Vorlage entfernen, Fallback greift wieder                    |
+| Use Case | deckt AC                                                                         | ergänzt (neu durch UC spezifiziert)                                                                                                  |
+| -------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| UC-3.1   | AC-BEH-01, AC-BEH-03, AC-BEH-05, AC-BEH-08, AC-BEH-09, AC-BEH-10                 | Tätigkeit-Vorbelegung aus Therapie, Schnell-Nacherfassung, Behandlungsliste mit „noch verfügbar"-BE, Sonstiges-Freitext (§2.4, §3.1) |
+| UC-3.2   | AC-RECH-01, AC-RECH-05, AC-RECH-09, AC-RECH-10, AC-RECH-11, AC-RECH-19           | Dateiname-Format `RE-…`, Dialog „Ja/Abbrechen", Korrektur-Flow, Direktlink „Rechnung öffnen" (§3.2, §4)                              |
+| UC-3.3   | AC-STD-01, AC-STD-02, AC-STD-04                                                  | Ablage in `timesheets/` statt `bills/`, Dateiname-Format `ST-…` (§3.3)                                                               |
+| UC-3.4   | —                                                                                | Filter- und Download-Flow aus §3.4                                                                                                   |
+| UC-3.5   | AC-KIND-01, AC-KIND-02, AC-KIND-03, AC-KIND-04, AC-KIND-05, AC-EZB-01, AC-EZB-02 | Delete-Flow + Referenz-Schutz (Kind mit Therapie), Erziehungsberechtigte-Slots + Bearbeiten + Adress-Fallback                        |
+| UC-3.6   | AC-AG-01, AC-AG-02, AC-AG-06                                                     | Update-Flow (Stundensatz), Delete-Flow + Referenz-Schutz, Gruppentherapie-Stundensätze                                               |
+| UC-3.7   | AC-TH-01, AC-TH-02, AC-TH-04, AC-TH-05, AC-TH-06, AC-BEH-07                      | Update-Flow (BE, Tätigkeit), Delete-Flow + Referenz-Schutz, Startdatum + Validierung, Tabellenanzeige der Therapieliste              |
+| UC-3.8   | AC-RECH-12                                                                       | Bündel-Download pro Auftraggeber/Monat, Versand-Vermerk (§3.8)                                                                       |
+| UC-3.9   | AC-BEH-11                                                                        | Behandlung bearbeiten / löschen (Abbrechen-Pfad inkl.)                                                                               |
+| UC-3.10  | AC-TPL-01 (Gegenstück), AC-TPL-03, AC-TPL-04                                     | Auftraggeber-Vorlage entfernen, Vorlagenliste mit Spalten + Direkt-Upload, Fallback greift wieder                                    |
 
 ### CRUD-Entity → E2E Mapping
 
@@ -962,15 +1230,15 @@ Diese Tabelle dokumentiert die E2E-Abdeckung für
 **Create · Read · Update · Delete** aller CRUD-Entitäten der App.
 „n/a" = für diese Entität bewusst nicht vorgesehen (siehe Fußnote).
 
-| Entität         | Create                                               | Read (Liste/Detail)                               | Update (Bearbeiten)                                                    | Delete (Löschen)                                                           |
-| --------------- | ---------------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Kind            | UC-3.5 (Szenario „Kind vollständig anlegen")         | UC-3.5 (Liste enthält Eintrag), UC-3.7 Background | UC-3.5 (`uc-3.5-kind.e2e.ts`, „Edit-Pfad AC-KIND-03")                  | UC-3.5 (Szenarien „Kind löschen" + Referenz-Schutz)                        |
-| Auftraggeber    | UC-3.6 (Szenarien „Firma", „Person-Happy")           | UC-3.6 (Liste enthält Eintrag), UC-3.7 Background | UC-3.6 (Szenario „Auftraggeber bearbeiten — Stundensatz anpassen")     | UC-3.6 (Szenarien „Auftraggeber löschen" + Referenz-Schutz)                |
-| Therapie        | UC-3.7 (Szenarien „Lerntherapie", „Sonstiges-Happy") | UC-3.7 (Detailansicht beider Datensätze)          | UC-3.7 (Szenario „Therapie bearbeiten — BE erhöhen, Tätigkeit setzen") | UC-3.7 (Szenarien „Therapie löschen" + Referenz-Schutz bei Behandlungen)   |
-| Behandlung      | UC-3.1 (Szenario „2 BE für heute")                   | UC-3.1 (Behandlungsliste der Therapie)            | UC-3.9 (Szenario „Behandlung bearbeiten — Datum/BE/Tätigkeit ändern")  | UC-3.9 (Szenarien „Behandlung löschen" + Abbrechen-Pfad)                   |
-| Rechnung        | UC-3.2 (Szenario „Rechnung für April 2026")          | UC-3.4 (Rechnungsübersicht, Filter, PDF-Download) | UC-3.2 „Nachträgliche Korrektur" (Neu-Erzeugung, Nummer bleibt)        | n/a¹                                                                       |
-| Stundennachweis | UC-3.3 (Szenario „Stundennachweis April 2026")       | — (kein separater Listen-UC)                      | n/a²                                                                   | n/a²                                                                       |
-| PDF-Vorlage     | `templates.e2e.ts` (AC-TPL-01)                       | `templates.e2e.ts`                                | AC-TPL-02 (Dateisystem-Ersatz)                                         | UC-3.10 (Szenario „Auftraggeber-Vorlage löschen — Fallback greift wieder") |
+| Entität         | Create                                                | Read (Liste/Detail)                               | Update (Bearbeiten)                                                    | Delete (Löschen)                                                           |
+| --------------- | ----------------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Kind            | UC-3.5 (Szenario „Kind vollständig anlegen")          | UC-3.5 (Liste enthält Eintrag), UC-3.7 Background | UC-3.5 (`uc-3.5-kind.e2e.ts`, „Edit-Pfad AC-KIND-03")                  | UC-3.5 (Szenarien „Kind löschen" + Referenz-Schutz)                        |
+| Auftraggeber    | UC-3.6 (Szenarien „Firma", „Person-Happy")            | UC-3.6 (Liste enthält Eintrag), UC-3.7 Background | UC-3.6 (Szenario „Auftraggeber bearbeiten — Stundensatz anpassen")     | UC-3.6 (Szenarien „Auftraggeber löschen" + Referenz-Schutz)                |
+| Therapie        | UC-3.7 (Szenarien „Lern-Therapie", „Sonstiges-Happy") | UC-3.7 (Detailansicht beider Datensätze)          | UC-3.7 (Szenario „Therapie bearbeiten — BE erhöhen, Tätigkeit setzen") | UC-3.7 (Szenarien „Therapie löschen" + Referenz-Schutz bei Behandlungen)   |
+| Behandlung      | UC-3.1 (Szenario „2 BE für heute")                    | UC-3.1 (Behandlungsliste der Therapie)            | UC-3.9 (Szenario „Behandlung bearbeiten — Datum/BE/Tätigkeit ändern")  | UC-3.9 (Szenarien „Behandlung löschen" + Abbrechen-Pfad)                   |
+| Rechnung        | UC-3.2 (Szenario „Rechnung für April 2026")           | UC-3.4 (Rechnungsübersicht, Filter, PDF-Download) | UC-3.2 „Nachträgliche Korrektur" (Neu-Erzeugung, Nummer bleibt)        | n/a¹                                                                       |
+| Stundennachweis | UC-3.3 (Szenario „Stundennachweis April 2026")        | — (kein separater Listen-UC)                      | n/a²                                                                   | n/a²                                                                       |
+| PDF-Vorlage     | `templates.e2e.ts` (AC-TPL-01)                        | `templates.e2e.ts`                                | AC-TPL-02 (Dateisystem-Ersatz)                                         | UC-3.10 (Szenario „Auftraggeber-Vorlage löschen — Fallback greift wieder") |
 
 **Fußnoten:**
 
