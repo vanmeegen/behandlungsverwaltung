@@ -25,11 +25,19 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    include: ['zod'],
+  },
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/__tests__/setup.ts'],
     include: ['**/__tests__/**/*.spec.{ts,tsx}'],
     css: false,
+    server: {
+      deps: {
+        inline: ['zod', /@behandlungsverwaltung\//],
+      },
+    },
   },
 });

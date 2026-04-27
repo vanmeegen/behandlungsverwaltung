@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import type { GraphQLFetcher } from '../../api/graphqlClient';
@@ -70,8 +70,7 @@ describe('<TemplateUploadPage /> — Auto-Upload (AC-TPL-04)', () => {
     Object.defineProperty(fileInput, 'files', { value: [file] });
     fireEvent.change(fileInput);
 
-    await new Promise((r) => setTimeout(r, 30));
-    expect(uploadFetcher).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(uploadFetcher).toHaveBeenCalledTimes(1));
     const [, variables] = uploadFetcher.mock.calls[0] as [string, Record<string, unknown>];
     const input = (
       variables as { input: { kind: string; auftraggeberId: string | null; base64: string } }

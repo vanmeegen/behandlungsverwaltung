@@ -74,7 +74,7 @@ export const AppShell = observer(({ uiStore }: AppShellProps) => {
           zIndex: (t) => t.zIndex.drawer + 1,
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ minHeight: 80, gap: 2 }}>
           {!isDesktop && (
             <IconButton
               color="inherit"
@@ -82,12 +82,23 @@ export const AppShell = observer(({ uiStore }: AppShellProps) => {
               edge="start"
               onClick={uiStore.toggleDrawer}
               data-testselector="nav-toggle"
-              sx={{ mr: 2 }}
+              sx={{ mr: 1 }}
             >
               <MenuIcon />
             </IconButton>
           )}
-          <Typography variant="h6" component="h1" noWrap>
+          <Box
+            component="img"
+            src="/logo.png"
+            alt="bewegtes Lernen"
+            sx={{ height: 56, width: 'auto', display: 'block' }}
+          />
+          <Typography
+            variant="h6"
+            component="h1"
+            noWrap
+            sx={{ fontFamily: '"Lora", Georgia, serif', fontWeight: 700 }}
+          >
             Behandlungsverwaltung
           </Typography>
         </Toolbar>
@@ -107,7 +118,7 @@ export const AppShell = observer(({ uiStore }: AppShellProps) => {
           },
         }}
       >
-        <Toolbar />
+        <Toolbar sx={{ minHeight: 80 }} />
         {navList}
       </Drawer>
 
@@ -118,7 +129,7 @@ export const AppShell = observer(({ uiStore }: AppShellProps) => {
           width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
         }}
       >
-        <Toolbar />
+        <Toolbar sx={{ minHeight: 80 }} />
         <Container maxWidth="md" sx={{ py: 3 }}>
           <Outlet />
         </Container>

@@ -170,6 +170,19 @@ export class BehandlungDraft {
     this.errors = {};
   }
 
+  loadFromBehandlung(b: Behandlung): void {
+    this.kindId = '';
+    this.therapieId = b.therapieId;
+    this.datum = b.datum.slice(0, 10);
+    this.be = b.be;
+    this.taetigkeit = (b.taetigkeit ?? '') as TaetigkeitValue | '';
+    this.taetigkeitTouched = true;
+    this.gruppentherapie = b.gruppentherapie;
+    this.gruppentherapieTouched = true;
+    this.sonstigesText = b.sonstigesText ?? '';
+    this.errors = {};
+  }
+
   // PRD §3.1: nach dem Speichern bleibt die Maske bereit für die
   // schnelle Erfassung der nächsten Behandlung desselben Kinds/derselben
   // Therapie. Kind/Therapie bleiben gesetzt, Datum und BE werden auf die
@@ -231,6 +244,8 @@ export class BehandlungStore {
   error: string | null = null;
   successOpen = false;
   draftBehandlung = new BehandlungDraft();
+  editDraftBehandlung = new BehandlungDraft();
+  editLoaded = false;
 
   constructor(private readonly fetcher: GraphQLFetcher) {
     makeAutoObservable(this, {}, { autoBind: true });
@@ -352,5 +367,28 @@ export class BehandlungStore {
     const input = this.draftBehandlung.validate();
     if (!input) return null;
     return this.create(input);
+  }
+
+  loadEditDraft(id: string): boolean {
+    const all = Object.values(this.byTherapie).flat();
+    const b = all.find((x) => x.id === id);
+    if (!b) {
+      this.editLoaded = false;
+      return false;
+    }
+    this.editDraftBehandlung.loadFromBehandlung(b);
+    this.editLoaded = true;
+    return true;
+  }
+
+  resetEditDraft(): void {
+    this.editDraftBehandlung.reset();
+    this.editLoaded = false;
+  }
+
+  async saveEditDraft(id: string): Promise<Behandlung | null> {
+    const input = this.editDraftBehandlung.validate();
+    if (!input) return null;
+    return this.update(id, input);
   }
 }

@@ -11,10 +11,10 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { BeStepper } from '../components/BeStepper';
-import type { BehandlungStore, BehandlungFormInput } from '../models/BehandlungStore';
+import type { BehandlungStore } from '../models/BehandlungStore';
 
 interface BehandlungEditPageProps {
   behandlungStore: BehandlungStore;
@@ -23,51 +23,26 @@ interface BehandlungEditPageProps {
 export const BehandlungEditPage = observer(({ behandlungStore }: BehandlungEditPageProps) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-
-  const [datum, setDatum] = useState('');
-  const [be, setBe] = useState(1);
-  const [taetigkeit, setTaetigkeit] = useState<TaetigkeitValue | ''>('');
-  const [gruppentherapie, setGruppentherapie] = useState(false);
-  const [sonstigesText, setSonstigesText] = useState('');
-  const [therapieId, setTherapieId] = useState('');
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const draft = behandlungStore.editDraftBehandlung;
 
   useEffect(() => {
     if (!id) return;
-    const allBehandlungen = Object.values(behandlungStore.byTherapie).flat();
-    const b = allBehandlungen.find((b) => b.id === id);
-    if (b) {
-      setDatum(b.datum.slice(0, 10));
-      setBe(b.be);
-      setTaetigkeit((b.taetigkeit ?? '') as TaetigkeitValue | '');
-      setGruppentherapie(b.gruppentherapie);
-      setSonstigesText(b.sonstigesText ?? '');
-      setTherapieId(b.therapieId);
-      setLoaded(true);
-    }
-  }, [id, behandlungStore.byTherapie]);
+    behandlungStore.loadEditDraft(id);
+    return (): void => {
+      behandlungStore.resetEditDraft();
+    };
+  }, [id, behandlungStore, behandlungStore.byTherapie]);
 
-  if (!loaded) {
+  if (!behandlungStore.editLoaded) {
     return <Typography>Behandlung wird geladen…</Typography>;
   }
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (!id) return;
-    const input: BehandlungFormInput = {
-      therapieId,
-      datum,
-      be,
-      taetigkeit: taetigkeit === '' ? null : (taetigkeit as TaetigkeitValue),
-      gruppentherapie,
-      sonstigesText: taetigkeit === 'sonstiges' ? sonstigesText || null : null,
-    };
-    const result = await behandlungStore.update(id, input);
+    const result = await behandlungStore.saveEditDraft(id);
     if (result) {
       navigate('/behandlungen');
-    } else {
-      setError(behandlungStore.error);
     }
   };
 
@@ -81,25 +56,22 @@ export const BehandlungEditPage = observer(({ behandlungStore }: BehandlungEditP
           <TextField
             label="Datum"
             type="date"
-            value={datum}
-            onChange={(e): void => setDatum(e.target.value)}
+            value={draft.datum}
+            onChange={(e): void => draft.setDatum(e.target.value)}
             inputProps={{ 'data-testselector': 'behandlung-edit-datum' }}
             InputLabelProps={{ shrink: true }}
           />
           <BeStepper
-            value={be}
-            onIncrement={(): void => setBe((v) => v + 1)}
-            onDecrement={(): void => setBe((v) => Math.max(1, v - 1))}
+            value={draft.be}
+            onIncrement={draft.incrementBe}
+            onDecrement={draft.decrementBe}
             testPrefix="behandlung-edit-be"
           />
           <TextField
             select
             label="Tätigkeit"
-            value={taetigkeit}
-            onChange={(e): void => {
-              setTaetigkeit(e.target.value as TaetigkeitValue | '');
-              if (e.target.value !== 'sonstiges') setSonstigesText('');
-            }}
+            value={draft.taetigkeit}
+            onChange={(e): void => draft.setTaetigkeit(e.target.value as TaetigkeitValue | '')}
             inputProps={{ 'data-testselector': 'behandlung-edit-taetigkeit' }}
           >
             <MenuItem value="">— keine —</MenuItem>
@@ -109,11 +81,11 @@ export const BehandlungEditPage = observer(({ behandlungStore }: BehandlungEditP
               </MenuItem>
             ))}
           </TextField>
-          {taetigkeit === 'sonstiges' && (
+          {draft.taetigkeit === 'sonstiges' && (
             <TextField
               label="Beschreibung (max. 35 Zeichen)"
-              value={sonstigesText}
-              onChange={(e): void => setSonstigesText(e.target.value)}
+              value={draft.sonstigesText}
+              onChange={(e): void => draft.setSonstigesText(e.target.value)}
               inputProps={{
                 'data-testselector': 'behandlung-edit-sonstiges-text',
                 maxLength: 35,
@@ -135,9 +107,9 @@ export const BehandlungEditPage = observer(({ behandlungStore }: BehandlungEditP
               Abbrechen
             </Button>
           </Stack>
-          {error && (
+          {behandlungStore.error && (
             <Alert severity="error" role="alert">
-              {error}
+              {behandlungStore.error}
             </Alert>
           )}
         </Stack>

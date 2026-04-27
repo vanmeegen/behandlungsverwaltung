@@ -70,12 +70,109 @@ const DELETE_EZB = /* GraphQL */ `
   }
 `;
 
+export class ErziehungsberechtigterDraft {
+  kindId = '';
+  slot: 1 | 2 = 1;
+  vorname = '';
+  nachname = '';
+  strasse = '';
+  hausnummer = '';
+  plz = '';
+  stadt = '';
+  email1 = '';
+  telefon1 = '';
+
+  constructor() {
+    makeAutoObservable(this, {}, { autoBind: true });
+  }
+
+  setVorname(v: string): void {
+    this.vorname = v;
+  }
+  setNachname(v: string): void {
+    this.nachname = v;
+  }
+  setStrasse(v: string): void {
+    this.strasse = v;
+  }
+  setHausnummer(v: string): void {
+    this.hausnummer = v;
+  }
+  setPlz(v: string): void {
+    this.plz = v;
+  }
+  setStadt(v: string): void {
+    this.stadt = v;
+  }
+  setEmail1(v: string): void {
+    this.email1 = v;
+  }
+  setTelefon1(v: string): void {
+    this.telefon1 = v;
+  }
+
+  initFor(kindId: string, slot: 1 | 2, existing: Erziehungsberechtigter | null): void {
+    this.kindId = kindId;
+    this.slot = slot;
+    this.vorname = existing?.vorname ?? '';
+    this.nachname = existing?.nachname ?? '';
+    this.strasse = existing?.strasse ?? '';
+    this.hausnummer = existing?.hausnummer ?? '';
+    this.plz = existing?.plz ?? '';
+    this.stadt = existing?.stadt ?? '';
+    this.email1 = existing?.email1 ?? '';
+    this.telefon1 = existing?.telefon1 ?? '';
+  }
+
+  reset(): void {
+    this.kindId = '';
+    this.slot = 1;
+    this.vorname = '';
+    this.nachname = '';
+    this.strasse = '';
+    this.hausnummer = '';
+    this.plz = '';
+    this.stadt = '';
+    this.email1 = '';
+    this.telefon1 = '';
+  }
+
+  toInput(): ErziehungsberechtigterFormInput {
+    return {
+      kindId: this.kindId,
+      slot: this.slot,
+      vorname: this.vorname,
+      nachname: this.nachname,
+      strasse: this.strasse || null,
+      hausnummer: this.hausnummer || null,
+      plz: this.plz || null,
+      stadt: this.stadt || null,
+      email1: this.email1 || null,
+      telefon1: this.telefon1 || null,
+    };
+  }
+}
+
 export class ErziehungsberechtigterStore {
   byKind: Record<string, Erziehungsberechtigter[]> = {};
   error: string | null = null;
+  draftEzb = new ErziehungsberechtigterDraft();
 
   constructor(private readonly fetcher: GraphQLFetcher) {
     makeAutoObservable(this, {}, { autoBind: true });
+  }
+
+  initDraftFor(kindId: string, slot: 1 | 2): void {
+    this.draftEzb.initFor(kindId, slot, this.getSlot(kindId, slot));
+    this.error = null;
+  }
+
+  resetDraft(): void {
+    this.draftEzb.reset();
+  }
+
+  async saveDraft(): Promise<Erziehungsberechtigter | null> {
+    return this.save(this.draftEzb.toInput());
   }
 
   getSlot(kindId: string, slot: number): Erziehungsberechtigter | null {
