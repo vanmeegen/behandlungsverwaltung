@@ -97,9 +97,18 @@ function setField(form: PDFForm, name: string, value: string, multiline = false)
   try {
     const textField = form.getTextField(name);
     if (multiline) textField.enableMultiline();
+    // Eine in der Vorlage gesetzte maxLength würde setText bei langen
+    // Auftraggeber-Rechnungsköpfen werfen lassen; der catch unten würde
+    // das stumm verschlucken und das Feld bliebe leer. Inhalte kommen aus
+    // validierten Stammdaten — die Längenbegrenzung der Vorlage darf sie
+    // nicht abschneiden.
+    textField.setMaxLength(undefined);
     textField.setText(value);
-  } catch {
-    // Falsch konfiguriertes Feld (z. B. Checkbox statt Textfeld) — ignorieren.
+  } catch (err) {
+    // Falsch konfiguriertes Feld (z. B. Checkbox statt Textfeld). Wir
+    // brechen die Rechnungserstellung deswegen nicht ab, loggen aber, damit
+    // die Therapeutin Bescheid weiß, dass ihre Vorlage angepasst werden muss.
+    console.error(`[rechnungPdf] AcroForm-Feld "${name}" konnte nicht gefüllt werden:`, err);
   }
 }
 

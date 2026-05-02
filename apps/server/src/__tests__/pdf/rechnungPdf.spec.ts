@@ -225,6 +225,36 @@ describe('renderRechnungPdf (AcroForm pipeline)', () => {
     ).rejects.toBeInstanceOf(TooManyBehandlungenError);
   });
 
+  it('renders the Rechnungskopf even if the template field has a too-small maxLength', async () => {
+    // Regression: eine produktive Vorlage hatte maxLength=100 auf
+    // einleitungstext, der Auftraggeber-Rechnungskopf war 115 Zeichen lang.
+    // pdf-lib hat in setText geworfen, der setField-catch hat das stumm
+    // verschluckt und das Feld blieb im finalen PDF leer.
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([595.28, 841.89]);
+    const form = doc.getForm();
+    const tf = form.createTextField('einleitungstext');
+    tf.setMaxLength(100);
+    tf.addToPage(page, { x: 50, y: 620, width: 500, height: 60 });
+    const templateBytes = await doc.save();
+
+    const longText =
+      'Mein Honorar für die erbrachten Leistungen integrative Lerntherapie der Eingliederungshilfe \ngemäß § 35 a SGB VIII.';
+    expect(longText.length).toBeGreaterThan(100);
+
+    const bytes = await renderRechnungPdf({
+      ...BASE_INPUT,
+      auftraggeberRechnungskopfText: longText,
+      templateBytes,
+    });
+    const text = await parsePdfText(bytes);
+    // pdf-parse umbricht den AcroForm-Wert nach dem Layout — wir prüfen
+    // einzelne Marker-Wörter, die keine Wortgrenzen kreuzen.
+    expect(text).toContain('Honorar');
+    expect(text).toContain('Eingliederungshilfe');
+    expect(text).toContain('§ 35 a SGB');
+  });
+
   it('tolerates a template that does not declare every optional field', async () => {
     // Create a minimal template with only the mandatory fields.
     const doc = await PDFDocument.create();
