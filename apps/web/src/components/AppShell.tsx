@@ -8,6 +8,7 @@ import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import Toolbar from '@mui/material/Toolbar';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
@@ -15,6 +16,7 @@ import { observer } from 'mobx-react-lite';
 import type { ElementType } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import type { UiStore } from '../models/UiStore';
+import { APP_VERSION, BUILD_DATE, GIT_SHA } from '../version';
 
 interface NavEntry {
   to: string;
@@ -87,20 +89,36 @@ export const AppShell = observer(({ uiStore }: AppShellProps) => {
               <MenuIcon />
             </IconButton>
           )}
-          <Box
-            component="img"
-            src="/logo.png"
-            alt="bewegtes Lernen"
-            sx={{ height: 56, width: 'auto', display: 'block' }}
-          />
-          <Typography
-            variant="h6"
-            component="h1"
-            noWrap
-            sx={{ fontFamily: '"Lora", Georgia, serif', fontWeight: 700 }}
+          <Tooltip
+            title={
+              <Box
+                component="span"
+                sx={{ display: 'block', whiteSpace: 'pre-line', textAlign: 'left' }}
+                data-testselector="app-version-tooltip"
+              >
+                {`Version v${APP_VERSION}\nCommit ${GIT_SHA}\nBuild ${BUILD_DATE}`}
+              </Box>
+            }
+            arrow
+            placement="bottom-start"
           >
-            Behandlungsverwaltung
-          </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'help' }}>
+              <Box
+                component="img"
+                src="/logo.png"
+                alt="bewegtes Lernen"
+                sx={{ height: 56, width: 'auto', display: 'block' }}
+              />
+              <Typography
+                variant="h6"
+                component="h1"
+                noWrap
+                sx={{ fontFamily: '"Lora", Georgia, serif', fontWeight: 700 }}
+              >
+                Behandlungsverwaltung
+              </Typography>
+            </Box>
+          </Tooltip>
         </Toolbar>
       </AppBar>
 
