@@ -129,9 +129,13 @@ builder.mutationField('deleteTemplate', (t) =>
       const row = rows[0]!;
       try {
         unlinkSync(join(paths.templatesDir, row.filename));
-      } catch {
-        // Datei fehlt — trotzdem DB-Zeile entfernen, damit der Zustand
-        // konsistent bleibt.
+      } catch (err) {
+        // Datei fehlt: DB-Zeile dennoch entfernen, damit der Zustand
+        // konsistent bleibt. Andere Fehler (z. B. EPERM) loggen, weil das auf
+        // ein Berechtigungsproblem hindeutet, das die Therapeutin sehen sollte.
+        if ((err as NodeJS.ErrnoException)?.code !== 'ENOENT') {
+          console.error(`[deleteTemplate] unlink ${row.filename} fehlgeschlagen:`, err);
+        }
       }
       db.delete(templateFiles).where(eq(templateFiles.id, row.id)).run();
       return true;

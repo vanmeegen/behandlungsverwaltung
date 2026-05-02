@@ -21,8 +21,14 @@ while (Date.now() - start < TIMEOUT_MS) {
       console.log(`GraphQL ready at ${URL} (${elapsed} ms)`);
       process.exit(0);
     }
-  } catch {
-    // server not accepting connections yet
+  } catch (err) {
+    // ConnectionRefused/Reset während des Server-Starts ist erwartet — alles
+    // andere (z. B. DNS-Fehler oder TLS-Probleme) protokollieren, damit ein
+    // hängender Wait nicht völlig stumm endet.
+    const code = (err as { code?: string } | null)?.code;
+    if (code !== 'ConnectionRefused' && code !== 'ECONNREFUSED' && code !== 'ECONNRESET') {
+      console.error('[dev-wait] unexpected fetch error:', err);
+    }
   }
   await Bun.sleep(INTERVAL_MS);
 }

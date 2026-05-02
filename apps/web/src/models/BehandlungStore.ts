@@ -293,7 +293,8 @@ export class BehandlungStore {
         this.byTherapie = { ...this.byTherapie, [therapieId]: rows };
       });
       return rows;
-    } catch {
+    } catch (err) {
+      console.error('[BehandlungStore] loadByTherapie fehlgeschlagen:', err);
       return [];
     }
   }

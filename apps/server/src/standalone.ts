@@ -95,7 +95,8 @@ function openInBrowser(target: string): void {
     const child = spawn(cmd, [target], { detached: true, stdio: 'ignore' });
     child.on('error', fallback);
     child.unref();
-  } catch {
+  } catch (err) {
+    console.error('[standalone] Browser konnte nicht automatisch geöffnet werden:', err);
     fallback();
   }
 }

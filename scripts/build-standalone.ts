@@ -80,20 +80,26 @@ const cacheDir = resolve(repoRoot, '.cache/build-standalone');
 // Linux/macOS we instead patch the icon into the stock bun.exe that's
 // used as the compile base, then let `bun build --compile` append our
 // JS payload on top via --compile-executable-path.
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException)?.code === 'ENOENT') return false;
+    // Andere Fehler (z. B. EACCES) deuten auf ein echtes Problem hin —
+    // sichtbar machen statt als "Datei fehlt" interpretieren.
+    console.error(`[build-standalone] access(${path}) fehlgeschlagen:`, err);
+    return false;
+  }
+}
+
 async function prepareWindowsBunBase(version: string): Promise<string> {
   const patchedPath = resolve(cacheDir, `bun-${version}-windows-x64-branded.exe`);
-  try {
-    await access(patchedPath);
-    return patchedPath;
-  } catch {
-    // fall through to download + patch
-  }
+  if (await fileExists(patchedPath)) return patchedPath;
 
   await mkdir(cacheDir, { recursive: true });
   const pristinePath = resolve(cacheDir, `bun-${version}-windows-x64-pristine.exe`);
-  try {
-    await access(pristinePath);
-  } catch {
+  if (!(await fileExists(pristinePath))) {
     const url = `https://github.com/oven-sh/bun/releases/download/bun-v${version}/bun-windows-x64.zip`;
     const zipPath = resolve(cacheDir, `bun-${version}-windows-x64.zip`);
     console.log(`  ▶ Downloading ${url}`);

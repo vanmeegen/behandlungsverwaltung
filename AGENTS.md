@@ -46,6 +46,10 @@ The workspace is a Bun monorepo declared in the root `package.json` (`workspaces
 - **Strict Types**: Use TypeScript strict mode; never use untyped arguments or return values.
 - **Explicit Types**: Avoid inline type declarations. If a shape appears in more than one place, extract a named type.
 - **API**: GraphQL only — no REST. Keep the server lightweight; prefer Pothos builder patterns.
+- **Exceptions niemals schlucken**: Ein leerer `catch {}` oder ein `catch (err) {}` ohne Logging/Re-Throw verschleiert Bugs (siehe Vorfall: PDF-`einleitungstext` blieb für ein 115-Zeichen-Feld leer, weil `setText` an einer `maxLength=100`-Vorlage warf und der Catch-Block den Fehler verschluckte). Regeln:
+  1. Jeder Catch-Block muss den Fehler entweder **loggen** (z. B. `console.error('<Kontext>:', err)`), als **domain-spezifische Exception weiterwerfen** oder **dem Aufrufer als Result/Status zurückgeben**.
+  2. Wenn ein Fall absichtlich ignoriert werden soll, bekommt der Catch einen Kommentar mit **Begründung** _und_ das Logging bleibt — sonst sieht im Produktivbetrieb niemand, wenn die Annahme nicht mehr stimmt.
+  3. `try/catch` soll möglichst eng um den werfenden Aufruf liegen, damit klar ist, welcher Fehler erwartet wird. Generische Catches um große Blöcke sind ein Code-Smell.
 
 ## Development Commands
 
