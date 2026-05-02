@@ -71,6 +71,14 @@ const BEHANDLUNGEN_BY_THERAPIE_QUERY = /* GraphQL */ `
   }
 `;
 
+const BEHANDLUNG_QUERY = /* GraphQL */ `
+  query Behandlung($id: ID!) {
+    behandlung(id: $id) {
+      ${BEHANDLUNG_COLUMNS}
+    }
+  }
+`;
+
 const UPDATE_BEHANDLUNG = /* GraphQL */ `
   mutation UpdateBehandlung($id: ID!, $input: BehandlungInput!) {
     updateBehandlung(id: $id, input: $input) {
@@ -370,16 +378,39 @@ export class BehandlungStore {
     return this.create(input);
   }
 
-  loadEditDraft(id: string): boolean {
-    const all = Object.values(this.byTherapie).flat();
-    const b = all.find((x) => x.id === id);
-    if (!b) {
-      this.editLoaded = false;
+  async loadEditDraft(id: string): Promise<boolean> {
+    // Cache-Hit aus byTherapie ist eine Optimierung; bei Deep-Links
+    // (Bookmark, Reload, Direkt-URL) ist byTherapie leer und wir holen
+    // die Behandlung über GraphQL nach.
+    const cached = Object.values(this.byTherapie)
+      .flat()
+      .find((x) => x.id === id);
+    if (cached) {
+      this.editDraftBehandlung.loadFromBehandlung(cached);
+      this.editLoaded = true;
+      return true;
+    }
+    try {
+      const data = await this.fetcher<{ behandlung: Behandlung | null }>(BEHANDLUNG_QUERY, { id });
+      if (!data.behandlung) {
+        runInAction(() => {
+          this.editLoaded = false;
+        });
+        return false;
+      }
+      runInAction(() => {
+        this.editDraftBehandlung.loadFromBehandlung(data.behandlung!);
+        this.editLoaded = true;
+      });
+      return true;
+    } catch (err) {
+      console.error('[BehandlungStore] loadEditDraft fehlgeschlagen:', err);
+      runInAction(() => {
+        this.error = err instanceof Error ? err.message : String(err);
+        this.editLoaded = false;
+      });
       return false;
     }
-    this.editDraftBehandlung.loadFromBehandlung(b);
-    this.editLoaded = true;
-    return true;
   }
 
   resetEditDraft(): void {

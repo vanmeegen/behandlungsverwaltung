@@ -4,6 +4,25 @@ import { behandlungen } from '../../db/schema';
 import { builder } from '../builder';
 import { BehandlungRef } from '../types/behandlung';
 
+builder.queryField('behandlung', (t) =>
+  t.field({
+    type: BehandlungRef,
+    nullable: true,
+    args: { id: t.arg.id({ required: true }) },
+    description: 'Eine einzelne Behandlung per ID — für Deep-Links in den Edit-Pfad.',
+    resolve: (_parent, args, { db }) => {
+      const id = Number(args.id);
+      if (!Number.isInteger(id)) {
+        throw new GraphQLError('Behandlung-ID ist ungültig', {
+          extensions: { code: 'VALIDATION_ERROR' },
+        });
+      }
+      const [row] = db.select().from(behandlungen).where(eq(behandlungen.id, id)).limit(1).all();
+      return row ?? null;
+    },
+  }),
+);
+
 builder.queryField('behandlungenByTherapie', (t) =>
   t.field({
     type: [BehandlungRef],

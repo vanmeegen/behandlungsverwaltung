@@ -27,11 +27,11 @@ export const BehandlungEditPage = observer(({ behandlungStore }: BehandlungEditP
 
   useEffect(() => {
     if (!id) return;
-    behandlungStore.loadEditDraft(id);
+    void behandlungStore.loadEditDraft(id);
     return (): void => {
       behandlungStore.resetEditDraft();
     };
-  }, [id, behandlungStore, behandlungStore.byTherapie]);
+  }, [id, behandlungStore]);
 
   if (!behandlungStore.editLoaded) {
     return <Typography>Behandlung wird geladen…</Typography>;

@@ -115,6 +115,62 @@ describe('behandlungenByTherapie query (PRD §2.4)', () => {
     expect(legacy).toBeUndefined();
   });
 
+  it('behandlung(id) returns a single Behandlung — Deep-Link in den Edit-Pfad', async () => {
+    const [b] = ctx.db
+      .insert(behandlungen)
+      .values({
+        therapieId,
+        datum: new Date('2026-04-22T00:00:00.000Z'),
+        be: 4,
+        taetigkeit: 'lerntherapie',
+      })
+      .returning()
+      .all();
+    const result = await graphql({
+      schema,
+      source: /* GraphQL */ `
+        query B($id: ID!) {
+          behandlung(id: $id) {
+            id
+            therapieId
+            datum
+            be
+            taetigkeit
+          }
+        }
+      `,
+      variableValues: { id: String(b!.id) },
+      contextValue: { db: ctx.db, requestId: 'test' },
+    });
+    expect(result.errors).toBeUndefined();
+    const row = (
+      result.data as {
+        behandlung: { id: string; therapieId: string; datum: string; be: number };
+      }
+    ).behandlung;
+    expect(row.id).toBe(String(b!.id));
+    expect(row.therapieId).toBe(String(therapieId));
+    expect(row.be).toBe(4);
+    expect(row.datum.slice(0, 10)).toBe('2026-04-22');
+  });
+
+  it('behandlung(id) gibt null zurück, wenn die ID nicht existiert', async () => {
+    const result = await graphql({
+      schema,
+      source: /* GraphQL */ `
+        query B($id: ID!) {
+          behandlung(id: $id) {
+            id
+          }
+        }
+      `,
+      variableValues: { id: '99999' },
+      contextValue: { db: ctx.db, requestId: 'test' },
+    });
+    expect(result.errors).toBeUndefined();
+    expect((result.data as { behandlung: unknown }).behandlung).toBeNull();
+  });
+
   it('returns only the given Therapie rows, ordered by datum desc', async () => {
     const result = await graphql({
       schema,

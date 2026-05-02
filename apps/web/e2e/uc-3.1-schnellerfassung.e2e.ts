@@ -83,8 +83,10 @@ test.describe('UC-3.1 Schnellerfassung Behandlung', () => {
     expect(b.taetigkeit).toBe('lerntherapie');
   });
 
-  test('bearbeiten: Datum einer bestehenden Behandlung ändern persistiert', async ({ page }) => {
-    const { kindId, therapieId } = await seedScenario();
+  test('bearbeiten via Deep-Link: lädt Behandlung direkt von /behandlungen/:id/bearbeiten', async ({
+    page,
+  }) => {
+    const { therapieId } = await seedScenario();
     const seeded = await seedBehandlung({
       therapieId,
       datum: '2026-04-15',
@@ -92,19 +94,9 @@ test.describe('UC-3.1 Schnellerfassung Behandlung', () => {
       taetigkeit: 'lerntherapie',
     });
 
-    // Realer Workflow: erst Schnellerfassung mit Therapie auswählen, damit
-    // die Inline-Liste lädt und den Bearbeiten-Link bereitstellt.
-    const formPage = new SchnellerfassungPage(page);
-    await formPage.goto();
-    await formPage.chooseKind(kindId);
-    await formPage.chooseTherapie(therapieId);
-
-    // Inline-Liste-Zeile erscheint, Bearbeiten-Link führt zur Edit-Page.
-    const row = page.getByTestId(`schnellerfassung-behandlungsliste-zeile-${seeded.id}`);
-    await expect(row).toBeVisible();
-    await row.getByRole('link', { name: 'Bearbeiten' }).click();
-    await expect(page).toHaveURL(new RegExp(`/behandlungen/${seeded.id}/bearbeiten$`));
-
+    // Direkter URL-Aufruf — der Store hat byTherapie noch nicht geladen,
+    // also muss loadEditDraft die Behandlung per ID-Query holen.
+    await page.goto(`/behandlungen/${seeded.id}/bearbeiten`);
     await page.getByTestId('behandlung-edit-datum').fill('2026-04-22');
     await page.getByTestId('behandlung-edit-submit').click();
 
