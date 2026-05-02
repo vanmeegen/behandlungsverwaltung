@@ -3,6 +3,7 @@ import type { Locator, Page } from '@playwright/test';
 export class RechnungCreatePage {
   readonly page: Page;
   readonly monatInput: Locator;
+  readonly jahrInput: Locator;
   readonly rechnungsdatumInput: Locator;
   readonly kindSelect: Locator;
   readonly auftraggeberSelect: Locator;
@@ -17,6 +18,7 @@ export class RechnungCreatePage {
   constructor(page: Page) {
     this.page = page;
     this.monatInput = page.getByTestId('rechnung-create-monat');
+    this.jahrInput = page.getByTestId('rechnung-create-jahr');
     this.rechnungsdatumInput = page.getByTestId('rechnung-create-rechnungsdatum');
     this.kindSelect = page.getByTestId('rechnung-create-kindId');
     this.auftraggeberSelect = page.getByTestId('rechnung-create-auftraggeberId');
@@ -34,8 +36,8 @@ export class RechnungCreatePage {
   }
 
   async setMonat(year: number, month: number): Promise<void> {
-    const v = `${year}-${String(month).padStart(2, '0')}`;
-    await this.monatInput.fill(v);
+    await this.jahrInput.selectOption(String(year));
+    await this.monatInput.selectOption(String(month));
   }
 
   async setRechnungsdatum(iso: string): Promise<void> {

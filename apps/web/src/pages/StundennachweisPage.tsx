@@ -5,7 +5,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { observer } from 'mobx-react-lite';
-import { useEffect, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, type FormEvent } from 'react';
 import type { AuftraggeberStore } from '../models/AuftraggeberStore';
 import type { KindStore } from '../models/KindStore';
 import type { StundennachweisStore } from '../models/StundennachweisStore';
@@ -75,15 +75,27 @@ export const StundennachweisPage = observer(
       await stundennachweisStore.saveDraft();
     };
 
-    const onMonthChange = (event: ChangeEvent<HTMLInputElement>): void => {
-      const raw = event.target.value;
-      if (!/^\d{4}-\d{2}$/.test(raw)) return;
-      const [y, m] = raw.split('-') as [string, string];
-      draft.setYear(Number.parseInt(y, 10));
-      draft.setMonth(Number.parseInt(m, 10));
-    };
-
-    const monthValue = `${draft.year}-${String(draft.month).padStart(2, '0')}`;
+    // Native <input type="month"> wird von Firefox nicht unterstützt
+    // (kein Picker, nur Textfeld). Stattdessen zwei native MUI-Selects.
+    const currentYear = new Date().getFullYear();
+    const minYear = Math.min(currentYear - 4, draft.year);
+    const maxYear = Math.max(currentYear + 1, draft.year);
+    const yearOptions: number[] = [];
+    for (let y = maxYear; y >= minYear; y--) yearOptions.push(y);
+    const monatNamen = [
+      'Januar',
+      'Februar',
+      'März',
+      'April',
+      'Mai',
+      'Juni',
+      'Juli',
+      'August',
+      'September',
+      'Oktober',
+      'November',
+      'Dezember',
+    ];
 
     return (
       <Box data-testselector="stundennachweis-page">
@@ -92,14 +104,44 @@ export const StundennachweisPage = observer(
         </Typography>
         <Box component="form" onSubmit={onSubmit}>
           <Stack spacing={2}>
-            <TextField
-              label="Abrechnungsmonat"
-              type="month"
-              value={monthValue}
-              onChange={onMonthChange}
-              inputProps={{ 'data-testselector': 'stundennachweis-monat' }}
-              InputLabelProps={{ shrink: true }}
-            />
+            <Stack direction="row" spacing={2}>
+              <TextField
+                select
+                label="Abrechnungsmonat"
+                value={String(draft.month)}
+                onChange={(e): void => draft.setMonth(Number.parseInt(e.target.value, 10))}
+                SelectProps={{
+                  native: true,
+                  inputProps: { 'data-testselector': 'stundennachweis-monat' },
+                }}
+                InputLabelProps={{ shrink: true }}
+                sx={{ flex: 1 }}
+              >
+                {monatNamen.map((name, idx) => (
+                  <option key={idx + 1} value={idx + 1}>
+                    {name}
+                  </option>
+                ))}
+              </TextField>
+              <TextField
+                select
+                label="Jahr"
+                value={String(draft.year)}
+                onChange={(e): void => draft.setYear(Number.parseInt(e.target.value, 10))}
+                SelectProps={{
+                  native: true,
+                  inputProps: { 'data-testselector': 'stundennachweis-jahr' },
+                }}
+                InputLabelProps={{ shrink: true }}
+                sx={{ flex: 1 }}
+              >
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </TextField>
+            </Stack>
 
             <TextField
               select

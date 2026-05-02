@@ -93,8 +93,11 @@ describe('<StundennachweisPage />', () => {
     });
     renderPage(fetcher as unknown as GraphQLFetcher, { therapien: [annaTherapie] });
 
+    fireEvent.change(screen.getByTestId('stundennachweis-jahr'), {
+      target: { value: '2026' },
+    });
     fireEvent.change(screen.getByTestId('stundennachweis-monat'), {
-      target: { value: '2026-04' },
+      target: { value: '4' },
     });
     fireEvent.change(screen.getByTestId('stundennachweis-kindId'), { target: { value: '10' } });
     fireEvent.change(screen.getByTestId('stundennachweis-auftraggeberId'), {
@@ -127,8 +130,11 @@ describe('<StundennachweisPage />', () => {
       );
     renderPage(fetcher as unknown as GraphQLFetcher, { therapien: [annaTherapie] });
 
+    fireEvent.change(screen.getByTestId('stundennachweis-jahr'), {
+      target: { value: '2026' },
+    });
     fireEvent.change(screen.getByTestId('stundennachweis-monat'), {
-      target: { value: '2026-04' },
+      target: { value: '4' },
     });
     fireEvent.change(screen.getByTestId('stundennachweis-kindId'), { target: { value: '10' } });
     fireEvent.change(screen.getByTestId('stundennachweis-auftraggeberId'), {
