@@ -7,16 +7,14 @@ export class TemplateUploadPage {
   readonly kindSelect: Locator;
   readonly auftraggeberSelect: Locator;
   readonly fileInput: Locator;
-  readonly submit: Locator;
-  readonly fileName: Locator;
+  readonly snackbar: Locator;
 
   constructor(page: Page) {
     this.page = page;
     this.kindSelect = page.getByTestId('template-upload-kind');
     this.auftraggeberSelect = page.getByTestId('template-upload-auftraggeberId');
     this.fileInput = page.getByTestId('template-upload-file');
-    this.submit = page.getByTestId('template-upload-submit');
-    this.fileName = page.getByTestId('template-upload-file-name');
+    this.snackbar = page.getByTestId('template-upload-snackbar');
   }
 
   async goto(): Promise<void> {
@@ -32,11 +30,9 @@ export class TemplateUploadPage {
     await this.auftraggeberSelect.selectOption(id);
   }
 
-  async setFile(path: string): Promise<void> {
+  async uploadFile(path: string): Promise<void> {
+    // Auto-Upload: das setInputFiles triggert ein change-Event, das die
+    // Page direkt verarbeitet — kein Submit-Button mehr.
     await this.fileInput.setInputFiles(path);
-  }
-
-  async submitAndWait(): Promise<void> {
-    await this.submit.click();
   }
 }

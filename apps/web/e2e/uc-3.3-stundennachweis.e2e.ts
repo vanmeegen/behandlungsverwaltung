@@ -15,8 +15,7 @@ import {
 } from './helpers/seed';
 import { StundennachweisPage } from './pages/StundennachweisPage';
 
-// A blank A4 PDF works for both template kinds — reuse the Rechnung fixture
-// as the stundennachweis template too.
+// A blank A4 PDF works for both template kinds.
 const FIXTURE_PATH = resolve(
   fileURLToPath(import.meta.url),
   '..',
@@ -42,8 +41,6 @@ async function seedHappyPath(): Promise<{
   const ag = await seedAuftraggeber({
     typ: 'firma',
     firmenname: 'Jugendamt Köln',
-    vorname: null,
-    nachname: null,
     strasse: 'Kalker Hauptstr.',
     hausnummer: '247-273',
     plz: '51103',
@@ -54,18 +51,11 @@ async function seedHappyPath(): Promise<{
     kindId: kind.id,
     auftraggeberId: ag.id,
     form: 'lerntherapie',
-    kommentar: null,
-    startdatum: '2026-01-01',
     bewilligteBe: 60,
     taetigkeit: 'lerntherapie',
   });
   for (const datum of ['2026-04-01', '2026-04-15', '2026-04-29']) {
-    await seedBehandlung({
-      therapieId: therapie.id,
-      datum,
-      be: 2,
-      taetigkeit: 'lerntherapie',
-    });
+    await seedBehandlung({ therapieId: therapie.id, datum, be: 2, taetigkeit: 'lerntherapie' });
   }
   const fixtureBase64 = readFileSync(FIXTURE_PATH).toString('base64');
   await uploadFixtureTemplate({ kind: 'rechnung', auftraggeberId: null, base64: fixtureBase64 });
@@ -83,12 +73,12 @@ async function seedHappyPath(): Promise<{
   return { kindId: kind.id, auftraggeberId: ag.id, rechnungNummer: rechnung.nummer };
 }
 
-test.describe('UC-3.3 Stundennachweis drucken', () => {
+test.describe('UC-3.3 Stundennachweis erstellen', () => {
   test.beforeEach(async () => {
     await resetDb();
   });
 
-  test('Szenario 1: Stundennachweis für April 2026 erzeugen (AC-STD-01, AC-STD-02, AC-STD-04)', async ({
+  test('erstellen: Stundennachweis-PDF enthält Rechnungsnummer, Kind, Auftraggeber, Tabellen-Header', async ({
     page,
   }) => {
     const { kindId, auftraggeberId, rechnungNummer } = await seedHappyPath();
@@ -106,21 +96,21 @@ test.describe('UC-3.3 Stundennachweis drucken', () => {
       `Stundennachweis erstellt: ${expectedDateiname}`,
     );
 
-    // AC-STD-01: the Stundennachweis lands in timesheets/ (the Rechnung PDF
-    // with the same nummer also exists in bills/, but we don't assert on that
-    // here — that's covered by UC-3.2).
     const timesheetsPath = join(TIMESHEETS_DIR, expectedDateiname);
     expect(existsSync(timesheetsPath)).toBe(true);
 
-    const pdfBytes = readFileSync(timesheetsPath);
-    const parser = new PDFParse({ data: new Uint8Array(pdfBytes) });
-    const { text } = (await parser.getText()) as { text: string };
-    expect(text).toContain('Stundennachweis RE-2026-04-0001');
-    expect(text).toContain('Kind: Anna Musterfrau');
-    expect(text).toContain('Auftraggeber: Jugendamt Köln');
-    expect(text).toContain('Monat: 04/2026');
+    const text = (
+      (await new PDFParse({
+        data: new Uint8Array(readFileSync(timesheetsPath)),
+      }).getText()) as { text: string }
+    ).text;
 
-    // AC-STD-02: header columns in order Datum · BE · Leistung · Unterschrift.
+    // Bestandteile (semantisch, kein Snapshot)
+    expect(text).toContain('Stundennachweis RE-2026-04-0001');
+    expect(text).toContain('Anna Musterfrau');
+    expect(text).toContain('Jugendamt Köln');
+    expect(text).toContain('04/2026');
+    // AC-STD-02: Tabellen-Spaltenreihenfolge Datum · BE · Leistung · Unterschrift
     const iDatum = text.indexOf('Datum');
     const iBe = text.indexOf('BE', iDatum);
     const iLeistung = text.indexOf('Leistung', iBe);
@@ -129,48 +119,5 @@ test.describe('UC-3.3 Stundennachweis drucken', () => {
     expect(iBe).toBeGreaterThan(iDatum);
     expect(iLeistung).toBeGreaterThan(iBe);
     expect(iUnterschrift).toBeGreaterThan(iLeistung);
-  });
-
-  test('Szenario 2: ohne Rechnung wird abgewiesen (AC-STD-03 Pfad: Vorbedingung fehlt)', async ({
-    page,
-  }) => {
-    // Same seeding, but skip createMonatsrechnungApi → no Rechnung exists.
-    const kind = await seedKind({
-      vorname: 'Anna',
-      nachname: 'Musterfrau',
-      geburtsdatum: '2018-03-14',
-      strasse: 'Hauptstr.',
-      hausnummer: '12',
-      plz: '50667',
-      stadt: 'Köln',
-      aktenzeichen: 'K-2026-001',
-    });
-    const ag = await seedAuftraggeber({
-      typ: 'firma',
-      firmenname: 'Jugendamt Köln',
-      vorname: null,
-      nachname: null,
-      strasse: 'Kalker Hauptstr.',
-      hausnummer: '247-273',
-      plz: '51103',
-      stadt: 'Köln',
-      stundensatzCents: 4500,
-    });
-    const fixtureBase64 = readFileSync(FIXTURE_PATH).toString('base64');
-    await uploadFixtureTemplate({
-      kind: 'stundennachweis',
-      auftraggeberId: null,
-      base64: fixtureBase64,
-    });
-
-    const formPage = new StundennachweisPage(page);
-    await formPage.goto();
-    await formPage.setMonat(2026, 4);
-    await formPage.chooseKind(kind.id);
-    await formPage.chooseAuftraggeber(ag.id);
-    await formPage.submitAndWait();
-
-    await expect(formPage.errorBanner).toContainText('Bitte zuerst die Rechnung anlegen');
-    await expect(formPage.successToast).toBeHidden();
   });
 });

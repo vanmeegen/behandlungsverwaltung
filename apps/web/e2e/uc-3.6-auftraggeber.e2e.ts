@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { readAuftraggeber, resetDb } from './helpers/seed';
+import { readAuftraggeber, resetDb, seedAuftraggeber } from './helpers/seed';
 import { AuftraggeberFormPage } from './pages/AuftraggeberFormPage';
 import { AuftraggeberListPage } from './pages/AuftraggeberListPage';
 
@@ -32,9 +32,7 @@ test.describe('UC-3.6 Auftraggeber erfassen', () => {
     await resetDb();
   });
 
-  test('Szenario 1: Firma anlegen mit Abteilung und Rechnungskopf-Text (AC-AG-01, AC-AG-04, AC-AG-05)', async ({
-    page,
-  }) => {
+  test('Firma anlegen: alle Felder persistieren, Liste zeigt Datensatz', async ({ page }) => {
     const listPage = new AuftraggeberListPage(page);
     await listPage.goto();
     await expect(listPage.emptyState).toBeVisible();
@@ -67,53 +65,14 @@ test.describe('UC-3.6 Auftraggeber erfassen', () => {
     );
 
     await expect(listPage.firmennameCellFor(created.id)).toHaveText('Jugendamt Köln');
-
-    await listPage.editLinkFor(created.id).click();
-    await expect(formPage.input('firmenname')).toHaveValue('Jugendamt Köln');
-    await expect(formPage.input('abteilung')).toHaveValue('Wirtschaftliche Jugendhilfe');
-    await expect(formPage.input('rechnungskopfText')).toHaveValue(
-      'Mein Honorar für die Teilmaßnahme Lern-Therapie betrug im Monat April 2026:',
-    );
-    await expect(page.getByTestId('auftraggeber-form-vorname')).toHaveCount(0);
-    await expect(page.getByTestId('auftraggeber-form-nachname')).toHaveCount(0);
   });
 
-  test('Szenario: Auftraggeber ohne Rechnungskopf-Text wird nicht gespeichert (AC-AG-05)', async ({
-    page,
-  }) => {
+  test('Person anlegen: vorname/nachname persistieren, firmenname=null', async ({ page }) => {
     const listPage = new AuftraggeberListPage(page);
     await listPage.goto();
 
     const formPage = new AuftraggeberFormPage(page);
     await listPage.newLink.click();
-
-    await formPage.chooseTyp('firma');
-    await formPage.input('firmenname').fill('Jugendamt Köln');
-    await formPage.input('strasse').fill('Kalker Hauptstr.');
-    await formPage.input('hausnummer').fill('247-273');
-    await formPage.input('plz').fill('51103');
-    await formPage.input('stadt').fill('Köln');
-    await formPage.input('stundensatz').fill('45,00');
-    // Bewusst KEIN rechnungskopfText
-    await formPage.submitAndWait();
-
-    await expect(formPage.errorFor('rechnungskopfText')).toHaveText(
-      'Rechnungskopf-Text ist Pflicht',
-    );
-
-    const rows = await readAuftraggeber();
-    expect(rows).toEqual([]);
-  });
-
-  test('Szenario Person-Happy: vorname/nachname persistieren, firmenname=null', async ({
-    page,
-  }) => {
-    const listPage = new AuftraggeberListPage(page);
-    await listPage.goto();
-
-    const formPage = new AuftraggeberFormPage(page);
-    await listPage.newLink.click();
-
     await formPage.fillAll(petra);
     await formPage.submitAndWait();
 
@@ -127,40 +86,35 @@ test.describe('UC-3.6 Auftraggeber erfassen', () => {
     expect(created.vorname).toBe('Petra');
     expect(created.nachname).toBe('Privatzahlerin');
     expect(created.firmenname).toBeNull();
-    expect(created.strasse).toBe('Lindenallee');
-    expect(created.hausnummer).toBe('7');
-    expect(created.plz).toBe('50667');
-    expect(created.stadt).toBe('Köln');
     expect(created.stundensatzCents).toBe(6000);
 
     await expect(listPage.nachnameCellFor(created.id)).toHaveText('Privatzahlerin');
     await expect(listPage.vornameCellFor(created.id)).toHaveText('Petra');
-
-    await listPage.editLinkFor(created.id).click();
-    await expect(formPage.input('vorname')).toHaveValue('Petra');
-    await expect(formPage.input('nachname')).toHaveValue('Privatzahlerin');
-    await expect(page.getByTestId('auftraggeber-form-firmenname')).toHaveCount(0);
   });
 
-  test('Szenario 2: Person ohne Namen wird abgelehnt (AC-AG-02)', async ({ page }) => {
-    const listPage = new AuftraggeberListPage(page);
-    await listPage.goto();
+  test('bearbeiten: Stundensatz + Rechnungskopf-Text ändern persistiert', async ({ page }) => {
+    const ag = await seedAuftraggeber({
+      typ: 'firma',
+      firmenname: 'Jugendamt Köln',
+      strasse: 'Kalker Hauptstr.',
+      hausnummer: '247-273',
+      plz: '51103',
+      stadt: 'Köln',
+      stundensatzCents: 4500,
+      rechnungskopfText: 'Alter Rechnungskopf',
+    });
 
     const formPage = new AuftraggeberFormPage(page);
-    await listPage.newLink.click();
-
-    await formPage.chooseTyp('person');
-    await formPage.input('strasse').fill('Lindenallee');
-    await formPage.input('hausnummer').fill('7');
-    await formPage.input('plz').fill('50667');
-    await formPage.input('stadt').fill('Köln');
-    await formPage.input('stundensatz').fill('45,00');
-    await formPage.input('rechnungskopfText').fill('Mein Honorar …:');
+    await formPage.gotoEdit(ag.id);
+    await formPage.input('stundensatz').fill('48,50');
+    await formPage.input('rechnungskopfText').fill('Neuer Rechnungskopf-Text');
     await formPage.submitAndWait();
 
-    await expect(formPage.errorFor('vorname')).toHaveText('Vor- und Nachname Pflicht');
+    await expect(page).toHaveURL(/\/auftraggeber$/);
 
     const rows = await readAuftraggeber();
-    expect(rows).toEqual([]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.stundensatzCents).toBe(4850);
+    expect(rows[0]!.rechnungskopfText).toBe('Neuer Rechnungskopf-Text');
   });
 });

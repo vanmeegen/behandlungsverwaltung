@@ -26,7 +26,7 @@ export class SchnellerfassungPage {
   }
 
   async goto(): Promise<void> {
-    await this.page.goto('/schnellerfassung');
+    await this.page.goto('/behandlungen');
   }
 
   async chooseKind(id: string): Promise<void> {

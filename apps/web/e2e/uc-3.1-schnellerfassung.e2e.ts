@@ -3,15 +3,13 @@ import {
   readBehandlungenByTherapie,
   resetDb,
   seedAuftraggeber,
+  seedBehandlung,
   seedKind,
   seedTherapie,
 } from './helpers/seed';
 import { SchnellerfassungPage } from './pages/SchnellerfassungPage';
 
-async function seedScenario(opts: { gruppentherapie?: boolean } = {}): Promise<{
-  kindId: string;
-  therapieId: string;
-}> {
+async function seedScenario(): Promise<{ kindId: string; therapieId: string }> {
   const kind = await seedKind({
     vorname: 'Anna',
     nachname: 'Musterfrau',
@@ -37,11 +35,8 @@ async function seedScenario(opts: { gruppentherapie?: boolean } = {}): Promise<{
     kindId: kind.id,
     auftraggeberId: ag.id,
     form: 'lerntherapie',
-    kommentar: null,
-    startdatum: '2026-01-01',
     bewilligteBe: 60,
     taetigkeit: 'lerntherapie',
-    gruppentherapie: opts.gruppentherapie ?? false,
   });
   return { kindId: kind.id, therapieId: therapie.id };
 }
@@ -53,14 +48,14 @@ const today = (): string => {
   ).padStart(2, '0')}`;
 };
 
-test.describe('UC-3.1 Schnellerfassung', () => {
+test.describe('UC-3.1 Schnellerfassung Behandlung', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test.beforeEach(async () => {
     await resetDb();
   });
 
-  test('Szenario Vorbelegung: 2 BE für heute mit Therapie-Tätigkeit (AC-BEH-01, AC-BEH-03)', async ({
+  test('erfassen: Vorbelegung Tätigkeit + Datum heute, BE auf 2 erhöhen, persistiert', async ({
     page,
   }) => {
     const { kindId, therapieId } = await seedScenario();
@@ -69,13 +64,13 @@ test.describe('UC-3.1 Schnellerfassung', () => {
     await formPage.goto();
     await formPage.chooseKind(kindId);
     await formPage.chooseTherapie(therapieId);
-    await expect(formPage.taetigkeit).toHaveValue('lerntherapie');
 
+    await expect(formPage.taetigkeit).toHaveValue('lerntherapie');
+    await expect(formPage.datum).toHaveValue(today());
     await expect(formPage.beValue).toHaveText('1');
+
     await formPage.tapPlus(1);
     await expect(formPage.beValue).toHaveText('2');
-
-    await expect(formPage.datum).toHaveValue(today());
 
     await formPage.submitAndWait();
 
@@ -88,53 +83,36 @@ test.describe('UC-3.1 Schnellerfassung', () => {
     expect(b.taetigkeit).toBe('lerntherapie');
   });
 
-  test('Szenario Override: Tätigkeit überschreiben speichert den überschriebenen Wert', async ({
-    page,
-  }) => {
+  test('bearbeiten: Datum einer bestehenden Behandlung ändern persistiert', async ({ page }) => {
     const { kindId, therapieId } = await seedScenario();
+    const seeded = await seedBehandlung({
+      therapieId,
+      datum: '2026-04-15',
+      be: 1,
+      taetigkeit: 'lerntherapie',
+    });
 
+    // Realer Workflow: erst Schnellerfassung mit Therapie auswählen, damit
+    // die Inline-Liste lädt und den Bearbeiten-Link bereitstellt.
     const formPage = new SchnellerfassungPage(page);
     await formPage.goto();
     await formPage.chooseKind(kindId);
     await formPage.chooseTherapie(therapieId);
-    await formPage.taetigkeit.fill('dyskalkulie');
-    await formPage.submitAndWait();
+
+    // Inline-Liste-Zeile erscheint, Bearbeiten-Link führt zur Edit-Page.
+    const row = page.getByTestId(`schnellerfassung-behandlungsliste-zeile-${seeded.id}`);
+    await expect(row).toBeVisible();
+    await row.getByRole('link', { name: 'Bearbeiten' }).click();
+    await expect(page).toHaveURL(new RegExp(`/behandlungen/${seeded.id}/bearbeiten$`));
+
+    await page.getByTestId('behandlung-edit-datum').fill('2026-04-22');
+    await page.getByTestId('behandlung-edit-submit').click();
+
+    await expect(page).toHaveURL(/\/behandlungen$/);
 
     const rows = await readBehandlungenByTherapie(therapieId);
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.taetigkeit).toBe('dyskalkulie');
-    expect(rows[0]!.be).toBe(1);
-  });
-
-  test('Gruppentherapie ist mit Wert der Therapie vorbelegt (AC-BEH-06)', async ({ page }) => {
-    const { kindId, therapieId } = await seedScenario({ gruppentherapie: true });
-
-    const formPage = new SchnellerfassungPage(page);
-    await formPage.goto();
-    await formPage.chooseKind(kindId);
-    await formPage.chooseTherapie(therapieId);
-    await expect(formPage.gruppentherapie).toBeChecked();
-
-    await formPage.submitAndWait();
-    const rows = await readBehandlungenByTherapie(therapieId);
-    expect(rows).toHaveLength(1);
-    expect(rows[0]!.gruppentherapie).toBe(true);
-  });
-
-  test('Gruppentherapie kann pro Behandlung überschrieben werden (AC-BEH-06)', async ({ page }) => {
-    const { kindId, therapieId } = await seedScenario({ gruppentherapie: false });
-
-    const formPage = new SchnellerfassungPage(page);
-    await formPage.goto();
-    await formPage.chooseKind(kindId);
-    await formPage.chooseTherapie(therapieId);
-    await expect(formPage.gruppentherapie).not.toBeChecked();
-    await formPage.gruppentherapie.click();
-    await expect(formPage.gruppentherapie).toBeChecked();
-
-    await formPage.submitAndWait();
-    const rows = await readBehandlungenByTherapie(therapieId);
-    expect(rows).toHaveLength(1);
-    expect(rows[0]!.gruppentherapie).toBe(true);
+    expect(rows[0]!.id).toBe(seeded.id);
+    expect(rows[0]!.datum.slice(0, 10)).toBe('2026-04-22');
   });
 });

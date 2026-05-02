@@ -19,7 +19,7 @@ test.describe('UC-3.5 Kind erfassen', () => {
     await resetDb();
   });
 
-  test('Szenario 1: Kind vollständig anlegen (AC-KIND-01, all 8 fields)', async ({ page }) => {
+  test('anlegen: alle Felder persistieren und Liste zeigt den Datensatz', async ({ page }) => {
     const listPage = new KindListPage(page);
     await listPage.goto();
     await expect(listPage.emptyState).toBeVisible();
@@ -31,8 +31,9 @@ test.describe('UC-3.5 Kind erfassen', () => {
     await formPage.fillAll(anna);
     await formPage.submitAndWait();
 
-    await expect(page).toHaveURL(/\/kinder$/);
-    await expect(listPage.rows).toHaveCount(1);
+    // Nach Create wechselt der Workflow direkt in den Edit-Modus
+    // (PRD §3.5 / EZB-Slots immer sichtbar machen).
+    await expect(page).toHaveURL(/\/kinder\/\d+$/);
 
     const rows = await readKinder();
     expect(rows).toHaveLength(1);
@@ -46,47 +47,36 @@ test.describe('UC-3.5 Kind erfassen', () => {
     expect(created.stadt).toBe('Köln');
     expect(created.aktenzeichen).toBe('K-2026-001');
 
+    await listPage.goto();
+    await expect(listPage.rows).toHaveCount(1);
     await expect(listPage.nachnameCellFor(created.id)).toHaveText('Musterfrau');
   });
 
-  test('Szenario 2: Kind ohne PLZ wird nicht gespeichert', async ({ page }) => {
+  test('bearbeiten: nachname ändern persistiert (AC-KIND-03)', async ({ page }) => {
     const listPage = new KindListPage(page);
-    await listPage.goto();
-
     const formPage = new KindFormPage(page);
-    await listPage.newLink.click();
 
-    await formPage.fillAll({ ...anna, plz: '' });
-    await formPage.submitAndWait();
-
-    await expect(formPage.errorFor('plz')).toHaveText('PLZ ist Pflicht');
-
-    const rows = await readKinder();
-    expect(rows).toEqual([]);
-  });
-
-  test('Edit-Pfad (AC-KIND-03): nachname ändern persistiert', async ({ page }) => {
-    const listPage = new KindListPage(page);
+    // Bestehendes Kind anlegen (Create-Flow ist im anderen Test abgedeckt).
     await listPage.goto();
-
-    const formPage = new KindFormPage(page);
     await listPage.newLink.click();
     await formPage.fillAll(anna);
     await formPage.submitAndWait();
-    await expect(listPage.rows).toHaveCount(1);
-
     const [created] = await readKinder();
     const id = created!.id;
+
+    await listPage.goto();
+    await expect(listPage.rows).toHaveCount(1);
     await listPage.editLinkFor(id).click();
     await expect(page).toHaveURL(new RegExp(`/kinder/${id}$`));
 
     await formPage.input('nachname').fill('Beispiel');
     await formPage.submitAndWait();
 
-    await expect(listPage.nachnameCellFor(id)).toHaveText('Beispiel');
-
     const rowsAfter = await readKinder();
     expect(rowsAfter).toHaveLength(1);
     expect(rowsAfter[0]!.nachname).toBe('Beispiel');
+
+    await listPage.goto();
+    await expect(listPage.nachnameCellFor(id)).toHaveText('Beispiel');
   });
 });

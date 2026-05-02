@@ -47,6 +47,10 @@ export class TherapieFormPage {
     await this.page.goto('/therapien/new');
   }
 
+  async gotoEdit(id: string): Promise<void> {
+    await this.page.goto(`/therapien/${id}`);
+  }
+
   errorFor(field: string): Locator {
     return this.page.getByTestId(`therapie-form-${field}-error`);
   }

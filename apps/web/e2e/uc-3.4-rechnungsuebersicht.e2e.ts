@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PDFParse } from 'pdf-parse';
 import {
   createMonatsrechnungApi,
   resetDb,
@@ -167,5 +168,15 @@ test.describe('UC-3.4 Rechnungsübersicht', () => {
     const path = await download.path();
     const bytes = readFileSync(path);
     expect(bytes.byteLength).toBeGreaterThan(200);
+
+    // Heruntergeladenes PDF semantisch verifizieren.
+    const text = (
+      (await new PDFParse({ data: new Uint8Array(bytes) }).getText()) as { text: string }
+    ).text;
+    expect(text).toContain('RE-2026-04-0001');
+    expect(text).toContain('Anna Musterfrau');
+    expect(text).toContain('K-2026-001');
+    expect(text).toContain('270,00');
+    expect(text).toContain('Jugendamt Köln');
   });
 });

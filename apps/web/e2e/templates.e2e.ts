@@ -62,18 +62,16 @@ test.describe('PDF templates upload (PRD §5, AC-TPL-01)', () => {
     const formPage = new TemplateUploadPage(page);
     await formPage.goto();
 
-    // 1) Global rechnung template
+    // 1) Global rechnung template (Auto-Upload beim Datei-Setzen)
     await formPage.chooseKind('rechnung');
     await formPage.chooseAuftraggeber('');
-    await formPage.setFile(FIXTURE_PATH);
-    await formPage.submitAndWait();
+    await formPage.uploadFile(FIXTURE_PATH);
     await expect(page.getByTestId('template-row-rechnung-global')).toBeVisible();
 
     // 2) Per-Auftraggeber stundennachweis template
     await formPage.chooseKind('stundennachweis');
     await formPage.chooseAuftraggeber(ag.id);
-    await formPage.setFile(FIXTURE_PATH);
-    await formPage.submitAndWait();
+    await formPage.uploadFile(FIXTURE_PATH);
     await expect(page.getByTestId(`template-row-stundennachweis-${ag.id}`)).toBeVisible();
 
     // File-system side check: both files are on disk under
